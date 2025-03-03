@@ -1,0 +1,94 @@
+package com.stratocloud.repository;
+
+import com.stratocloud.auth.CallContext;
+import com.stratocloud.exceptions.EntityNotFoundException;
+import com.stratocloud.group.UserGroup;
+import com.stratocloud.jpa.repository.AbstractTenantedRepository;
+import com.stratocloud.user.User;
+import com.stratocloud.utils.Utils;
+import jakarta.persistence.criteria.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Repository
+public class UserGroupRepositoryImpl extends AbstractTenantedRepository<UserGroup, UserGroupJpaRepository>
+        implements UserGroupRepository {
+
+    public UserGroupRepositoryImpl(UserGroupJpaRepository jpaRepository) {
+        super(jpaRepository);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserGroup findUserGroup(Long userGroupId) {
+        return jpaRepository.findById(userGroupId).orElseThrow(
+                () -> new EntityNotFoundException("User group not found.")
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserGroup> findByFilters(List<Long> userGroupIds, List<Long> userIds, String search) {
+        Specification<UserGroup> spec = getUserGroupSpecification(userGroupIds, userIds, search, false);
+
+        return jpaRepository.findAll(spec);
+    }
+
+    private Specification<UserGroup> getUserGroupSpecification(List<Long> userGroupIds,
+                                                               List<Long> userIds,
+                                                               String search,
+                                                               Boolean allGroups) {
+        boolean allGroupsEnabled = allGroups != null ? allGroups : false;
+
+        Specification<UserGroup> spec = getCallingTenantSpec();
+
+        if(Utils.isNotEmpty(userGroupIds))
+            spec = spec.and(getIdSpec(userGroupIds));
+
+        if(Utils.isNotEmpty(userIds))
+            spec = spec.and(getMemberSpec(userIds));
+
+        CallContext callContext = CallContext.current();
+
+        if(!allGroupsEnabled && !callContext.isAdmin()) {
+            spec = spec.and(getMemberSpec(List.of(callContext.getCallingUser().userId())));
+        }
+
+        if(Utils.isNotBlank(search))
+            spec = spec.and(getSearchSpec(search));
+
+        return spec;
+    }
+
+    private Specification<UserGroup> getSearchSpec(String search) {
+        return (root, query, criteriaBuilder) -> {
+            String s = "%" + search + "%";
+            Predicate p1 = criteriaBuilder.like(root.get("name"), s);
+            Predicate p2 = criteriaBuilder.like(root.get("alias"), s);
+            return criteriaBuilder.or(p1, p2);
+        };
+    }
+
+    private Specification<UserGroup> getMemberSpec(List<Long> userIds) {
+        return (root, query, criteriaBuilder) -> {
+            Join<User, UserGroup> join = root.join("members");
+            return join.get("id").in(userIds);
+        };
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserGroup> page(List<Long> userGroupIds,
+                                List<Long> userIds,
+                                String search,
+                                Boolean allGroups,
+                                Pageable pageable) {
+        Specification<UserGroup> spec = getUserGroupSpecification(userGroupIds, userIds, search, allGroups);
+        return jpaRepository.findAll(spec, pageable);
+    }
+}

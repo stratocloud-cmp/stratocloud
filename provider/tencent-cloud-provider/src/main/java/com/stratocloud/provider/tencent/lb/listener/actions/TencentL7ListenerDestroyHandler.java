@@ -1,0 +1,63 @@
+package com.stratocloud.provider.tencent.lb.listener.actions;
+
+import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.provider.resource.DestroyResourceActionHandler;
+import com.stratocloud.provider.resource.ResourceActionInput;
+import com.stratocloud.provider.resource.ResourceHandler;
+import com.stratocloud.provider.tencent.TencentCloudProvider;
+import com.stratocloud.provider.tencent.lb.listener.TencentL7ListenerHandler;
+import com.stratocloud.provider.tencent.lb.listener.TencentListener;
+import com.stratocloud.provider.tencent.lb.listener.TencentListenerId;
+import com.stratocloud.provider.tencent.lb.listener.requirements.TencentL7ListenerToInternalLbHandler;
+import com.stratocloud.provider.tencent.lb.listener.requirements.TencentL7ListenerToOpenLbHandler;
+import com.stratocloud.resource.Resource;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@Component
+public class TencentL7ListenerDestroyHandler implements DestroyResourceActionHandler {
+    private final TencentL7ListenerHandler listenerHandler;
+
+    public TencentL7ListenerDestroyHandler(TencentL7ListenerHandler listenerHandler) {
+        this.listenerHandler = listenerHandler;
+    }
+
+    @Override
+    public ResourceHandler getResourceHandler() {
+        return listenerHandler;
+    }
+
+    @Override
+    public String getTaskName() {
+        return "删除七层监听器";
+    }
+
+    @Override
+    public Class<? extends ResourceActionInput> getInputClass() {
+        return ResourceActionInput.Dummy.class;
+    }
+
+    @Override
+    public void run(Resource resource, Map<String, Object> parameters) {
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+
+        Optional<TencentListener> listener = listenerHandler.describeListener(account, resource.getExternalId());
+
+        if(listener.isEmpty())
+            return;
+
+        TencentCloudProvider provider = (TencentCloudProvider) listenerHandler.getProvider();
+        provider.buildClient(account).deleteListener(TencentListenerId.fromString(resource.getExternalId()));
+    }
+
+    @Override
+    public List<String> getLockExclusiveTargetRelTypeIds() {
+        return List.of(
+                TencentL7ListenerToInternalLbHandler.TYPE_ID,
+                TencentL7ListenerToOpenLbHandler.TYPE_ID
+        );
+    }
+}

@@ -1,0 +1,69 @@
+package com.stratocloud.resource.jobs;
+
+import com.stratocloud.constant.StratoServices;
+import com.stratocloud.job.AsyncJob;
+import com.stratocloud.job.AsyncJobContext;
+import com.stratocloud.job.AsyncJobHandler;
+import com.stratocloud.resource.ResourceService;
+import com.stratocloud.resource.cmd.relationship.BatchDisconnectResourcesCmd;
+import org.springframework.stereotype.Component;
+
+@Component
+public class BatchDisconnectResourcesJobHandler implements AsyncJobHandler<BatchDisconnectResourcesCmd> {
+    private final ResourceService resourceService;
+
+    public BatchDisconnectResourcesJobHandler(ResourceService resourceService) {
+        this.resourceService = resourceService;
+    }
+
+    @Override
+    public String getJobType() {
+        return "BATCH_DISCONNECT_RESOURCES";
+    }
+
+    @Override
+    public String getJobTypeName() {
+        return "解除挂载";
+    }
+
+    @Override
+    public String getStartJobTopic() {
+        return "BATCH_DISCONNECT_RESOURCES_JOB_START";
+    }
+
+    @Override
+    public String getCancelJobTopic() {
+        return "BATCH_DISCONNECT_RESOURCES_JOB_CANCEL";
+    }
+
+    @Override
+    public String getServiceName() {
+        return StratoServices.RESOURCE_SERVICE;
+    }
+
+    @Override
+    public void preCreateJob(BatchDisconnectResourcesCmd parameters) {
+        resourceService.disconnectResources(parameters);
+    }
+
+    @Override
+    public void onUpdateJob(BatchDisconnectResourcesCmd parameters) {
+        AsyncJob asyncJob = AsyncJobContext.current().getAsyncJob();
+
+        asyncJob.discardCurrentExecutions();
+
+        resourceService.disconnectResources(parameters);
+    }
+
+    @Override
+    public void onCancelJob(String message, BatchDisconnectResourcesCmd parameters) {
+        AsyncJob asyncJob = AsyncJobContext.current().getAsyncJob();
+        asyncJob.cancel(message);
+    }
+
+    @Override
+    public void onStartJob(BatchDisconnectResourcesCmd parameters) {
+        AsyncJob asyncJob = AsyncJobContext.current().getAsyncJob();
+        asyncJob.start();
+    }
+}

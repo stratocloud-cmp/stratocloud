@@ -1,0 +1,15 @@
+package com.stratocloud.job;
+
+public enum TaskEvent {
+    START_REQUESTED,
+    CANCEL_REQUESTED,
+    DISCARD_REQUESTED,
+    RETRY_REQUESTED,
+
+    AUTO_RETRY_START_LATER,
+
+
+    HANDLER_REPORT_FAILED,
+    HANDLER_REPORT_FINISHED
+
+}

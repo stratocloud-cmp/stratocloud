@@ -1,0 +1,12 @@
+package com.stratocloud.workflow.messaging;
+
+public class WorkflowTopics {
+    public static final String WORKFLOW_REPORT_JOB_STARTED = "WORKFLOW_REPORT_JOB_STARTED";
+    public static final String WORKFLOW_REPORT_JOB_FINISHED = "WORKFLOW_REPORT_JOB_FINISHED";
+    public static final String WORKFLOW_REPORT_JOB_FAILED = "WORKFLOW_REPORT_JOB_FAILED";
+    public static final String WORKFLOW_REPORT_APPROVAL_STARTED = "WORKFLOW_REPORT_APPROVAL_STARTED";
+    public static final String WORKFLOW_REPORT_CONFIRM_STARTED = "WORKFLOW_REPORT_CONFIRM_STARTED";
+
+    public static final String WORKFLOW_REPORT_WORKFLOW_FINISHED = "WORKFLOW_REPORT_WORKFLOW_FINISHED";
+    public static final String WORKFLOW_REPORT_WORKFLOW_FAILED = "WORKFLOW_REPORT_WORKFLOW_FAILED";
+}

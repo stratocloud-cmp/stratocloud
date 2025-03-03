@@ -1,0 +1,29 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: "strato-cloud"
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:file:/etc/stratocloud/storage/h2
+    username: stratocloud
+    password: stratocloud
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 200
+      auto-commit: true
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 20000
+      connection-test-query: SELECT 1
+  jpa:
+    generate-ddl: false
+    hibernate:
+      ddl-auto: update
+    database: h2
+    show-sql: false
+    open-in-view: true
+
+logging:
+  file:
+    path: /etc/stratocloud/log

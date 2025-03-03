@@ -1,0 +1,116 @@
+package com.stratocloud.resource.jobs;
+
+import com.stratocloud.constant.StratoServices;
+import com.stratocloud.exceptions.StratoException;
+import com.stratocloud.external.resource.UserGatewayService;
+import com.stratocloud.identity.SimpleUser;
+import com.stratocloud.job.AutoRegisteredJobHandler;
+import com.stratocloud.messaging.MessageBus;
+import com.stratocloud.permission.DynamicPermissionRequired;
+import com.stratocloud.permission.PermissionItem;
+import com.stratocloud.repository.ResourceRepository;
+import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourcePermissionTarget;
+import com.stratocloud.resource.ResourceService;
+import com.stratocloud.resource.cmd.BatchTransferCmd;
+import com.stratocloud.resource.cmd.ownership.TransferCmd;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Component
+public class BatchTransferResourcesJobHandler
+        implements AutoRegisteredJobHandler<BatchTransferCmd>, DynamicPermissionRequired {
+
+    private final MessageBus messageBus;
+
+    private final ResourceService resourceService;
+
+    private final ResourceRepository resourceRepository;
+
+    private final UserGatewayService userGatewayService;
+
+    public BatchTransferResourcesJobHandler(MessageBus messageBus,
+                                            ResourceService resourceService,
+                                            ResourceRepository resourceRepository,
+                                            UserGatewayService userGatewayService) {
+        this.messageBus = messageBus;
+        this.resourceService = resourceService;
+        this.resourceRepository = resourceRepository;
+        this.userGatewayService = userGatewayService;
+    }
+
+
+    @Override
+    public String getJobType() {
+        return "TRANSFER_RESOURCES";
+    }
+
+    @Override
+    public String getJobTypeName() {
+        return "移交资源";
+    }
+
+    @Override
+    public String getStartJobTopic() {
+        return "TRANSFER_RESOURCES_JOB_START";
+    }
+
+    @Override
+    public String getCancelJobTopic() {
+        return "TRANSFER_RESOURCES_JOB_CANCEL";
+    }
+
+    @Override
+    public String getServiceName() {
+        return StratoServices.RESOURCE_SERVICE;
+    }
+
+    @Override
+    public void preCreateJob(BatchTransferCmd parameters) {
+
+    }
+
+    @Override
+    public void onUpdateJob(BatchTransferCmd parameters) {
+
+    }
+
+    @Override
+    public void onCancelJob(String message, BatchTransferCmd parameters) {
+
+    }
+
+    @Override
+    public void onStartJob(BatchTransferCmd parameters) {
+        tryFinishJob(messageBus, ()->resourceService.transfer(parameters));
+    }
+
+    @Override
+    public List<String> collectSummaryData(BatchTransferCmd jobParameters) {
+        List<String> result = new ArrayList<>();
+
+        for (TransferCmd transfer : jobParameters.getTransfers()) {
+            Resource resource = resourceRepository.findResource(transfer.getResourceId());
+
+            SimpleUser simpleUser = userGatewayService.findUser(transfer.getNewOwnerId()).orElseThrow(
+                    () -> new StratoException("Transfer target user not found.")
+            );
+
+            result.add("资源[%s]移交至%s".formatted(resource.getName(), simpleUser.realName()));
+        }
+
+        return result;
+    }
+
+    @Override
+    public PermissionItem getPermissionItem() {
+        return new PermissionItem(
+                ResourcePermissionTarget.ID,
+                ResourcePermissionTarget.NAME,
+                "TRANSFER",
+                "移交"
+        );
+    }
+}
