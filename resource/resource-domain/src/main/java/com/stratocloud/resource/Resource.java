@@ -394,10 +394,6 @@ public class Resource extends Controllable implements TaskTargetEntity {
     }
 
 
-    public void validateRecyclePrecondition() {
-
-    }
-
     public boolean hasTag(String tagKey, String tagValue) {
         return tags.stream().anyMatch(
                 t -> Objects.equals(t.getTagKey(), tagKey) && Objects.equals(t.getTagValue(), tagValue)

@@ -83,13 +83,11 @@ public class TencentInstanceBackendToL4ListenerHandler implements EssentialRequi
                 new TencentListenerId(backend.get().lbId(), backend.get().listenerId()).toString()
         );
 
-        if(listener.isEmpty())
-            return List.of();
-
-        return List.of(new ExternalRequirement(
+        return listener.map(externalResource -> List.of(new ExternalRequirement(
                 getRelationshipTypeId(),
-                listener.get(),
+                externalResource,
                 Map.of()
-        ));
+        ))).orElseGet(List::of);
+
     }
 }

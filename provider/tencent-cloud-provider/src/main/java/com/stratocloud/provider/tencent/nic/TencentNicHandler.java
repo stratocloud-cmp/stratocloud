@@ -68,11 +68,6 @@ public class TencentNicHandler extends AbstractResourceHandler {
     }
 
     @Override
-    public boolean isSharedRequirementTarget() {
-        return false;
-    }
-
-    @Override
     public Optional<ExternalResource> describeExternalResource(ExternalAccount account, String externalId) {
         return describeNic(account, externalId).map(
                 nic -> toExternalResource(account, nic)

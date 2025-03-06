@@ -10,6 +10,7 @@ import org.hibernate.annotations.BatchSize;
 
 import java.util.*;
 
+@SuppressWarnings("ALL")
 @Getter
 @Setter
 @Entity

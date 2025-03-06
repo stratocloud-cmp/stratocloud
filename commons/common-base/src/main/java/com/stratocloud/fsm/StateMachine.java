@@ -5,6 +5,7 @@ import com.stratocloud.exceptions.StratoException;
 import java.util.*;
 
 
+@SuppressWarnings("ALL")
 public class StateMachine<S, E> {
     private final HashMap<S, StateEntry> _states;
     private final StateEntry _initialStateEntry;

@@ -57,11 +57,6 @@ public class AliyunFlavorHandler extends AbstractResourceHandler {
     }
 
     @Override
-    public boolean isSharedRequirementTarget() {
-        return false;
-    }
-
-    @Override
     public Optional<ExternalResource> describeExternalResource(ExternalAccount account, String externalId) {
         return describeFlavor(account, externalId).map(
                 flavor -> toExternalResource(

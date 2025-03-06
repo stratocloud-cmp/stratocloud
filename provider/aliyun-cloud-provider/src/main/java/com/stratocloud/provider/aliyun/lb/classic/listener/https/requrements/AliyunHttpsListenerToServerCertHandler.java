@@ -127,15 +127,13 @@ public class AliyunHttpsListenerToServerCertHandler implements ExclusiveRequirem
 
         Optional<ExternalResource> cert = certHandler.describeExternalResource(account, certId);
 
-        if(cert.isEmpty())
-            return List.of();
-
-        return List.of(
+        return cert.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        cert.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 }

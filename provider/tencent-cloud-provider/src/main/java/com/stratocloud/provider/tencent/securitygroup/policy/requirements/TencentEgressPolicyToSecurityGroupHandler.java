@@ -88,14 +88,12 @@ public class TencentEgressPolicyToSecurityGroupHandler implements EssentialRequi
         Optional<ExternalResource> securityGroup
                 = securityGroupHandler.describeExternalResource(account, securityGroupId);
 
-        if(securityGroup.isEmpty())
-            return List.of();
-
-        return List.of(new ExternalRequirement(
+        return securityGroup.map(externalResource -> List.of(new ExternalRequirement(
                 getRelationshipTypeId(),
-                securityGroup.get(),
+                externalResource,
                 Map.of()
-        ));
+        ))).orElseGet(List::of);
+
     }
 
 

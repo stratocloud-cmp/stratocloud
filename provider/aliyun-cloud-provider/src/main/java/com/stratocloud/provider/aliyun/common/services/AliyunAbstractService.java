@@ -60,7 +60,7 @@ public abstract class AliyunAbstractService {
             if(e.getCode().contains("AccessKey"))
                 throw new ExternalAccountInvalidException(e.getMessage(), e);
 
-            log.warn("ErrorCode: "+e.getCode());
+            log.warn("ErrorCode: {}", e.getCode());
 
             if(Objects.equals(e.getStatusCode(), 404))
                 throw new ExternalResourceNotFoundException(e.getMessage(), e);
@@ -69,12 +69,12 @@ public abstract class AliyunAbstractService {
                 case ErrorCodes.SERVICE_UNAVAILABLE -> throw new ProviderConnectionException(e.getMessage(), e);
 
                 case ErrorCodes.THROTTLING, ErrorCodes.API_THROTTLING, ErrorCodes.TASK_CONFLICT -> {
-                    log.warn("Retrying later: "+e.getMessage());
+                    log.warn("Retrying later: {}", e.getMessage());
                     SleepUtil.sleepRandomlyByMilliSeconds(500, 3000);
                     return doTryInvoke(invoker, triedTimes+1);
                 }
                 case ErrorCodes.DRY_RUN_OPERATION -> {
-                    log.info("Dry run operation passed: "+e.getMessage());
+                    log.info("Dry run operation passed: {}", e.getMessage());
                     return null;
                 }
                 default -> throw new StratoException(e.getMessage(), e);

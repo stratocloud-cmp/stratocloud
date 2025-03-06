@@ -14,7 +14,6 @@ import com.stratocloud.provider.aliyun.flavor.AliyunFlavorId;
 import com.stratocloud.provider.aliyun.instance.AliyunInstance;
 import com.stratocloud.provider.aliyun.instance.AliyunInstanceHandler;
 import com.stratocloud.provider.relationship.ChangeableEssentialHandler;
-import com.stratocloud.provider.relationship.RelationshipConnectInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
@@ -120,11 +119,6 @@ public class AliyunInstanceToFlavorHandler implements ChangeableEssentialHandler
     @Override
     public Set<ResourceState> getAllowedSourceStates() {
         return Set.of(ResourceState.STOPPED);
-    }
-
-    @Override
-    public Class<? extends RelationshipConnectInput> getConnectInputClass() {
-        return RelationshipConnectInput.Dummy.class;
     }
 
     @Override

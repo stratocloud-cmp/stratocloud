@@ -48,7 +48,7 @@ public class NextHop {
                     socketHandler, headers, proxyTarget
             ).get(2000, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            log.error("Proxy target offline: " + proxyTarget);
+            log.error("Proxy target offline: {}", proxyTarget);
             listener.clientOffline();
             throw new RuntimeException(e);
         }

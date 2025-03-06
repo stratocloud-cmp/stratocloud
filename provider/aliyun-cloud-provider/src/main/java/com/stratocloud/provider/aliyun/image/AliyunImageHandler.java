@@ -56,11 +56,6 @@ public class AliyunImageHandler extends AbstractResourceHandler {
     }
 
     @Override
-    public boolean isSharedRequirementTarget() {
-        return false;
-    }
-
-    @Override
     public Optional<ExternalResource> describeExternalResource(ExternalAccount account, String externalId) {
         return describeImage(account, externalId).map(
                 image -> toExternalResource(account, image)

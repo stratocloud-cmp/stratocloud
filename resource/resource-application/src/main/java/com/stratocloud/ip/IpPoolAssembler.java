@@ -6,7 +6,6 @@ import com.stratocloud.ip.query.NestedIpRange;
 import com.stratocloud.ip.query.NestedIpResponse;
 import com.stratocloud.jpa.entities.EntityUtil;
 import com.stratocloud.resource.Resource;
-import com.stratocloud.resource.query.metadata.NestedRelationshipSpec;
 import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
 

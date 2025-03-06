@@ -5,7 +5,6 @@ import com.stratocloud.group.query.NestedUserGroupResponse;
 import com.stratocloud.group.query.NestedUserGroupTag;
 import com.stratocloud.group.query.SimpleUserGroup;
 import com.stratocloud.jpa.entities.EntityUtil;
-import com.stratocloud.user.User;
 import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
 

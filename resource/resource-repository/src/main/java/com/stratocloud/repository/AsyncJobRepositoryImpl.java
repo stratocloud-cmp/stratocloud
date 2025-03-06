@@ -4,11 +4,9 @@ import com.stratocloud.exceptions.EntityNotFoundException;
 import com.stratocloud.job.AsyncJob;
 import com.stratocloud.jpa.repository.AbstractControllableRepository;
 import com.stratocloud.utils.Utils;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 

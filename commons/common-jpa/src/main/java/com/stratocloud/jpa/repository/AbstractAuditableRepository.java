@@ -5,7 +5,6 @@ import com.stratocloud.jpa.repository.jpa.AuditableJpaRepository;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.Collection;
-import java.util.List;
 
 public abstract class AbstractAuditableRepository<E extends Auditable, R extends AuditableJpaRepository<E>>
         extends AbstractRepository<E, Long, R> implements AuditableRepository<E>{

@@ -51,11 +51,6 @@ public class SynchronizeLimitsJobHandler
     }
 
     @Override
-    public boolean isTransientJob() {
-        return false;
-    }
-
-    @Override
     public boolean defaultWorkflowRequireOrder() {
         return false;
     }

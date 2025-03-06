@@ -55,16 +55,14 @@ public abstract class TencentListenerToLbHandler implements ExclusiveRequirement
 
         Optional<ExternalResource> loadBalancer = loadBalancerHandler.describeExternalResource(account, lbId);
 
-        if(loadBalancer.isEmpty())
-            return List.of();
-
-        return List.of(
+        return loadBalancer.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        loadBalancer.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 
     @Override

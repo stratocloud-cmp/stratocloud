@@ -89,16 +89,14 @@ public class AliyunIngressPolicyToSourceGroupHandler implements ExclusiveRequire
                 account, policy.get().detail().getSourceGroupId()
         );
 
-        if(sourceGroup.isEmpty())
-            return List.of();
-
-        return List.of(
+        return sourceGroup.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        sourceGroup.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 
     @Override

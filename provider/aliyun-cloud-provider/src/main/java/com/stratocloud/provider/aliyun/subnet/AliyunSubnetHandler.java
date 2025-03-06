@@ -55,11 +55,6 @@ public class AliyunSubnetHandler extends AbstractResourceHandler {
     }
 
     @Override
-    public boolean isSharedRequirementTarget() {
-        return false;
-    }
-
-    @Override
     public boolean canAttachIpPool() {
         return true;
     }

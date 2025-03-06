@@ -150,15 +150,13 @@ public class AliyunUdpListenerToMasterSlaveGroupHandler implements ExclusiveRequ
         Optional<ExternalResource> masterSlaveGroup
                 = masterSlaveGroupHandler.describeExternalResource(account, masterSlaveGroupId.toString());
 
-        if(masterSlaveGroup.isEmpty())
-            return List.of();
-
-        return List.of(
+        return masterSlaveGroup.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        masterSlaveGroup.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 }

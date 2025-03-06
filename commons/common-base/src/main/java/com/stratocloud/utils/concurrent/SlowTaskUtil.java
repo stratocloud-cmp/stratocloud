@@ -18,7 +18,7 @@ public class SlowTaskUtil implements SelfMonitorTarget {
 
     @Override
     public void logStats() {
-        log.info("Slow task executor service: " + executorService);
+        log.info("Slow task executor service: {}", executorService);
     }
 
     public static ExecutorService getExecutorService() {

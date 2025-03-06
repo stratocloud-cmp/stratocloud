@@ -69,11 +69,6 @@ public class AliyunNicHandler extends AbstractResourceHandler implements Monitor
     }
 
     @Override
-    public boolean isSharedRequirementTarget() {
-        return false;
-    }
-
-    @Override
     public Optional<ExternalResource> describeExternalResource(ExternalAccount account, String externalId) {
         return describeNic(account, externalId).map(
                 nic -> toExternalResource(account, nic)

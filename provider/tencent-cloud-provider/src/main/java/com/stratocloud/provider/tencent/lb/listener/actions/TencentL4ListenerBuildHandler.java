@@ -127,7 +127,7 @@ public class TencentL4ListenerBuildHandler implements BuildResourceActionHandler
             request.setIdleConnectTimeout(input.getIdleConnectTimeout());
 
         if(input.getEnableSnat() != null && input.getEnableSnat())
-            request.setSnatEnable(input.getEnableSnat());
+            request.setSnatEnable(true);
 
         if(isTcpSsl(input.getProtocol())){
             Resource cert = resource.getExclusiveTarget(ResourceCategories.SERVER_CERT).orElseThrow(

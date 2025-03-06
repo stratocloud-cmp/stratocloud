@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-class LocalCache {
+public class LocalCache {
     private final Map<String, CacheValue<?>> map = new ConcurrentHashMap<>();
 
     private static final Duration defaultExpireDuration = Duration.ofSeconds(30);

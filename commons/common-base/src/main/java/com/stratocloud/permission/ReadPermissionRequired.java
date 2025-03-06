@@ -5,6 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @PermissionRequired(action = "READ", actionName = "查询")

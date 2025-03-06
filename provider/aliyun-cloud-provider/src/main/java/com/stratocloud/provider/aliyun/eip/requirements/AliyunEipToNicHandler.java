@@ -144,13 +144,11 @@ public class AliyunEipToNicHandler implements ExclusiveRequirementHandler, Prima
 
         Optional<ExternalResource> nic = nicHandler.describeExternalResource(account, networkInterfaceId);
 
-        if(nic.isEmpty())
-            return List.of();
-
-        return List.of(new ExternalRequirement(
+        return nic.map(externalResource -> List.of(new ExternalRequirement(
                 getRelationshipTypeId(),
-                nic.get(),
+                externalResource,
                 Map.of()
-        ));
+        ))).orElseGet(List::of);
+
     }
 }

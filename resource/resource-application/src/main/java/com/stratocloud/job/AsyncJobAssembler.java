@@ -8,7 +8,6 @@ import com.stratocloud.jpa.entities.EntityUtil;
 import com.stratocloud.utils.JSON;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Component

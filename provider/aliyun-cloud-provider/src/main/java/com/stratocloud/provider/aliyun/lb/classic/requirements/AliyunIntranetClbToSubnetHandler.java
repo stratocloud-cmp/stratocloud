@@ -78,15 +78,13 @@ public class AliyunIntranetClbToSubnetHandler implements EssentialRequirementHan
 
         Optional<ExternalResource> subnet = subnetHandler.describeExternalResource(account, vSwitchId);
 
-        if(subnet.isEmpty())
-            return List.of();
-
-        return List.of(
+        return subnet.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        subnet.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 }

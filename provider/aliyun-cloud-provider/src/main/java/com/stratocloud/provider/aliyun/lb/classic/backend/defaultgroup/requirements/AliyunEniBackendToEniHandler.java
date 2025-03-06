@@ -78,16 +78,14 @@ public class AliyunEniBackendToEniHandler implements EssentialRequirementHandler
 
         Optional<ExternalResource> nic = nicHandler.describeExternalResource(account, serverId);
 
-        if(nic.isEmpty())
-            return List.of();
-
-        return List.of(
+        return nic.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        nic.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 
     @Override

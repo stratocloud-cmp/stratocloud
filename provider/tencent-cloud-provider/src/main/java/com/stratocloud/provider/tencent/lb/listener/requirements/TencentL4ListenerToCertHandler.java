@@ -102,15 +102,13 @@ public class TencentL4ListenerToCertHandler implements ExclusiveRequirementHandl
 
         Optional<ExternalResource> cert = certHandler.describeExternalResource(account, certificate.getCertId());
 
-        if(cert.isEmpty())
-            return List.of();
-
-        return List.of(
+        return cert.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        cert.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 }

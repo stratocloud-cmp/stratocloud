@@ -123,13 +123,11 @@ public class AliyunEipToBandwidthPackageHandler implements ExclusiveRequirementH
 
         Optional<ExternalResource> bandwidthPackage = packageHandler.describeExternalResource(account, packageId);
 
-        if(bandwidthPackage.isEmpty())
-            return List.of();
-
-        return List.of(new ExternalRequirement(
+        return bandwidthPackage.map(externalResource -> List.of(new ExternalRequirement(
                 getRelationshipTypeId(),
-                bandwidthPackage.get(),
+                externalResource,
                 Map.of()
-        ));
+        ))).orElseGet(List::of);
+
     }
 }

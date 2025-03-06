@@ -875,8 +875,6 @@ public class ResourceServiceImpl implements ResourceService {
 
         Resource resource = repository.findResource(resourceId);
 
-        resource.validateRecyclePrecondition();
-
         if(executingDestruction){
             resource.validateActionPrecondition(ResourceActions.DESTROY_RESOURCE.id(), destroyParameters);
             Execution execution = orchestrator.orchestrateDestruction(resource, destroyParameters, recyclingCapabilities);

@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.concurrent.ThreadLocalRandom;
 
+@SuppressWarnings("ALL")
 public class Sequence {
 
     /**

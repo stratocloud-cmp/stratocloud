@@ -69,16 +69,14 @@ public abstract class AliyunListenerToAclHandler implements ExclusiveRequirement
 
         Optional<ExternalResource> acl = aclHandler.describeExternalResource(account, aclId);
 
-        if(acl.isEmpty())
-            return List.of();
-
-        return List.of(
+        return acl.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        acl.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 
     @Override

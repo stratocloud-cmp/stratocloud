@@ -73,14 +73,12 @@ public class TencentOpenLoadBalancerToVpcHandler implements EssentialRequirement
         if(loadBalancer.isEmpty())
             return List.of();
         Optional<ExternalResource> vpc = vpcHandler.describeExternalResource(account, loadBalancer.get().getVpcId());
-        if(vpc.isEmpty())
-            return List.of();
-        return List.of(
+        return vpc.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        vpc.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
     }
 }

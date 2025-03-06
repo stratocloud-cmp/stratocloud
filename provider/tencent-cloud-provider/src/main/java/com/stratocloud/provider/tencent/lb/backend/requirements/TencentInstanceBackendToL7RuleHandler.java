@@ -116,13 +116,11 @@ public class TencentInstanceBackendToL7RuleHandler implements EssentialRequireme
 
         Optional<ExternalResource> rule = ruleHandler.describeExternalResource(account, ruleId);
 
-        if(rule.isEmpty())
-            return List.of();
-
-        return List.of(new ExternalRequirement(
+        return rule.map(externalResource -> List.of(new ExternalRequirement(
                 getRelationshipTypeId(),
-                rule.get(),
+                externalResource,
                 Map.of()
-        ));
+        ))).orElseGet(List::of);
+
     }
 }

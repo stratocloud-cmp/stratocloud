@@ -57,16 +57,14 @@ public abstract class AliyunListenerToClbHandler implements ExclusiveRequirement
 
         Optional<ExternalResource> clb = clbHandler.describeExternalResource(account, loadBalancerId);
 
-        if(clb.isEmpty())
-            return List.of();
-
-        return List.of(
+        return clb.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        clb.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 
     @Override

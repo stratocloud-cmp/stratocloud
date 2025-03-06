@@ -16,7 +16,7 @@ public class WebSocketProxyHandshakeInterceptor implements HandshakeInterceptor 
                                    ServerHttpResponse response,
                                    WebSocketHandler wsHandler,
                                    Map<String, Object> attributes) {
-        log.info("Establishing websocket handshake for: " + request.getURI());
+        log.info("Establishing websocket handshake for: {}", request.getURI());
 
         return true;
     }
@@ -29,7 +29,7 @@ public class WebSocketProxyHandshakeInterceptor implements HandshakeInterceptor 
         if(exception == null){
             log.info("Websocket handshake established: {}.", request.getURI());
         }else {
-            log.error("Websocket handshake failed: "+request.getURI(), exception);
+            log.error("Websocket handshake failed: {}.", request.getURI(), exception);
         }
     }
 }

@@ -77,14 +77,12 @@ public class TencentSubnetToZoneHandler implements EssentialRequirementHandler {
 
         Optional<ExternalResource> zone = zoneHandler.describeExternalResource(account, subnet.get().getZone());
 
-        if(zone.isEmpty())
-            return List.of();
-
-        return List.of(new ExternalRequirement(
+        return zone.map(externalResource -> List.of(new ExternalRequirement(
                 getRelationshipTypeId(),
-                zone.get(),
+                externalResource,
                 Map.of()
-        ));
+        ))).orElseGet(List::of);
+
     }
 
 }

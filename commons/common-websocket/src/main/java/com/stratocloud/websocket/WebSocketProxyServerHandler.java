@@ -28,9 +28,9 @@ public class WebSocketProxyServerHandler extends AbstractWebSocketHandler implem
     private final Function<URI, URI> proxyTargetGetter;
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(WebSocketSession session) {
         NextHop nextHop = getNextHop(session);
-        log.info("Next hop is: "+nextHop.getRemoteAddress());
+        log.info("Next hop is: {}", nextHop.getRemoteAddress());
     }
 
     public WebSocketProxyServerHandler(Function<URI, URI> proxyTargetGetter) {

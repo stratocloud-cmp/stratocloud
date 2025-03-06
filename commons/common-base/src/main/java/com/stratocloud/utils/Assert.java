@@ -48,7 +48,7 @@ public class Assert {
     }
 
     public static void isPositive(int... values) {
-        if(values == null || values.length == 0)
+        if(values == null)
             return;
 
         for (int value : values) {

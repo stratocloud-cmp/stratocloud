@@ -150,16 +150,14 @@ public class AliyunHttpsListenerToServerGroupHandler implements ExclusiveRequire
         Optional<ExternalResource> serverGroup
                 = serverGroupHandler.describeExternalResource(account, serverGroupId.toString());
 
-        if(serverGroup.isEmpty())
-            return List.of();
-
-        return List.of(
+        return serverGroup.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        serverGroup.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 
     @Override

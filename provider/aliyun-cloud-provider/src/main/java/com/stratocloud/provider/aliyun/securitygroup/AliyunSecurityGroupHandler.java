@@ -55,11 +55,6 @@ public class AliyunSecurityGroupHandler extends AbstractResourceHandler {
     }
 
     @Override
-    public boolean isSharedRequirementTarget() {
-        return false;
-    }
-
-    @Override
     public Optional<ExternalResource> describeExternalResource(ExternalAccount account, String externalId) {
         return describeSecurityGroup(account, externalId).map(
                 securityGroup -> toExternalResource(account, securityGroup)

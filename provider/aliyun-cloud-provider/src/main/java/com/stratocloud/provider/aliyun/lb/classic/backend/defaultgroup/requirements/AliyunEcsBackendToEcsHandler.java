@@ -78,16 +78,14 @@ public class AliyunEcsBackendToEcsHandler implements EssentialRequirementHandler
 
         Optional<ExternalResource> instance = instanceHandler.describeExternalResource(account, serverId);
 
-        if(instance.isEmpty())
-            return List.of();
-
-        return List.of(
+        return instance.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        instance.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 
     @Override

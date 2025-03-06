@@ -76,14 +76,12 @@ public class TencentRuleToL7ListenerHandler implements EssentialRequirementHandl
         TencentL7RuleId ruleId = TencentL7RuleId.fromString(source.externalId());
         TencentListenerId listenerId = new TencentListenerId(ruleId.lbId(), ruleId.listenerId());
         Optional<ExternalResource> listener = listenerHandler.describeExternalResource(account, listenerId.toString());
-        if(listener.isEmpty())
-            return List.of();
-        return List.of(
+        return listener.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        listener.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
     }
 }

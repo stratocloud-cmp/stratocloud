@@ -78,15 +78,13 @@ public class AliyunIngressPolicyToDestGroupHandler implements EssentialRequireme
                 account, policy.get().policyId().securityGroupId()
         );
 
-        if(securityGroup.isEmpty())
-            return List.of();
-
-        return List.of(
+        return securityGroup.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        securityGroup.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 }

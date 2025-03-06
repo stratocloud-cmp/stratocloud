@@ -8,5 +8,5 @@ public interface StratoGuestCommandExecutorFactory
     @Override
     default void afterPropertiesSet() {
         StratoGuestCommandExecutorFactoryRegistry.register(this);
-    };
+    }
 }

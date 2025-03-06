@@ -186,7 +186,7 @@ public class ResourceRepositoryImpl extends AbstractControllableRepository<Resou
 
 
         Specification<Resource> specification = (root, query, criteriaBuilder) -> {
-            query.distinct(true);
+            Objects.requireNonNull(query).distinct(true);
             List<Predicate> predicates = new ArrayList<>();
             for(String resourceType:targetIdsMap.keySet()){
                 List<Long> targetIds = targetIdsMap.get(resourceType);
@@ -246,7 +246,7 @@ public class ResourceRepositoryImpl extends AbstractControllableRepository<Resou
 
     private Specification<Resource> getSearchSpec(String search) {
         return (root, query, criteriaBuilder) -> {
-            query.distinct(true);
+            Objects.requireNonNull(query).distinct(true);
 
             Join<RuntimeProperty, Resource> runtimePropertyJoin = root.join(
                     "runtimeProperties", JoinType.LEFT

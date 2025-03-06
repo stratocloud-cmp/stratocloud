@@ -78,9 +78,7 @@ public class TencentFlavorToZoneHandler implements EssentialRequirementHandler {
 
         Optional<ExternalResource> zone = zoneHandler.describeExternalResource(account, flavor.get().getZone());
 
-        if(zone.isEmpty())
-            return new ArrayList<>();
+        return zone.map(externalResource -> List.of(new ExternalRequirement(getRelationshipTypeId(), externalResource, Map.of()))).orElseGet(ArrayList::new);
 
-        return List.of(new ExternalRequirement(getRelationshipTypeId(), zone.get(), Map.of()));
     }
 }

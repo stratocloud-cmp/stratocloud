@@ -78,14 +78,12 @@ public class TencentOpenLoadBalancerToZoneHandler implements EssentialRequiremen
             return List.of();
 
         Optional<ExternalResource> zone = zoneHandler.describeExternalResource(account, loadBalancer.get().getZones()[0]);
-        if(zone.isEmpty())
-            return List.of();
-        return List.of(
+        return zone.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        zone.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
     }
 }

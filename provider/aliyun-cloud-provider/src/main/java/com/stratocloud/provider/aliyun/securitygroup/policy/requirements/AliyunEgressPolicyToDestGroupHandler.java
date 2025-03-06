@@ -89,16 +89,14 @@ public class AliyunEgressPolicyToDestGroupHandler implements ExclusiveRequiremen
                 account, policy.get().detail().getDestGroupId()
         );
 
-        if(destGroup.isEmpty())
-            return List.of();
-
-        return List.of(
+        return destGroup.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        destGroup.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 
     @Override

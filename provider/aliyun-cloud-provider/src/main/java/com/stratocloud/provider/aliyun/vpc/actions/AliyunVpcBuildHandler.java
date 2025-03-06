@@ -63,7 +63,7 @@ public class AliyunVpcBuildHandler implements BuildResourceActionHandler {
         request.setDescription(resource.getDescription());
 
         if(input.getEnableIpv6() != null && input.getEnableIpv6()){
-            request.setEnableIpv6(input.getEnableIpv6());
+            request.setEnableIpv6(true);
             request.setIpv6CidrBlock(input.getIpv6CidrBlock());
             request.setIpv6Isp(input.getIpv6Isp());
         }

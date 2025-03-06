@@ -82,15 +82,13 @@ public class AliyunBandwidthPackageToZoneHandler implements EssentialRequirement
 
         Optional<ExternalResource> zone = zoneHandler.describeExternalResource(account, zoneId);
 
-        if(zone.isEmpty())
-            return List.of();
-
-        return List.of(
+        return zone.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        zone.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 }

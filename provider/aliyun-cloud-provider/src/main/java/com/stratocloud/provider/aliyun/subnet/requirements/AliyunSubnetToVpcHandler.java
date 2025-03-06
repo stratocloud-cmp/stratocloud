@@ -78,14 +78,12 @@ public class AliyunSubnetToVpcHandler implements EssentialRequirementHandler {
 
         Optional<ExternalResource> vpc = vpcHandler.describeExternalResource(account, subnet.get().detail().getVpcId());
 
-        if(vpc.isEmpty())
-            return List.of();
-
-        return List.of(new ExternalRequirement(
+        return vpc.map(externalResource -> List.of(new ExternalRequirement(
                 getRelationshipTypeId(),
-                vpc.get(),
+                externalResource,
                 Map.of()
-        ));
+        ))).orElseGet(List::of);
+
     }
 
 }

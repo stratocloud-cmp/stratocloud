@@ -77,34 +77,4 @@ public class TencentEipBuildInput implements ResourceActionInput {
             min = 1
     )
     private Long internetMaxBandwidthOut;
-
-//    @SelectField(
-//            label = "弹性IP类型",
-//            options = {
-//                    "EIP",
-//                    "AnycastEIP",
-//                    "HighQualityEIP",
-//                    "AntiDDoSEIP"
-//            },
-//            optionNames = {
-//                    "默认",
-//                    "加速IP",
-//                    "精品IP",
-//                    "高防IP"
-//            }
-//    )
-//    private String addressType;
-//
-//    @SelectField(
-//            label = "Anycast发布域",
-//            options = {
-//                    "ANYCAST_ZONE_GLOBAL",
-//                    "ANYCAST_ZONE_OVERSEAS",
-//            },
-//            optionNames = {
-//                    "全球发布域",
-//                    "境外发布域",
-//            }
-//    )
-//    private String anycastZone;
 }

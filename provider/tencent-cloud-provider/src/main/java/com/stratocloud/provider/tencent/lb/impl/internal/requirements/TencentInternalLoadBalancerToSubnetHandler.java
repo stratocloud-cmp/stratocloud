@@ -73,14 +73,12 @@ public class TencentInternalLoadBalancerToSubnetHandler implements EssentialRequ
         if(loadBalancer.isEmpty())
             return List.of();
         Optional<ExternalResource> subnet = subnetHandler.describeExternalResource(account, loadBalancer.get().getSubnetId());
-        if(subnet.isEmpty())
-            return List.of();
-        return List.of(
+        return subnet.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        subnet.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
     }
 }

@@ -87,15 +87,13 @@ public abstract class AliyunClbServerGroupToClbHandler implements ExclusiveRequi
                 account, serverGroup.get().id().loadBalancerId()
         );
 
-        if(clb.isEmpty())
-            return List.of();
-
-        return List.of(
+        return clb.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
-                        clb.get(),
+                        externalResource,
                         Map.of()
                 )
-        );
+        )).orElseGet(List::of);
+
     }
 }

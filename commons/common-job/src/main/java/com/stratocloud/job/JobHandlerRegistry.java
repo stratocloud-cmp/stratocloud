@@ -109,7 +109,7 @@ public class JobHandlerRegistry {
             public void consume(Message message) {
                 JobCanceledPayload payload = JSON.toJavaObject(message.getPayload(), JobCanceledPayload.class);
 
-                JobParameters jobParameters = (JobParameters) JSON.convert(
+                JobParameters jobParameters = JSON.convert(
                         payload.parameters(),
                         jobHandler.getParameterClass()
                 );

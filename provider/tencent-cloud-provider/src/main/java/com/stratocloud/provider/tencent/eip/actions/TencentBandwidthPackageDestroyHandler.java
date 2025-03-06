@@ -7,12 +7,10 @@ import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.eip.TencentBandwidthPackageHandler;
 import com.stratocloud.resource.Resource;
-import com.stratocloud.resource.ResourceUsage;
 import com.stratocloud.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -50,13 +48,4 @@ public class TencentBandwidthPackageDestroyHandler implements DestroyResourceAct
     }
 
 
-    @Override
-    public List<ResourceUsage> predictUsageChangeAfterAction(Resource resource, Map<String, Object> parameters) {
-        return List.of();
-    }
-
-    @Override
-    public void validatePrecondition(Resource resource, Map<String, Object> parameters) {
-
-    }
 }

@@ -39,9 +39,6 @@ public class ProvidersInitializer implements BeanPostProcessor {
             return;
         resourceHandler.getProvider().register(resourceHandler);
         log.info("Resource handler {} registered.", resourceHandler.getClass().getSimpleName());
-
-//        if(resourceHandler instanceof GuestOsHandler guestOsHandler)
-//            guestActionHandlerFactory.registerManagementInfoUpdateHandler(guestOsHandler);
     }
 
     private void initializeResourceActionHandlers(Object bean) {

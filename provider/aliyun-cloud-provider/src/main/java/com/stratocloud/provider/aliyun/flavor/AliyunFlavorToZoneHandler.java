@@ -79,9 +79,7 @@ public class AliyunFlavorToZoneHandler implements EssentialRequirementHandler {
                 account, flavor.get().flavorId().zoneId()
         );
 
-        if(zone.isEmpty())
-            return new ArrayList<>();
+        return zone.map(externalResource -> List.of(new ExternalRequirement(getRelationshipTypeId(), externalResource, Map.of()))).orElseGet(ArrayList::new);
 
-        return List.of(new ExternalRequirement(getRelationshipTypeId(), zone.get(), Map.of()));
     }
 }

@@ -5,7 +5,6 @@ import com.stratocloud.constant.StratoServices;
 import com.stratocloud.group.UserGroup;
 import com.stratocloud.group.UserGroupService;
 import com.stratocloud.group.cmd.AddUsersToGroupCmd;
-import com.stratocloud.group.cmd.JoinUserGroupCmd;
 import com.stratocloud.job.AutoRegisteredJobHandler;
 import com.stratocloud.jpa.repository.EntityManager;
 import com.stratocloud.messaging.MessageBus;

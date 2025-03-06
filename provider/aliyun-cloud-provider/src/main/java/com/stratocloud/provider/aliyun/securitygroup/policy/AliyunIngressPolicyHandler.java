@@ -56,11 +56,6 @@ public class AliyunIngressPolicyHandler extends AbstractResourceHandler {
     }
 
     @Override
-    public boolean isSharedRequirementTarget() {
-        return false;
-    }
-
-    @Override
     public Optional<ExternalResource> describeExternalResource(ExternalAccount account, String externalId) {
         return describeIngressPolicy(account, externalId).map(
                 securityGroupPolicy -> toExternalResource(account, securityGroupPolicy)
