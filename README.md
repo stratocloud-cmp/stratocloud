@@ -27,6 +27,9 @@ StratoCloud
 * SSH/WinRM远程命令执行[(商业版功能)](./docs/PREMIUM.md)
   * 支持通过SSH/WinRM在私有云环境部署软件或执行脚本
 
+# 逻辑架构
+![arch](./docs/architecture.png)
+
 
 # 为什么选择StratoCloud?
 * 多云/混合云管理

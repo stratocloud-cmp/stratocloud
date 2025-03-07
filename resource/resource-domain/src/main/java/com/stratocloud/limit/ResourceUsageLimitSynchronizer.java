@@ -34,7 +34,7 @@ public class ResourceUsageLimitSynchronizer {
         List<SimpleTenant> subTenants
                 = tenantGatewayService.findSubTenants(tenantId);
         List<Long> tenantIds = new ArrayList<>();
-        subTenants.forEach(it -> tenantIds.add(it.id()));
+        subTenants.forEach(st -> tenantIds.add(st.id()));
         return tenantIds;
     }
 
