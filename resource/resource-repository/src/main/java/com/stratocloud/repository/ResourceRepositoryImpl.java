@@ -3,7 +3,6 @@ package com.stratocloud.repository;
 import com.stratocloud.auth.CallContext;
 import com.stratocloud.auth.UserSession;
 import com.stratocloud.exceptions.EntityNotFoundException;
-import com.stratocloud.exceptions.PermissionNotGrantedException;
 import com.stratocloud.exceptions.ResourceNotFoundException;
 import com.stratocloud.identity.BuiltInIds;
 import com.stratocloud.jpa.repository.AbstractControllableRepository;
@@ -12,7 +11,9 @@ import com.stratocloud.provider.ProviderRegistry;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -370,8 +371,6 @@ public class ResourceRepositoryImpl extends AbstractControllableRepository<Resou
         if(allTagsMatched)
             return;
 
-        throw new PermissionNotGrantedException("User %s does not have permission of resource %s.".formatted(
-                callingUser.realName(), entity.getName()
-        ));
+        super.validatePermission(entity);
     }
 }
