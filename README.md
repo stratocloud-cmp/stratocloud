@@ -28,7 +28,8 @@ StratoCloud
   * 支持通过SSH/WinRM在私有云环境部署软件或执行脚本
 
 # 逻辑架构
-![arch](./docs/architecture.png)
+![arch](https://gitee.com/stratocloud-cmp/stratocloud/raw/master/docs/architecture.png)
+
 
 
 # 为什么选择StratoCloud?
