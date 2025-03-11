@@ -52,6 +52,8 @@ public class InitNamingRulesConsumer implements MessageConsumer {
         rule.setSuffixLength(payload.suffixPolicy().suffixLength());
         rule.setSuffixStartNumber(payload.suffixPolicy().suffixStartNumber());
 
+        rule.setBuiltIn(true);
+
         ruleRepository.save(rule);
     }
 

@@ -25,6 +25,8 @@ public class Rule extends Tenanted {
     private String name;
     @Column(nullable = false, columnDefinition = "TEXT")
     private String script;
+    @Column(nullable = false)
+    private Boolean builtIn = false;
 
 
     public Object execute(Map<String, Object> parameters){

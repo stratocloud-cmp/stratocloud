@@ -175,7 +175,7 @@ spring:
 ```shell
 $ cd stratocloud-1.0.0-release/bin
 ```
-执行启动脚本(Linux环境):  
+执行启动脚本(Linux/macOS环境):  
 ```shell
 #启动StratoCloud
 $ nohup sh startup.sh &

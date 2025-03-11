@@ -279,6 +279,9 @@ public class RuleServiceImpl implements RuleService{
                 new AuditObject(rule.getId().toString(), rule.getName())
         );
 
+        if(rule.getBuiltIn())
+            throw new BadCommandException("内置规则不能删除");
+
         repository.delete(rule);
     }
 }
