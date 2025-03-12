@@ -188,16 +188,16 @@ public class UserServiceImpl implements UserService{
     }
 
     private void deleteUser(Long userId) {
-        Set<Long> builtInUserIds = Set.of(BuiltInIds.SYSTEM_USER_ID, BuiltInIds.SUPER_ADMIN_USER_ID);
-
-        if(builtInUserIds.contains(userId))
-            throw new BadCommandException("内置用户无法删除");
-
         User user = repository.findUser(userId);
 
         AuditLogContext.current().addAuditObject(
                 new AuditObject(user.getId().toString(), user.getRealName())
         );
+
+        Set<Long> builtInUserIds = Set.of(BuiltInIds.SYSTEM_USER_ID, BuiltInIds.SUPER_ADMIN_USER_ID);
+
+        if(builtInUserIds.contains(userId))
+            throw new BadCommandException("内置用户无法删除");
 
         user.onDelete();
         repository.delete(user);

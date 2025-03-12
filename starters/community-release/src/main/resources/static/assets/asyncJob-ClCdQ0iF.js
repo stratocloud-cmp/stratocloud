@@ -1,1 +1,0 @@
-import{s}from"./request-BV6gXtmx.js";const o=r=>s({url:"/resource-service/run-async-job",method:"post",data:r}),c=r=>s({url:"/resource-service/describe-async-jobs",method:"post",data:r});export{c as d,o as r};

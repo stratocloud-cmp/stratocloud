@@ -189,7 +189,7 @@ public class ResourceCategories {
             "SERVER_CERT",
             "服务器SSL证书",
             "server-cert",
-            205
+            991
     );
     public static final ResourceCategory LOAD_BALANCER_ACL = new ResourceCategory(
             ResourceCategoryGroups.LOAD_BALANCER_RELATED,
