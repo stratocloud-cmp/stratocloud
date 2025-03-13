@@ -34,11 +34,11 @@ public class UserDeletedConsumer implements MessageConsumer {
 
         for (Repository<?,?> repository : repositories)
             if(repository instanceof ControllableRepository tenantedRepository)
-                handleTenantDeleted(tenantedRepository, payload);
+                handleUserDeleted(tenantedRepository, payload);
     }
 
-    private void handleTenantDeleted(ControllableRepository<Controllable> controllableRepository,
-                                     UserDeletedPayload payload) {
+    private void handleUserDeleted(ControllableRepository<Controllable> controllableRepository,
+                                   UserDeletedPayload payload) {
         if(!controllableRepository.transferWhenOwnerDeleted())
             return;
 
