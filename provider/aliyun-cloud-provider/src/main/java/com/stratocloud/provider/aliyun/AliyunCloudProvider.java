@@ -52,7 +52,7 @@ public class AliyunCloudProvider extends AbstractProvider {
 
     @Override
     public void eraseSensitiveInfo(Map<String, Object> properties) {
-        properties.remove("secretKey");
+        properties.remove("accessKeySecret");
     }
 
 
