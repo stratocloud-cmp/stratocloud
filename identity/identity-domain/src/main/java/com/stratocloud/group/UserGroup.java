@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Getter
 @Setter
@@ -55,5 +56,9 @@ public class UserGroup extends Tenanted {
 
     public void removeMemberById(Long userId) {
         members.removeIf(m->m.getId().equals(userId));
+    }
+
+    public boolean hasMember(Long userId) {
+        return members.stream().anyMatch(m -> Objects.equals(userId, m.getId()));
     }
 }

@@ -1,7 +1,7 @@
 package com.stratocloud.controllers;
 
 import com.stratocloud.audit.SendAuditLog;
-import com.stratocloud.permission.DeletePermissionRequired;
+import com.stratocloud.permission.PermissionRequired;
 import com.stratocloud.permission.PermissionTarget;
 import com.stratocloud.resource.ResourceApi;
 import com.stratocloud.resource.ResourcePermissionTarget;
@@ -131,7 +131,7 @@ public class ResourceController implements ResourceApi {
     }
 
     @Override
-    @DeletePermissionRequired
+    @PermissionRequired(action = "DROP", actionName = "解除纳管")
     @SendAuditLog(
             action = "DropResources",
             actionName = "解除纳管",

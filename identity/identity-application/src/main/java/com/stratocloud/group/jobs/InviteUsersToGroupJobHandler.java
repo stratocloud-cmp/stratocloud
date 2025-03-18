@@ -1,6 +1,5 @@
 package com.stratocloud.group.jobs;
 
-import com.stratocloud.auth.CallContext;
 import com.stratocloud.constant.StratoServices;
 import com.stratocloud.group.UserGroup;
 import com.stratocloud.group.UserGroupService;
@@ -58,7 +57,7 @@ public class InviteUsersToGroupJobHandler
 
     @Override
     public void preCreateJob(AddUsersToGroupCmd parameters) {
-
+        validatePermission();
     }
 
     @Override
@@ -73,10 +72,7 @@ public class InviteUsersToGroupJobHandler
 
     @Override
     public void onStartJob(AddUsersToGroupCmd parameters) {
-        CallContext currentContext = CallContext.current();
-        CallContext.registerSystemSession();
         tryFinishJob(messageBus, ()->userGroupService.addUsersToGroup(parameters));
-        CallContext.registerBack(currentContext);
     }
 
     @Override

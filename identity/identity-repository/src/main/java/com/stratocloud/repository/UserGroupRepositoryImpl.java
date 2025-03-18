@@ -91,4 +91,13 @@ public class UserGroupRepositoryImpl extends AbstractTenantedRepository<UserGrou
         Specification<UserGroup> spec = getUserGroupSpecification(userGroupIds, userIds, search, allGroups);
         return jpaRepository.findAll(spec, pageable);
     }
+
+
+    @Override
+    public void validatePermission(UserGroup entity) {
+        if(entity.hasMember(CallContext.current().getCallingUser().userId()))
+            return;
+
+        super.validatePermission(entity);
+    }
 }

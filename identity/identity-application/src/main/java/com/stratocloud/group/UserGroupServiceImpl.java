@@ -2,6 +2,7 @@ package com.stratocloud.group;
 
 import com.stratocloud.audit.AuditLogContext;
 import com.stratocloud.audit.AuditObject;
+import com.stratocloud.auth.CallContext;
 import com.stratocloud.group.cmd.*;
 import com.stratocloud.group.query.DescribeGroupsRequest;
 import com.stratocloud.group.query.DescribeSimpleGroupsResponse;
@@ -50,6 +51,16 @@ public class UserGroupServiceImpl implements UserGroupService {
         List<UserGroupTag> userGroupTags = toUserGroupTags(tags);
 
         userGroup.updateTags(userGroupTags);
+
+        userGroup.setTenantId(cmd.getTenantId());
+
+
+        CallContext callContext = CallContext.current();
+        if(!callContext.isAdmin()){
+            User callingUser = userRepository.findUser(callContext.getCallingUser().userId());
+            userGroup.addMember(callingUser);
+        }
+
 
         userGroup = repository.save(userGroup);
 
@@ -142,12 +153,21 @@ public class UserGroupServiceImpl implements UserGroupService {
 
         UserGroup userGroup = repository.findUserGroup(userGroupId);
 
+        Long userId = CallContext.current().getCallingUser().userId();
+        boolean isMemberCalling = userGroup.hasMember(userId);
+
         AuditLogContext.current().addAuditObject(
                 new AuditObject(userGroup.getId().toString(), userGroup.getName())
         );
 
         userIds.forEach(userGroup::removeMemberById);
-        repository.save(userGroup);
+
+        if(isMemberCalling){
+            repository.saveWithSystemSession(userGroup);
+        } else {
+            repository.save(userGroup);
+        }
+
 
         return new RemoveUserFromGroupResponse();
     }

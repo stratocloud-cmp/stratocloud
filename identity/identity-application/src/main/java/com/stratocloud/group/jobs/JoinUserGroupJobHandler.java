@@ -59,7 +59,7 @@ public class JoinUserGroupJobHandler
 
     @Override
     public void preCreateJob(JoinUserGroupCmd parameters) {
-
+        validatePermission();
     }
 
     @Override

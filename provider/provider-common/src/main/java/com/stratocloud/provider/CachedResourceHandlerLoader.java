@@ -55,6 +55,7 @@ public abstract class CachedResourceHandlerLoader implements DynamicResourceHand
     }
 
 
+
     @Scheduled(fixedDelay = 15L, timeUnit = TimeUnit.SECONDS)
     public final void refreshResourceHandlers(){
         try {

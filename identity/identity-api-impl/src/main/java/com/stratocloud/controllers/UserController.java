@@ -48,7 +48,6 @@ public class UserController implements UserApi {
     }
 
     @Override
-    @UpdatePermissionRequired
     @SendAuditLog(
             action = "UpdateUser",
             actionName = "更新用户",

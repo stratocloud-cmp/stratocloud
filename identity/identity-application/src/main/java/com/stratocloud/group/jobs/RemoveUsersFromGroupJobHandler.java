@@ -1,6 +1,5 @@
 package com.stratocloud.group.jobs;
 
-import com.stratocloud.auth.CallContext;
 import com.stratocloud.constant.StratoServices;
 import com.stratocloud.group.UserGroup;
 import com.stratocloud.group.UserGroupService;
@@ -58,7 +57,7 @@ public class RemoveUsersFromGroupJobHandler
 
     @Override
     public void preCreateJob(RemoveUsersFromGroupCmd parameters) {
-
+        validatePermission();
     }
 
     @Override
@@ -73,10 +72,7 @@ public class RemoveUsersFromGroupJobHandler
 
     @Override
     public void onStartJob(RemoveUsersFromGroupCmd parameters) {
-        CallContext currentContext = CallContext.current();
-        CallContext.registerSystemSession();
         tryFinishJob(messageBus, ()->userGroupService.removeUsersFromGroup(parameters));
-        CallContext.registerBack(currentContext);
     }
 
     @Override

@@ -50,7 +50,7 @@ public class UpdateUserGroupJobHandler
 
     @Override
     public void preCreateJob(UpdateUserGroupCmd parameters) {
-
+        validatePermission();
     }
 
     @Override
