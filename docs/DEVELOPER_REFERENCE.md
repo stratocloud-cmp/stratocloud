@@ -551,3 +551,13 @@ StratoCloud社区版默认使用本地缓存，无法实现高可用部署。下
 3.新增Redis缓存服务实现类，例如`RedisCacheService`，实现`CacheService`接口，为此类添加`@Component`和`@Primary`注解，并在`getLock`方法中返回`RedisCacheLock`对象  
 4.在启动模块的`pom.xml`中引入刚刚新建的`redis-cache`模块
 
+# 使用其他数据库
+StratoCloud持久化层使用JPA-Hibernate框架，如果需要使用国产数据库，请参考以下文档
+* [Hibernate对接达梦](https://eco.dameng.com/document/dm/zh-cn/app-dev/java-hibernate-frame)
+* [Hibernate对接OceanBase](https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000002013264)
+* [Hibernate对接TiDB](https://docs.pingcap.com/zh/tidb/stable/dev-guide-sample-application-java-hibernate/)
+* [Hibernate对接GaussDB](https://support.huaweicloud.com/intl/zh-cn/qs-gaussdb/gaussdb_01_534.html)
+* [Hibernate对接PolarDB](https://help.aliyun.com/zh/polardb/polardb-for-oracle/jdbc-o-2-0)
+
+TDSQL MySQL版、TDSQL PostgreSQL版等数据库直接使用现有MySQL/PostgreSQL驱动即可，无需引入依赖
+
