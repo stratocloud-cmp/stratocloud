@@ -46,7 +46,7 @@ StratoCloud
 * 可扩展性
   * 所有云平台的对接模块均为可插拔、开箱即用的Maven模块，无需改动主体代码，提升云平台对接开发效率。详见[二次开发参考](./docs/DEVELOPER_REFERENCE.md)
 * 快速交付
-  * 并行、异步的云平台调用逻辑，提升资源交付速度和界面响应速度。详见[性能测试](./docs/PERFORMANCE.md)
+  * 并行、异步的云平台调用逻辑，提升资源交付速度和界面响应速度
 
 # 快速开始  
 本小节将引导您快速安装StratoCloud。在您开始安装之前，请知悉“快速开始”的目的仅限于帮助您快速了解StratoCloud，为单机部署模式。如果有高可用部署需求，详见[商业版功能](./docs/PREMIUM.md)或[二次开发参考](./docs/DEVELOPER_REFERENCE.md)。
@@ -195,8 +195,7 @@ $ startup.cmd
 [2.最佳实践](./docs/BEST_PRACTICES.md)  
 [3.设计考量](./docs/DESIGN_CONSIDERATIONS.md)  
 [4.二次开发参考](./docs/DEVELOPER_REFERENCE.md)  
-[5.性能测试](./docs/DEVELOPER_REFERENCE.md)  
-[6.商业版功能](./docs/PREMIUM.md)
+[5.商业版功能](./docs/PREMIUM.md)
 
 # 联系我们
 [stratocloud@163.com](mailto:stratocloud@163.com)
