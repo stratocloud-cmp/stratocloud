@@ -558,6 +558,5 @@ StratoCloud持久化层使用JPA-Hibernate框架，如果需要使用国产数�
 * [Hibernate对接TiDB](https://docs.pingcap.com/zh/tidb/stable/dev-guide-sample-application-java-hibernate/)
 * [Hibernate对接GaussDB](https://support.huaweicloud.com/intl/zh-cn/qs-gaussdb/gaussdb_01_534.html)
 * [Hibernate对接PolarDB](https://help.aliyun.com/zh/polardb/polardb-for-oracle/jdbc-o-2-0)
-
-TDSQL MySQL版、TDSQL PostgreSQL版等数据库直接使用现有MySQL/PostgreSQL驱动即可，无需引入依赖
+* TDSQL MySQL版、TDSQL PostgreSQL版等数据库直接使用现有MySQL/PostgreSQL驱动即可，无需引入依赖
 
