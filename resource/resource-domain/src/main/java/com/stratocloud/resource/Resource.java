@@ -640,4 +640,10 @@ public class Resource extends Controllable implements TaskTargetEntity {
                 ResourceState.getAliveStateSet().contains(state) &&
                 syncState != ResourceSyncState.NOT_FOUND;
     }
+
+    public void removeTag(String tagKey, String tagValue) {
+        tags.removeIf(
+                t -> Objects.equals(t.getTagKey(), tagKey) && Objects.equals(t.getTagValue(), tagValue)
+        );
+    }
 }

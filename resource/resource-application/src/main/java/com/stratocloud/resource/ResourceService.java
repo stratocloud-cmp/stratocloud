@@ -73,4 +73,10 @@ public interface ResourceService {
     DropResourcesResponse dropResources(BatchDropCmd cmd);
 
     DescribeQuickStatsResponse describeResourceQuickStats(DescribeQuickStatsRequest request);
+
+    AssociateTagsResponse associateTags(AssociateTagsCmd cmd);
+
+    DisassociateTagResponse disassociateTag(DisassociateTagCmd cmd);
+
+    UpdateDescriptionResponse updateDescription(UpdateDescriptionCmd cmd);
 }

@@ -6,13 +6,11 @@ import com.stratocloud.permission.PermissionTarget;
 import com.stratocloud.resource.ResourceApi;
 import com.stratocloud.resource.ResourcePermissionTarget;
 import com.stratocloud.resource.ResourceService;
-import com.stratocloud.resource.cmd.BatchDropCmd;
-import com.stratocloud.resource.cmd.RunReadActionsCmd;
+import com.stratocloud.resource.cmd.*;
 import com.stratocloud.resource.query.*;
 import com.stratocloud.resource.query.inquiry.*;
 import com.stratocloud.resource.query.metadata.*;
-import com.stratocloud.resource.response.DropResourcesResponse;
-import com.stratocloud.resource.response.RunReadActionsResponse;
+import com.stratocloud.resource.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -145,5 +143,41 @@ public class ResourceController implements ResourceApi {
     @Override
     public DescribeQuickStatsResponse describeResourceQuickStats(@RequestBody DescribeQuickStatsRequest request) {
         return service.describeResourceQuickStats(request);
+    }
+
+    @Override
+    @PermissionRequired(action = "ASSOCIATE_TAGS", actionName = "绑定标签")
+    @SendAuditLog(
+            action = "AssociateTags",
+            actionName = "绑定标签",
+            objectType = "Resource",
+            objectTypeName = "云资源"
+    )
+    public AssociateTagsResponse associateTags(@RequestBody AssociateTagsCmd cmd) {
+        return service.associateTags(cmd);
+    }
+
+    @Override
+    @PermissionRequired(action = "DISASSOCIATE_TAG", actionName = "解绑标签")
+    @SendAuditLog(
+            action = "DisassociateTag",
+            actionName = "解绑标签",
+            objectType = "Resource",
+            objectTypeName = "云资源"
+    )
+    public DisassociateTagResponse disassociateTag(@RequestBody DisassociateTagCmd cmd) {
+        return service.disassociateTag(cmd);
+    }
+
+    @Override
+    @PermissionRequired(action = "UPDATE_DESCRIPTION", actionName = "更新资源描述")
+    @SendAuditLog(
+            action = "UpdateDescription",
+            actionName = "更新资源描述",
+            objectType = "Resource",
+            objectTypeName = "云资源"
+    )
+    public UpdateDescriptionResponse updateDescription(@RequestBody UpdateDescriptionCmd cmd) {
+        return service.updateDescription(cmd);
     }
 }

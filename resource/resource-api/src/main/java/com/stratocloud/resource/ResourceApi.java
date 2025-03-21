@@ -1,13 +1,11 @@
 package com.stratocloud.resource;
 
 import com.stratocloud.constant.StratoServices;
-import com.stratocloud.resource.cmd.BatchDropCmd;
-import com.stratocloud.resource.cmd.RunReadActionsCmd;
+import com.stratocloud.resource.cmd.*;
 import com.stratocloud.resource.query.*;
 import com.stratocloud.resource.query.inquiry.*;
 import com.stratocloud.resource.query.metadata.*;
-import com.stratocloud.resource.response.DropResourcesResponse;
-import com.stratocloud.resource.response.RunReadActionsResponse;
+import com.stratocloud.resource.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -74,4 +72,11 @@ public interface ResourceApi {
 
     @PostMapping(StratoServices.RESOURCE_SERVICE+"/describe-resource-quick-stats")
     DescribeQuickStatsResponse describeResourceQuickStats(@RequestBody DescribeQuickStatsRequest request);
+
+    @PostMapping(StratoServices.RESOURCE_SERVICE+"/associate-tags")
+    AssociateTagsResponse associateTags(AssociateTagsCmd cmd);
+    @PostMapping(StratoServices.RESOURCE_SERVICE+"/disassociate-tag")
+    DisassociateTagResponse disassociateTag(DisassociateTagCmd cmd);
+    @PostMapping(StratoServices.RESOURCE_SERVICE+"/update-description")
+    UpdateDescriptionResponse updateDescription(UpdateDescriptionCmd cmd);
 }

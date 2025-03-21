@@ -34,6 +34,7 @@ import com.stratocloud.resource.cmd.*;
 import com.stratocloud.resource.cmd.action.RunActionCmd;
 import com.stratocloud.resource.cmd.create.CreateResourcesCmd;
 import com.stratocloud.resource.cmd.create.NestedNewResource;
+import com.stratocloud.resource.cmd.create.NestedResourceTag;
 import com.stratocloud.resource.cmd.ownership.TransferCmd;
 import com.stratocloud.resource.cmd.recycle.RecycleCmd;
 import com.stratocloud.resource.cmd.relationship.*;
@@ -1103,6 +1104,62 @@ public class ResourceServiceImpl implements ResourceService {
         }
 
         return response;
+    }
+
+    @Override
+    @ValidateRequest
+    @Transactional
+    public AssociateTagsResponse associateTags(AssociateTagsCmd cmd) {
+        if(Utils.isEmpty(cmd.getTags()))
+            return new AssociateTagsResponse();
+
+        Resource resource = repository.findResource(cmd.getResourceId());
+
+        for (NestedResourceTag tag : cmd.getTags()) {
+            resource.updateTag(tag.getTagKey(), tag.getTagKeyName(), tag.getTagValue(), tag.getTagValueName());
+        }
+
+        AuditLogContext.current().addAuditObject(
+                new AuditObject(resource.getId().toString(), resource.getName())
+        );
+
+        repository.save(resource);
+
+        return new AssociateTagsResponse();
+    }
+
+    @Override
+    @ValidateRequest
+    @Transactional
+    public DisassociateTagResponse disassociateTag(DisassociateTagCmd cmd) {
+        Resource resource = repository.findResource(cmd.getResourceId());
+
+        resource.removeTag(cmd.getTagKey(), cmd.getTagValue());
+
+        AuditLogContext.current().addAuditObject(
+                new AuditObject(resource.getId().toString(), resource.getName())
+        );
+
+        repository.save(resource);
+
+        return new DisassociateTagResponse();
+    }
+
+    @Override
+    @ValidateRequest
+    @Transactional
+    public UpdateDescriptionResponse updateDescription(UpdateDescriptionCmd cmd) {
+        Resource resource = repository.findResource(cmd.getResourceId());
+
+        resource.setDescription(cmd.getDescription());
+
+        AuditLogContext.current().addAuditObject(
+                new AuditObject(resource.getId().toString(), resource.getName())
+        );
+
+        repository.save(resource);
+
+        return new UpdateDescriptionResponse();
     }
 
     private void synchronizeResourceStatesByAccount(ExternalAccount account) {
