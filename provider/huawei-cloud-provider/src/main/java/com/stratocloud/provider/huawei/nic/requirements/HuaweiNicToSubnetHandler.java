@@ -89,9 +89,4 @@ public class HuaweiNicToSubnetHandler implements EssentialRequirementHandler {
         )).orElseGet(List::of);
 
     }
-
-    @Override
-    public boolean visibleInTarget() {
-        return false;
-    }
 }
