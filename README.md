@@ -28,7 +28,7 @@ StratoCloud
   * 支持通过SSH/WinRM在私有云环境部署软件或执行脚本
 
 # 逻辑架构
-![arch](./docs/architecture.png)
+![arch](./docs/architecture.jpg)
 
 
 
