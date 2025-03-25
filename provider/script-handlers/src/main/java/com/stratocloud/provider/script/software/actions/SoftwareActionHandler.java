@@ -17,6 +17,7 @@ import com.stratocloud.resource.*;
 import com.stratocloud.script.RemoteScript;
 import com.stratocloud.script.SoftwareAction;
 import com.stratocloud.utils.ContextUtil;
+import com.stratocloud.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -107,7 +108,7 @@ public class SoftwareActionHandler implements ResourceActionHandler {
         );
 
 
-        resource.setName("%s (%s)".formatted(softwareDefinition.getName(), guestOs.getName()));
+        resource.setName("%s(%s)".formatted(softwareDefinition.getName(), guestOs.getName()));
 
         RuntimePropertiesUtil.copyManagementIpInfo(guestOs, resource);
 
@@ -124,6 +125,8 @@ public class SoftwareActionHandler implements ResourceActionHandler {
 
         Map<String, String> environment = RuntimePropertiesUtil.getRuntimePropertiesMap(resource);
 
+        resolveRequirementsProperties(resource, environment);
+
         customForm.ifPresent(form -> RuntimePropertiesUtil.decryptCustomFormData(
                 environment, form
         ));
@@ -138,6 +141,15 @@ public class SoftwareActionHandler implements ResourceActionHandler {
                 () -> new StratoException("Management IP not known.")
         );
 
+        String outputServicePortStr = outputArguments.get("servicePort");
+        if(Utils.isNotBlank(outputServicePortStr)){
+            try {
+                servicePort = Integer.valueOf(outputServicePortStr);
+            } catch (Exception e) {
+                log.warn("Failed to parse service port from: {}.", outputServicePortStr);
+            }
+        }
+
         resource.setExternalId(new SoftwareId(managementIp, servicePort).toString());
 
         if(result.status() != RemoteScriptResult.Status.SUCCESS)
@@ -148,6 +160,9 @@ public class SoftwareActionHandler implements ResourceActionHandler {
             );
     }
 
+    private void resolveRequirementsProperties(Resource resource, Map<String, String> environment) {
+
+    }
 
 
     @Override

@@ -22,7 +22,7 @@ public class RemoteScriptDef implements RemoteScriptHolder{
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private RemoteScriptType scriptType;
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
     @Column
     private String programPath;

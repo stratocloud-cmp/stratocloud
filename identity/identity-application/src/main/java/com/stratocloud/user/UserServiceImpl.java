@@ -4,8 +4,10 @@ import com.stratocloud.audit.AuditLogContext;
 import com.stratocloud.audit.AuditObject;
 import com.stratocloud.auth.CallContext;
 import com.stratocloud.exceptions.BadCommandException;
+import com.stratocloud.group.UserGroup;
 import com.stratocloud.identity.BuiltInIds;
 import com.stratocloud.repository.RoleRepository;
+import com.stratocloud.repository.UserGroupRepository;
 import com.stratocloud.repository.UserRepository;
 import com.stratocloud.role.Role;
 import com.stratocloud.user.cmd.*;
@@ -34,15 +36,19 @@ public class UserServiceImpl implements UserService{
 
     private final RoleRepository roleRepository;
 
+    private final UserGroupRepository userGroupRepository;
+
 
     public UserServiceImpl(UserRepository repository,
                            UserAssembler assembler,
                            UserFactory userFactory,
-                           RoleRepository roleRepository) {
+                           RoleRepository roleRepository,
+                           UserGroupRepository userGroupRepository) {
         this.repository = repository;
         this.assembler = assembler;
         this.userFactory = userFactory;
         this.roleRepository = roleRepository;
+        this.userGroupRepository = userGroupRepository;
     }
 
     @Override
@@ -198,6 +204,10 @@ public class UserServiceImpl implements UserService{
 
         if(builtInUserIds.contains(userId))
             throw new BadCommandException("内置用户无法删除");
+
+        List<UserGroup> userGroups = userGroupRepository.findByFilters(null, List.of(userId), null);
+        if(!userGroups.isEmpty())
+            throw new BadCommandException("请先在相关用户组中移除需要删除的用户");
 
         user.onDelete();
         repository.delete(user);
