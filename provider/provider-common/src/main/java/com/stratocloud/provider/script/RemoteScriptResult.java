@@ -36,7 +36,7 @@ public record RemoteScriptResult(Status status, String output, String error) {
                 continue;
 
             if(line.startsWith("output(") && line.endsWith(")")){
-                String keyValue = line.substring(2, line.length()-2).trim();
+                String keyValue = line.substring(7, line.length()-1).trim();
 
                 int index = keyValue.indexOf("=");
 

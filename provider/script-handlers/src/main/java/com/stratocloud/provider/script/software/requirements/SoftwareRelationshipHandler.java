@@ -42,6 +42,9 @@ public class SoftwareRelationshipHandler implements RelationshipHandler {
         this.softwareRequirement = softwareRequirement;
     }
 
+    public SoftwareRequirement getSoftwareRequirement() {
+        return softwareRequirement;
+    }
 
     @Override
     public String getRelationshipTypeId() {
@@ -225,5 +228,10 @@ public class SoftwareRelationshipHandler implements RelationshipHandler {
             return List.of();
 
         return List.of(targetIdsStr.split(","));
+    }
+
+    @Override
+    public boolean visibleInTarget() {
+        return softwareRequirement.getSource().isVisibleInTarget();
     }
 }

@@ -5,7 +5,9 @@ import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.custom.CustomForm;
 import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.provider.RuntimePropertiesUtil;
+import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.guest.GuestOsHandler;
+import com.stratocloud.provider.relationship.RelationshipHandler;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
@@ -13,17 +15,18 @@ import com.stratocloud.provider.script.RemoteScriptResult;
 import com.stratocloud.provider.script.RemoteScriptService;
 import com.stratocloud.provider.script.software.SoftwareHandler;
 import com.stratocloud.provider.script.software.SoftwareId;
+import com.stratocloud.provider.script.software.requirements.SoftwareRelationshipHandler;
+import com.stratocloud.provider.script.software.requirements.SoftwareToGuestOsHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.script.RemoteScript;
 import com.stratocloud.script.SoftwareAction;
+import com.stratocloud.script.SoftwareRequirement;
 import com.stratocloud.utils.ContextUtil;
 import com.stratocloud.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class SoftwareActionHandler implements ResourceActionHandler {
@@ -108,8 +111,6 @@ public class SoftwareActionHandler implements ResourceActionHandler {
         );
 
 
-        resource.setName("%s(%s)".formatted(softwareDefinition.getName(), guestOs.getName()));
-
         RuntimePropertiesUtil.copyManagementIpInfo(guestOs, resource);
 
         customForm.ifPresent(f -> RuntimePropertiesUtil.setCustomFormRuntimeProperties(
@@ -117,19 +118,14 @@ public class SoftwareActionHandler implements ResourceActionHandler {
         ));
 
         Integer servicePort = softwareHandler.getDefinition().getServicePort();
-        RuntimeProperty portProperty = RuntimeProperty.ofDisplayable(
-                "servicePort", "服务端口", servicePort.toString(), servicePort.toString()
-        );
-
-        resource.addOrUpdateRuntimeProperty(portProperty);
+        updateServicePortProperty(resource, servicePort, false);
 
         Map<String, String> environment = RuntimePropertiesUtil.getRuntimePropertiesMap(resource);
 
         resolveRequirementsProperties(resource, environment);
 
-        customForm.ifPresent(form -> RuntimePropertiesUtil.decryptCustomFormData(
-                environment, form
-        ));
+        SoftwareHandler.decryptEnvironment(softwareDefinition, environment);
+
 
         RemoteScriptResult result = remoteScriptService.execute(guestOs, remoteScript, environment);
 
@@ -145,11 +141,21 @@ public class SoftwareActionHandler implements ResourceActionHandler {
         if(Utils.isNotBlank(outputServicePortStr)){
             try {
                 servicePort = Integer.valueOf(outputServicePortStr);
+                updateServicePortProperty(resource, servicePort, true);
             } catch (Exception e) {
                 log.warn("Failed to parse service port from: {}.", outputServicePortStr);
             }
         }
 
+        servicePort = getFinalServicePort(resource).orElse(servicePort);
+
+        resource.setName(
+                "%s(%s:%s)".formatted(
+                        softwareDefinition.getName(),
+                        guestOs.getName(),
+                        servicePort
+                )
+        );
         resource.setExternalId(new SoftwareId(managementIp, servicePort).toString());
 
         if(result.status() != RemoteScriptResult.Status.SUCCESS)
@@ -160,9 +166,86 @@ public class SoftwareActionHandler implements ResourceActionHandler {
             );
     }
 
-    private void resolveRequirementsProperties(Resource resource, Map<String, String> environment) {
+    private Optional<Integer> getFinalServicePort(Resource resource) {
+        var portProperty = RuntimePropertiesUtil.getRuntimePropertyByKey(resource, "servicePort");
 
+        if(portProperty.isEmpty())
+            return Optional.empty();
+
+        String value = portProperty.get().getValue();
+        try {
+            return Optional.of(Integer.valueOf(value));
+        }catch (Exception e){
+            log.warn("Failed to parse service port from property: {}", value);
+            return Optional.empty();
+        }
     }
+
+    private static void updateServicePortProperty(Resource resource, Integer servicePort, boolean force) {
+        RuntimeProperty portProperty = RuntimeProperty.ofDisplayable(
+                "servicePort", "服务端口", servicePort.toString(), servicePort.toString()
+        );
+
+        if(force)
+            resource.addOrUpdateRuntimeProperty(portProperty);
+        else
+            resource.addRuntimePropertyIfAbsent(portProperty);
+    }
+
+    private void resolveRequirementsProperties(Resource resource, Map<String, String> environment) {
+        List<Relationship> softwareRequirements = resource.getRequirements().stream().filter(
+                rel -> rel.getTarget().isCategory(ResourceCategories.SOFTWARE)
+        ).toList();
+
+        if(Utils.isEmpty(softwareRequirements))
+            return;
+
+        Map<String, List<Relationship>> requirementsMap
+                = softwareRequirements.stream().collect(Collectors.groupingBy(Relationship::getType));
+
+        for (Map.Entry<String, List<Relationship>> entry : requirementsMap.entrySet()) {
+            String relationshipTypeId = entry.getKey();
+
+            RelationshipHandler requirementHandler = softwareHandler.getRequirement(relationshipTypeId);
+
+            if(!(requirementHandler instanceof SoftwareRelationshipHandler softwareRelationshipHandler))
+                continue;
+
+            List<Relationship> relationships = entry.getValue();
+
+            if(Utils.isEmpty(relationships))
+                continue;
+
+            SoftwareRequirement softwareRequirement = softwareRelationshipHandler.getSoftwareRequirement();
+            String requirementKey = softwareRequirement.getRequirementKey();
+
+            Set<String> keys
+                    = RuntimePropertiesUtil.getRuntimePropertiesMap(relationships.get(0).getTarget()).keySet();
+
+            List<Map<String, String>> targetEnvironmentList = relationships.stream().map(rel -> {
+                Map<String, String> targetPropertiesMap
+                        = RuntimePropertiesUtil.getRuntimePropertiesMap(rel.getTarget());
+
+                SoftwareHandler.decryptEnvironment(softwareRequirement.getTarget(), targetPropertiesMap);
+
+                return targetPropertiesMap;
+            }).toList();
+
+            for (String key : keys) {
+                List<String> values = new ArrayList<>();
+                for (Map<String, String> targetEnvironment : targetEnvironmentList) {
+                    String value = targetEnvironment.get(key);
+
+                    if(Utils.isNotBlank(value))
+                        values.add(value.trim());
+                }
+
+                if(values.size() == relationships.size())
+                    environment.put(requirementKey+"_"+key, String.join(" ", values));
+            }
+        }
+    }
+
 
 
     @Override
@@ -189,5 +272,14 @@ public class SoftwareActionHandler implements ResourceActionHandler {
         Resource guestOs = guestOsList.get(0);
 
         remoteScriptService.validateExecutorExist(guestOs, remoteScript);
+    }
+
+    @Override
+    public List<String> getLockExclusiveTargetRelTypeIds() {
+        Set<String> relTypeIds = softwareHandler.getRequirements().stream().filter(
+                rel -> rel instanceof SoftwareToGuestOsHandler
+        ).map(RelationshipHandler::getRelationshipTypeId).collect(Collectors.toSet());
+
+        return List.copyOf(relTypeIds);
     }
 }

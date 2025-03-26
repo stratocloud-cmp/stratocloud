@@ -4,11 +4,12 @@ import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.provider.relationship.DependsOnRelationshipHandler;
 import com.stratocloud.provider.relationship.RelationshipHandler;
 import com.stratocloud.provider.resource.ResourceHandler;
-import com.stratocloud.utils.ContextUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -48,14 +49,20 @@ public class ProviderRegistry {
         if(DependsOnRelationshipHandler.TYPE_ID.equals(relationshipTypeId))
             return new DependsOnRelationshipHandler(null, null);
 
-        ApplicationContext applicationContext = ContextUtil.getApplicationContext();
+        for (Provider provider : getProviders()) {
+            for (ResourceHandler resourceHandler : provider.getResourceHandlers()) {
+                var relationshipHandler = resourceHandler.getRequirements().stream().filter(
+                        rel -> Objects.equals(
+                                rel.getRelationshipTypeId(),
+                                relationshipTypeId
+                        )
+                ).findAny();
 
-        var relationshipHandlers = applicationContext.getBeansOfType(RelationshipHandler.class).values();
+                if(relationshipHandler.isPresent())
+                    return relationshipHandler.get();
+            }
+        }
 
-        return relationshipHandlers.stream().filter(
-                r-> Objects.equals(r.getRelationshipTypeId(), relationshipTypeId)
-        ).findAny().orElseThrow(
-                () -> new StratoException("Relationship handler not found by id %s.".formatted(relationshipTypeId))
-        );
+        throw new StratoException("Relationship handler not found by id %s.".formatted(relationshipTypeId));
     }
 }

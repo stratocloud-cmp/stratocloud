@@ -525,6 +525,15 @@ public class Resource extends Controllable implements TaskTargetEntity {
 
     public void addOrUpdateRuntimeProperty(RuntimeProperty runtimeProperty){
         runtimeProperties.removeIf(rp -> Objects.equals(rp.getKey(), runtimeProperty.getKey()));
+        addRuntimePropertyIfAbsent(runtimeProperty);
+    }
+
+    public void addRuntimePropertyIfAbsent(RuntimeProperty runtimeProperty) {
+        boolean existed = runtimeProperties.stream().anyMatch(
+                rp -> Objects.equals(rp.getKey(), runtimeProperty.getKey())
+        );
+        if(existed)
+            return;
         runtimeProperties.add(runtimeProperty);
         runtimeProperty.setResource(this);
     }

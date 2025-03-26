@@ -73,11 +73,11 @@ public class SoftwareHandlerLoader extends CachedResourceHandlerLoader {
                 SoftwareRelationshipHandler relationshipHandler;
 
                 if(requirement.isExclusive())
-                    relationshipHandler = new SoftwareRelationshipHandler(
+                    relationshipHandler = new ExclusiveSoftwareRequirementHandler(
                             sourceHandler, targetHandler, requirement
                     );
                 else
-                    relationshipHandler = new ExclusiveSoftwareRequirementHandler(
+                    relationshipHandler = new SoftwareRelationshipHandler(
                             sourceHandler, targetHandler, requirement
                     );
 

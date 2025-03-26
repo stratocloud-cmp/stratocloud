@@ -3,6 +3,7 @@ package com.stratocloud.provider.script.software;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
+import com.stratocloud.form.custom.CustomForm;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.RuntimePropertiesUtil;
@@ -45,6 +46,8 @@ public class SoftwareHandler extends AbstractResourceHandler implements DynamicR
             }
         }
     }
+
+
 
     public SoftwareDefinition getDefinition() {
         return definition;
@@ -125,7 +128,12 @@ public class SoftwareHandler extends AbstractResourceHandler implements DynamicR
 
         Map<String, String> runtimePropertiesMap = RuntimePropertiesUtil.getRuntimePropertiesMap(resource);
 
+        decryptEnvironment(definition, runtimePropertiesMap);
+
         RemoteScriptResult result = remoteScriptService.execute(guestOsResource, remoteScript, runtimePropertiesMap);
+
+        if(result.status() == RemoteScriptResult.Status.FAILED)
+            throw new StratoException(result.error());
 
         Map<String, String> outputArguments = result.getOutputArguments();
 
@@ -148,5 +156,15 @@ public class SoftwareHandler extends AbstractResourceHandler implements DynamicR
     @Override
     public List<ResourceUsageType> getUsagesTypes() {
         return List.of();
+    }
+
+
+    public static void decryptEnvironment(SoftwareDefinition softwareDefinition, Map<String, String> environment) {
+        for (SoftwareAction action : softwareDefinition.getActions()) {
+            Optional<CustomForm> eachForm = action.getRemoteScriptDef().getCustomForm();
+            eachForm.ifPresent(form -> RuntimePropertiesUtil.decryptCustomFormData(
+                    environment, form
+            ));
+        }
     }
 }

@@ -38,7 +38,7 @@ public abstract class AbstractResourceHandler implements ResourceHandler {
 
     @Override
     public List<RelationshipHandler> getCapabilities() {
-        List<RelationshipHandler> result = new ArrayList<>(capabilities);
+        Set<RelationshipHandler> result = new HashSet<>(capabilities);
 
         List<DynamicResourceHandlerLoader> loaders = getProvider().getResourceHandlerLoaders();
 
@@ -50,7 +50,7 @@ public abstract class AbstractResourceHandler implements ResourceHandler {
             }
         }
 
-        return Collections.unmodifiableList(result);
+        return List.copyOf(result);
     }
 
     @Override
