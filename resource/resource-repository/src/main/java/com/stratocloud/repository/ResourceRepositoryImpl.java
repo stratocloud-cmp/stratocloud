@@ -326,20 +326,22 @@ public class ResourceRepositoryImpl extends AbstractControllableRepository<Resou
     @Override
     @Transactional(readOnly = true)
     public boolean existsByExternalResource(ExternalResource externalResource) {
-        return jpaRepository.existsByAccountIdAndTypeAndExternalId(
+        return jpaRepository.existsByAccountIdAndTypeAndExternalIdAndStateIn(
                 externalResource.accountId(),
                 externalResource.type(),
-                externalResource.externalId()
+                externalResource.externalId(),
+                ResourceState.getVisibleStates()
         );
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<Resource> findByExternalResource(ExternalResource externalResource) {
-        return jpaRepository.findByAccountIdAndTypeAndExternalId(
+        return jpaRepository.findByAccountIdAndTypeAndExternalIdAndStateIn(
                 externalResource.accountId(),
                 externalResource.type(),
-                externalResource.externalId()
+                externalResource.externalId(),
+                ResourceState.getVisibleStates()
         );
     }
 

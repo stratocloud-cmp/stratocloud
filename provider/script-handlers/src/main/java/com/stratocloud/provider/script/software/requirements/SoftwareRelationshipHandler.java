@@ -4,6 +4,7 @@ import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.custom.CustomForm;
 import com.stratocloud.form.info.DynamicFormMetaData;
+import com.stratocloud.job.TaskContext;
 import com.stratocloud.provider.RuntimePropertiesUtil;
 import com.stratocloud.provider.guest.GuestOsHandler;
 import com.stratocloud.provider.relationship.RelationshipHandler;
@@ -12,10 +13,7 @@ import com.stratocloud.provider.script.RemoteScriptResult;
 import com.stratocloud.provider.script.RemoteScriptService;
 import com.stratocloud.provider.script.software.SoftwareHandler;
 import com.stratocloud.repository.ResourceRepository;
-import com.stratocloud.resource.ExternalRequirement;
-import com.stratocloud.resource.ExternalResource;
-import com.stratocloud.resource.Relationship;
-import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.*;
 import com.stratocloud.script.RemoteScriptDef;
 import com.stratocloud.script.SoftwareRequirement;
 import com.stratocloud.utils.ContextUtil;
@@ -123,8 +121,12 @@ public class SoftwareRelationshipHandler implements RelationshipHandler {
                 guestOs, connectScriptDef.getRemoteScript(), environment
         );
 
-        if(result.status() != RemoteScriptResult.Status.SUCCESS)
-            throw new StratoException("Failed to connect software relationship %s.".formatted(getRelationshipTypeId()));
+        if(result.status() == RemoteScriptResult.Status.SUCCESS)
+            TaskContext.setMessage(result.output());
+        else
+            throw new StratoException(
+                    "Failed to connect software relationship %s.".formatted(getRelationshipTypeId())
+            );
     }
 
     @Override
@@ -148,8 +150,17 @@ public class SoftwareRelationshipHandler implements RelationshipHandler {
                 guestOs, disconnectScriptDef.getRemoteScript(), environment
         );
 
-        if(result.status() != RemoteScriptResult.Status.SUCCESS)
-            throw new StratoException("Failed to disconnect software relationship %s.".formatted(getRelationshipTypeId()));
+        if(result.status() == RemoteScriptResult.Status.SUCCESS)
+            TaskContext.setMessage(result.output());
+        else
+            throw new StratoException(
+                    "Failed to disconnect software relationship %s.".formatted(getRelationshipTypeId())
+            );
+    }
+
+    @Override
+    public RelationshipActionResult checkDisconnectResult(ExternalAccount account, Relationship relationship) {
+        return RelationshipActionResult.finished();
     }
 
     private void resolveRequirementProperties(Resource requirementTarget, Map<String, String> environment) {
@@ -233,5 +244,10 @@ public class SoftwareRelationshipHandler implements RelationshipHandler {
     @Override
     public boolean visibleInTarget() {
         return softwareRequirement.getSource().isVisibleInTarget();
+    }
+
+    @Override
+    public boolean synchronizeTarget() {
+        return true;
     }
 }

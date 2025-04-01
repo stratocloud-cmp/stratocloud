@@ -1,0 +1,119 @@
+{
+  "definitionKey": "REDIS_CLUSTER",
+  "name": "Redis Cluster",
+  "description": null,
+  "softwareType": "MIDDLEWARE",
+  "osType": "Linux",
+  "publicDefinition": true,
+  "visibleInTarget": false,
+  "servicePort": 7006,
+  "actions": [
+    {
+      "actionType": "INSTALL",
+      "actionId": "BUILD",
+      "actionName": "安装",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "nodes_ips=({{NODE_managementIp}})\r\nnodes_port=({{NODE_servicePort}})\r\nnodes_password=({{NODE_redis_password}})\r\n\r\necho \"output(nodes_ips=${nodes_ips[*]})\"\r\necho \"output(nodes_port=${nodes_port[*]})\"\r\necho \"output_hidden(nodes_password=${nodes_password[*]})\"\r\n\r\nnodes_length=${#nodes_ips[@]}\r\nnodes_address=()\r\ncurrent_node=()\r\nfunction set_node_master_auth(){\r\n    redis-cli -h ${current_node[0]} -p ${current_node[1]} -a ${current_node[2]} <<EOF\r\nCONFIG SET masterauth ${current_node[2]}\r\nCONFIG REWRITE\r\nEOF\r\n}\r\n\r\nfunction create_cluster(){\r\n    redis-cli -h ${current_node[0]} -p ${current_node[1]} -a ${current_node[2]} --cluster create ${nodes_address[*]} --cluster-replicas 1 --cluster-yes\r\n}\r\n \r\nfor ((i=0; i<nodes_length; i++))\r\ndo\r\n    current_node[0]=${nodes_ips[$i]}\r\n    current_node[1]=${nodes_port[$i]}\r\n    current_node[2]=${nodes_password[$i]}\r\n    nodes_address[$i]=\"${nodes_ips[$i]}:${nodes_port[$i]}\"\r\n    set_node_master_auth\r\ndone\r\n\r\ncreate_cluster\r\n\r\n",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    },
+    {
+      "actionType": "CHECK_STATE",
+      "actionId": "CHECK_STATE",
+      "actionName": "检查状态",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "nodes_ips=({{nodes_ips}})\r\nnodes_port=({{nodes_port}})\r\nnodes_password=({{nodes_password}})\r\n\r\ncount_self=$(redis-cli -h ${nodes_ips[0]} -p ${nodes_port[0]} -a ${nodes_password[0]} cluster nodes | grep -c myself)\r\n\r\nif ((count_self>0))\r\nthen\r\n    echo \"output(serviceState=STARTED)\"\r\nelse\r\n    echo \"output(serviceState=STOPPED)\"\r\nfi",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    },
+    {
+      "actionType": "UNINSTALL",
+      "actionId": "UNINSTALL",
+      "actionName": "卸载",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "nodes_ips=({{nodes_ips}})\r\nnodes_port=({{nodes_port}})\r\nnodes_password=({{nodes_password}})\r\nnodes_length=${#nodes_ips[@]}\r\n\r\nfor ((i=0; i<nodes_length; i++))\r\ndo\r\n    redis-cli -h ${nodes_ips[${i}]} -p ${nodes_port[${i}]} -a ${nodes_password[${i}]} <<EOF\r\nFLUSHALL\r\nCLUSTER RESET HARD\r\nEOF\r\ndone\r\n",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    }
+  ],
+  "requirements": [
+    {
+      "requirementKey": "NODE",
+      "requirementName": "Redis节点",
+      "capabilityName": "Redis集群",
+      "exclusive": false,
+      "connectScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "target_ip=\"{{REDIS_managementIp}}\"\r\ntarget_port=\"{{REDIS_servicePort}}\"\r\n\r\necho \"Connected to ${target_ip}:${target_port}\"",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      },
+      "disconnectScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "target_ip=\"{{REDIS_managementIp}}\"\r\ntarget_port=\"{{REDIS_servicePort}}\"\r\necho \"Disconnected from ${target_ip}:${target_port}\"",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      },
+      "checkConnectionScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "nodes_ips=({{nodes_ips}})\r\nnodes_port=({{nodes_port}})\r\nnodes_password=({{nodes_password}})\r\nnodes_length=${#nodes_ips[@]}\r\n\r\ntarget_ids=\"\"\r\nfor ((i=0; i<nodes_length; i++))\r\ndo\r\n    count_node=$(redis-cli -h ${nodes_ips[0]} -p ${nodes_port[0]} -a ${nodes_password[0]} cluster nodes | grep -c ${nodes_ips[${i}]}:${nodes_port[${i}]})\r\n    if ((count_node==0))\r\n    then\r\n        continue\r\n    fi\r\n    if ((${i}>0))\r\n    then\r\n        target_ids+=\",\"\r\n    fi\r\n    target_ids+=${nodes_port[${i}]}\"@\"${nodes_ips[${i}]}\r\ndone\r\n\r\necho \"output(targetIds=${target_ids})\"",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    }
+  ]
+}

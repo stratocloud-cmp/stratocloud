@@ -6,6 +6,7 @@ import com.stratocloud.form.SelectEntityType;
 import com.stratocloud.form.SelectField;
 import com.stratocloud.form.Source;
 import com.stratocloud.form.custom.CustomForm;
+import com.stratocloud.job.TaskContext;
 import com.stratocloud.provider.RuntimePropertiesUtil;
 import com.stratocloud.provider.guest.GuestOsHandler;
 import com.stratocloud.provider.resource.ResourceActionHandler;
@@ -92,11 +93,13 @@ public class GuestOsExecuteScriptHandler implements ResourceActionHandler {
 
         RemoteScriptResult result = remoteScriptService.execute(resource, remoteScript, environment);
 
-        if(result.status() != RemoteScriptResult.Status.SUCCESS)
+        if(result.status() == RemoteScriptResult.Status.SUCCESS)
+            TaskContext.setMessage(result.output());
+        else
             throw new StratoException("Failed to execute script %s on %s:\n%s".formatted(
                     scriptDefinition.getName(),
                     resource.getName(),
-                    result.error()
+                    result.output()
             ));
     }
 

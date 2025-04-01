@@ -21,9 +21,7 @@ public record RemoteScriptResult(Status status, String output, String error) {
         return new RemoteScriptResult(Status.SUCCESS, output, error);
     }
 
-
-
-    public Map<String, String> getOutputArguments(){
+    private Map<String, String> getOutputArguments(String functionName){
         Map<String, String> result = new HashMap<>();
 
         if(Utils.isBlank(output))
@@ -35,8 +33,8 @@ public record RemoteScriptResult(Status status, String output, String error) {
             if(Utils.isBlank(line))
                 continue;
 
-            if(line.startsWith("output(") && line.endsWith(")")){
-                String keyValue = line.substring(7, line.length()-1).trim();
+            if(line.startsWith(functionName+"(") && line.endsWith(")")){
+                String keyValue = line.substring(functionName.length()+1, line.length()-1).trim();
 
                 int index = keyValue.indexOf("=");
 
@@ -50,5 +48,14 @@ public record RemoteScriptResult(Status status, String output, String error) {
         }
 
         return result;
+    }
+
+
+    public Map<String, String> getOutputArguments(){
+        return getOutputArguments("output");
+    }
+
+    public Map<String, String> getHiddenOutputArguments(){
+        return getOutputArguments("output_hidden");
     }
 }

@@ -21,6 +21,7 @@
         <module>non-cloud-provider</module>
         <module>script-handlers</module>
         <module>huawei-cloud-provider</module>
+        <module>built-in-software</module>
     </modules>
 
     <properties>

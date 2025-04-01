@@ -65,15 +65,6 @@ public class Utils {
         return !isNotEmpty(map);
     }
 
-    public static boolean nonNull(Object... values) {
-        if(isEmpty(values))
-            return true;
-        for (Object value : values)
-            if(value == null)
-                return false;
-        return true;
-    }
-
     public static <C> Class<?> getTypeArgumentClass(Class<? extends C> actualClass, Class<C> superClass){
         return GenericTypeResolver.resolveTypeArgument(actualClass, superClass);
     }
@@ -82,5 +73,13 @@ public class Utils {
         if(isEmpty(list))
             return 0;
         return list.size();
+    }
+
+    public static String dropMiddleChars(String s, int keepNumber){
+        if(s==null || s.length()<=keepNumber)
+            return s;
+
+        int half = keepNumber/2;
+        return s.substring(0, half) + " ...(Dropped)... " + s.substring(s.length()-half);
     }
 }

@@ -4,6 +4,7 @@ import com.stratocloud.exceptions.BadCommandException;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.custom.CustomForm;
 import com.stratocloud.form.info.DynamicFormMetaData;
+import com.stratocloud.job.TaskContext;
 import com.stratocloud.provider.RuntimePropertiesUtil;
 import com.stratocloud.provider.guest.GuestOsHandler;
 import com.stratocloud.provider.resource.BuildResourceActionHandler;
@@ -101,11 +102,13 @@ public class InitScriptBuildHandler implements BuildResourceActionHandler {
         }
 
 
-        if(result.status() != RemoteScriptResult.Status.SUCCESS)
+        if(result.status() == RemoteScriptResult.Status.SUCCESS)
+            TaskContext.setMessage(result.output());
+        else
             throw new StratoException("Failed to execute script %s on %s:\n%s".formatted(
                     scriptDefinition.getName(),
                     guestOs.getName(),
-                    result.error()
+                    result.output()
             ));
     }
 

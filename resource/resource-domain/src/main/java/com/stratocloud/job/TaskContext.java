@@ -41,4 +41,11 @@ public class TaskContext {
     public static void remove(){
         threadLocal.remove();
     }
+
+    public static void setMessage(String message) {
+        getTask().ifPresentOrElse(
+                t -> t.setMessage(message),
+                () -> log.warn("Task running without context. Message: {}", message)
+        );
+    }
 }

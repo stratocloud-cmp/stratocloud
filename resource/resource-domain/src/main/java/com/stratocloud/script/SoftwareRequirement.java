@@ -32,25 +32,25 @@ public class SoftwareRequirement extends Auditable {
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "scriptType", column = @Column(name = "connect_script_type", nullable = false)),
-            @AttributeOverride(name = "content", column = @Column(name = "connect_script_content", nullable = false)),
+            @AttributeOverride(name = "content", column = @Column(name = "connect_script_content", nullable = false, columnDefinition = "TEXT")),
             @AttributeOverride(name = "programPath", column = @Column(name = "connect_script_program_path")),
-            @AttributeOverride(name = "customFormJson", column = @Column(name = "connect_script_custom_form_json"))
+            @AttributeOverride(name = "customFormJson", column = @Column(name = "connect_script_custom_form_json", columnDefinition = "TEXT"))
     })
     private RemoteScriptDef connectScriptDef;
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "scriptType", column = @Column(name = "disconnect_script_type", nullable = false)),
-            @AttributeOverride(name = "content", column = @Column(name = "disconnect_script_content", nullable = false)),
+            @AttributeOverride(name = "content", column = @Column(name = "disconnect_script_content", nullable = false, columnDefinition = "TEXT")),
             @AttributeOverride(name = "programPath", column = @Column(name = "disconnect_script_program_path")),
-            @AttributeOverride(name = "customFormJson", column = @Column(name = "disconnect_script_custom_form_json"))
+            @AttributeOverride(name = "customFormJson", column = @Column(name = "disconnect_script_custom_form_json", columnDefinition = "TEXT"))
     })
     private RemoteScriptDef disconnectScriptDef;
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "scriptType", column = @Column(name = "check_script_type", nullable = false)),
-            @AttributeOverride(name = "content", column = @Column(name = "check_script_content", nullable = false)),
+            @AttributeOverride(name = "content", column = @Column(name = "check_script_content", nullable = false, columnDefinition = "TEXT")),
             @AttributeOverride(name = "programPath", column = @Column(name = "check_script_program_path")),
-            @AttributeOverride(name = "customFormJson", column = @Column(name = "check_script_custom_form_json"))
+            @AttributeOverride(name = "customFormJson", column = @Column(name = "check_script_custom_form_json", columnDefinition = "TEXT"))
     })
     private RemoteScriptDef checkConnectionScriptDef;
 

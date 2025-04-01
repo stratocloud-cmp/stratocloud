@@ -4,6 +4,7 @@ import com.stratocloud.exceptions.BadCommandException;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.custom.CustomForm;
 import com.stratocloud.form.info.DynamicFormMetaData;
+import com.stratocloud.job.TaskContext;
 import com.stratocloud.provider.RuntimePropertiesUtil;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.guest.GuestOsHandler;
@@ -20,6 +21,7 @@ import com.stratocloud.provider.script.software.requirements.SoftwareToGuestOsHa
 import com.stratocloud.resource.*;
 import com.stratocloud.script.RemoteScript;
 import com.stratocloud.script.SoftwareAction;
+import com.stratocloud.script.SoftwareActionType;
 import com.stratocloud.script.SoftwareRequirement;
 import com.stratocloud.utils.ContextUtil;
 import com.stratocloud.utils.Utils;
@@ -130,8 +132,10 @@ public class SoftwareActionHandler implements ResourceActionHandler {
         RemoteScriptResult result = remoteScriptService.execute(guestOs, remoteScript, environment);
 
         Map<String, String> outputArguments = result.getOutputArguments();
+        Map<String, String> hiddenOutputArguments = result.getHiddenOutputArguments();
 
         RuntimePropertiesUtil.setDisplayableRuntimeProperties(resource, outputArguments);
+        RuntimePropertiesUtil.setHiddenRuntimeProperties(resource, hiddenOutputArguments);
 
         String managementIp = RuntimePropertiesUtil.getManagementIp(resource).orElseThrow(
                 () -> new StratoException("Management IP not known.")
@@ -158,10 +162,12 @@ public class SoftwareActionHandler implements ResourceActionHandler {
         );
         resource.setExternalId(new SoftwareId(managementIp, servicePort).toString());
 
-        if(result.status() != RemoteScriptResult.Status.SUCCESS)
+        if(result.status() == RemoteScriptResult.Status.SUCCESS)
+            TaskContext.setMessage(result.output());
+        else
             throw new StratoException(
                     "Failed to perform action %s on software %s: %s".formatted(
-                            getAction().id(), softwareDefinition.getName(), result.error()
+                            getAction().id(), softwareDefinition.getName(), result.output()
                     )
             );
     }
@@ -250,6 +256,9 @@ public class SoftwareActionHandler implements ResourceActionHandler {
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        if(softwareAction.getActionType() == SoftwareActionType.UNINSTALL)
+            resource.onDestroyed();
+
         return ResourceActionResult.finished();
     }
 

@@ -133,7 +133,7 @@ public class SoftwareHandler extends AbstractResourceHandler implements DynamicR
         RemoteScriptResult result = remoteScriptService.execute(guestOsResource, remoteScript, runtimePropertiesMap);
 
         if(result.status() == RemoteScriptResult.Status.FAILED)
-            throw new StratoException(result.error());
+            throw new StratoException(result.output());
 
         Map<String, String> outputArguments = result.getOutputArguments();
 

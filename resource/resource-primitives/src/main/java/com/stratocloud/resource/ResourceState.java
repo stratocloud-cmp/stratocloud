@@ -61,4 +61,10 @@ public enum ResourceState {
     public static Set<ResourceState> getAliveStateSet(){
         return new HashSet<>(getAliveStates());
     }
+
+    public static List<ResourceState> getVisibleStates(){
+        List<ResourceState> states = new ArrayList<>(List.of(ResourceState.values()));
+        List.of(DESTROYED).forEach(states::remove);
+        return states;
+    }
 }

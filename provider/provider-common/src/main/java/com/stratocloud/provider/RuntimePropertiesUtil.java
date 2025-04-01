@@ -363,4 +363,16 @@ public class RuntimePropertiesUtil {
             }
         }
     }
+
+    public static void setHiddenRuntimeProperties(Resource resource, Map<String, String> runtimeProperties) {
+        if(Utils.isEmpty(runtimeProperties))
+            return;
+
+        for (var entry : runtimeProperties.entrySet()) {
+            RuntimeProperty runtimeProperty = RuntimeProperty.ofHidden(
+                    entry.getKey(), entry.getKey(), entry.getValue(), entry.getValue()
+            );
+            resource.addOrUpdateRuntimeProperty(runtimeProperty);
+        }
+    }
 }

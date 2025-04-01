@@ -1,0 +1,211 @@
+{
+  "definitionKey": "REDIS",
+  "name": "Redis",
+  "softwareType": "MIDDLEWARE",
+  "osType": "Linux",
+  "publicDefinition": true,
+  "visibleInTarget": false,
+  "servicePort": 6379,
+  "actions": [
+    {
+      "actionType": "CHECK_STATE",
+      "actionId": "CHECK_STATE",
+      "actionName": "检查状态",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "port=\"{{redis_port}}\"\r\nhost_ip=\"{{managementIp}}\"\r\npath=\"{{redis_conf_path}}\"\r\npassword=\"{{redis_password}}\"\r\nstate=1\r\nfunction check_service_state(){\r\n    redis-cli -h $host_ip -p $port -a $password ping\r\n    state=$?\r\n    if (( $state==0 )); then echo \"Redis(${port}) is started\"; else echo \"Redis(${port}) is not started\"; fi\r\n}\r\n\r\ncheck_service_state\r\n\r\nif (( $state==0 )); then echo \"output(serviceState=STARTED)\"; else echo \"output(serviceState=STOPPED)\"; fi",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    },
+    {
+      "actionType": "START",
+      "actionId": "START",
+      "actionName": "启动",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "port=\"{{redis_port}}\"\r\npath=\"{{redis_conf_path}}\"\r\nhost_ip=\"{{managementIp}}\"\r\npassword=\"{{redis_password}}\"\r\nstate=1\r\nfunction check_service_state(){\r\n    redis-cli -h $host_ip -p $port -a $password ping\r\n    state=$?\r\n    if (( $state==0 )); then echo \"Redis(${port}) is started\"; else echo \"Redis(${port}) is not started\"; fi\r\n}\r\n\r\ncheck_service_state\r\nif(( $state==1 )); then echo \"Starting redis...\"; redis-server ${path}/redis.conf; sleep 3; check_service_state; fi",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    },
+    {
+      "actionType": "STOP",
+      "actionId": "STOP",
+      "actionName": "停止",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "port=\"{{redis_port}}\"\r\nhost_ip=\"{{managementIp}}\"\r\npath=\"{{redis_conf_path}}\"\r\npassword=\"{{redis_password}}\"\r\nstate=1\r\nfunction check_service_state(){\r\n    redis-cli -h $host_ip -p $port -a $password ping\r\n    state=$?\r\n    if (( $state==0 )); then echo \"Redis(${port}) is started\"; else echo \"Redis(${port}) is not started\"; fi\r\n}\r\n\r\ncheck_service_state\r\nif (( $state==0 )); then echo \"Stopping redis...\"; redis-cli -h $host_ip -p $port -a $password shutdown; check_service_state; fi",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    },
+    {
+      "actionType": "INSTALL",
+      "actionId": "BUILD",
+      "actionName": "安装",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "#!/bin/bash\r\npassword=\"{{redis_password}}\"\r\nhost_ip=\"{{managementIp}}\"\r\nport=\"{{redis_port}}\"\r\npath=\"{{redis_conf_path}}\"\r\ncluster_enabled=\"{{redis_cluster_enabled}}\"\r\n\r\nfunction configure_firewall(){\r\n    firewall-cmd --zone=public --add-port=${port}/tcp --permanent\r\n    firewall-cmd --reload\r\n    echo \"Configured firewalld successfully\"\r\n}\r\n\r\nfunction install_redis(){\r\n    mkdir -p $path\r\n\r\n    if test -f /usr/local/bin/redis-server;\r\n    then\r\n        echo \"Redis is already installed\"\r\n    else\r\n        mkdir -p /etc/redis\r\n        cd /etc/redis\r\n        wget https://download.redis.io/redis-stable.tar.gz\r\n        tar -xzvf redis-stable.tar.gz\r\n        cd redis-stable\r\n        make\r\n        make PREFIX=/etc/redis install\r\n        ln -sf /etc/redis/bin/redis-server /usr/bin/redis-server\r\n        ln -sf /etc/redis/bin/redis-cli /usr/bin/redis-cli\r\n    fi\r\n\r\n    cp -f /etc/redis/redis-stable/redis.conf ${path}/\r\n\r\n    sed -i -e \"s/port 6379/port ${port}/g\" -e \"s/bind 127.0.0.1/bind ${host_ip}/g\" -e \"s/daemonize no/daemonize yes/g\" -e \"s/protected-mode yes/protected-mode no/g\" ${path}/redis.conf\r\n    echo \"requirepass ${password}\" >> ${path}/redis.conf\r\n    if (( $cluster_enabled==\"true\" ))\r\n    then\r\n        echo \"cluster-enabled yes\" >> ${path}/redis.conf\r\n        echo \"cluster-config-file ${path}/nodes.conf\" >> ${path}/redis.conf\r\n        echo \"cluster-node-timeout 5000\" >> ${path}/redis.conf\r\n        echo \"appendonly yes\" >> ${path}/redis.conf\r\n    fi\r\n\r\n    sudo redis-server ${path}/redis.conf\r\n    echo \"Redis started at ${host_ip}:${port}\"\r\n}\r\n\r\nconfigure_firewall\r\ninstall_redis\r\n\r\necho \"output(servicePort=$port)\"\r\n\r\n",
+          "programPath": null
+        },
+        "customForm": {
+          "items": [
+            {
+              "type": "InputField",
+              "key": "redis_password",
+              "label": "密码",
+              "description": null,
+              "encrypted": true,
+              "detail": {
+                "conditions": [],
+                "inputType": "password",
+                "required": true
+              }
+            },
+            {
+              "type": "NumberField",
+              "key": "redis_port",
+              "label": "端口",
+              "description": null,
+              "encrypted": false,
+              "detail": {
+                "conditions": [],
+                "defaultValue": 6379,
+                "min": 1,
+                "max": 65535,
+                "required": true
+              }
+            },
+            {
+              "type": "InputField",
+              "key": "redis_conf_path",
+              "label": "配置文件路径",
+              "description": null,
+              "encrypted": false,
+              "detail": {
+                "conditions": [],
+                "required": true,
+                "defaultValue": "/etc/redis/6379",
+                "inputType": "text"
+              }
+            },
+            {
+              "type": "BooleanField",
+              "key": "redis_cluster_enabled",
+              "label": "允许集群",
+              "description": null,
+              "encrypted": false,
+              "detail": {
+                "conditions": [],
+                "defaultValue": true
+              }
+            }
+          ]
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": [
+            {
+              "type": "InputField",
+              "key": "redis_password",
+              "label": "密码",
+              "description": null,
+              "detail": {
+                "defaultValue": null,
+                "required": true,
+                "conditions": [],
+                "regex": null,
+                "regexMessage": null,
+                "inputType": "password"
+              }
+            },
+            {
+              "type": "NumberField",
+              "key": "redis_port",
+              "label": "端口",
+              "description": null,
+              "detail": {
+                "defaultValue": 6379,
+                "min": 1,
+                "max": 65535,
+                "required": true,
+                "conditions": [],
+                "placeholder": null
+              }
+            },
+            {
+              "type": "InputField",
+              "key": "redis_conf_path",
+              "label": "配置文件路径",
+              "description": null,
+              "detail": {
+                "defaultValue": "/etc/redis/6379",
+                "required": true,
+                "conditions": [],
+                "regex": null,
+                "regexMessage": null,
+                "inputType": "text"
+              }
+            },
+            {
+              "type": "BooleanField",
+              "key": "redis_cluster_enabled",
+              "label": "允许集群",
+              "description": null,
+              "detail": {
+                "defaultValue": true,
+                "conditions": []
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "actionType": "UNINSTALL",
+      "actionId": "UNINSTALL",
+      "actionName": "卸载",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "port=\"{{redis_port}}\"\r\nhost_ip=\"{{managementIp}}\"\r\npath=\"{{redis_conf_path}}\"\r\npassword=\"{{redis_password}}\"\r\nstate=1\r\nfunction check_service_state(){\r\n    redis-cli -h $host_ip -p $port -a $password ping\r\n    state=$?\r\n    if (( $state==0 )); then echo \"Redis(${port}) is started\"; else echo \"Redis(${port}) is not started\"; fi\r\n}\r\n\r\ncheck_service_state\r\nif (( $state==0 )); then echo \"Stopping redis...\"; redis-cli -h $host_ip -p $port -a $password shutdown; check_service_state; fi\r\n\r\necho \"Uninstalling redis...\"\r\nrm -r $path",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    }
+  ],
+  "requirements": []
+}
