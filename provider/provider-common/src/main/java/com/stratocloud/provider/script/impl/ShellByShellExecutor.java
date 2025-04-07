@@ -44,6 +44,7 @@ public class ShellByShellExecutor implements RemoteScriptExecutor {
             return RemoteScriptResult.succeed(stdout.toString(), stderr.toString());
         } catch (Exception e) {
             log.error("Failed to execute script: ", e);
+            stdout.append(e);
             stderr.append(e);
             return RemoteScriptResult.failed(stdout.toString(), stderr.toString());
         }
@@ -71,8 +72,11 @@ public class ShellByShellExecutor implements RemoteScriptExecutor {
                                    StringBuilder stdout,
                                    StringBuilder stderr) {
         String filePath = DIRECTORY + "/" + UUID.randomUUID()+".sh";
+        String singleQuote = "'\"'\"'";
         String createFileCmd = "sudo echo '%s' > %s".formatted(
-                remoteScript.content().replaceAll("\r\n", "\n"),
+                remoteScript.content()
+                        .replaceAll("\r\n", "\n")
+                        .replaceAll("'", singleQuote),
                 filePath
         );
         executeCommand(executor, createFileCmd, stdout, stderr);
@@ -88,13 +92,13 @@ public class ShellByShellExecutor implements RemoteScriptExecutor {
         GuestCommandResult result = executor.execute(guestCommand);
 
         if(Utils.isNotBlank(result.output()))
-            stdout.append(result.output());
+            stdout.append(result.output()).append("\n");
 
         if(result.status() != GuestCommandResult.Status.SUCCESS) {
             throw new StratoException(result.error());
         }
 
         if(Utils.isNotBlank(result.error()))
-            stderr.append(result.error());
+            stderr.append(result.error()).append("\n");
     }
 }

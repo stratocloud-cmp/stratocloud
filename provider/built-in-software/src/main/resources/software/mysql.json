@@ -1,0 +1,108 @@
+{
+  "definitionKey": "MYSQL",
+  "name": "MySQL (RHEL 7 or CentOS 7)",
+  "description": null,
+  "softwareType": "DATABASE",
+  "osType": "Linux",
+  "publicDefinition": true,
+  "visibleInTarget": false,
+  "servicePort": 3306,
+  "actions": [
+    {
+      "actionType": "INSTALL",
+      "actionId": "INSTALL",
+      "actionName": "安装",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "set -x\r\n\r\nmkdir -p /etc/mysql\r\ncd /etc/mysql\r\n\r\nwget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-community-common-8.4.4-1.el7.x86_64.rpm\r\nwget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-community-client-plugins-8.4.4-1.el7.x86_64.rpm\r\nwget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-community-libs-compat-8.4.4-1.el7.x86_64.rpm\r\nwget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-community-libs-8.4.4-1.el7.x86_64.rpm\r\nwget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-community-client-8.4.4-1.el7.x86_64.rpm\r\nwget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-community-icu-data-files-8.4.4-1.el7.x86_64.rpm\r\nwget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-community-devel-8.4.4-1.el7.x86_64.rpm\r\nwget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-community-server-8.4.4-1.el7.x86_64.rpm\r\n\r\nyum install -y *.rpm\r\n\r\nsystemctl enable mysqld\r\n\r\nsystemctl start mysqld\r\n\r\nsleep 10\r\n\r\nwords=($(grep 'temporary password' /var/log/mysqld.log))\r\n\r\ntemporary_password=\"${words[${#words[@]}-1]}\"\r\n\r\necho \"output(TemporaryPassword=$temporary_password)\"",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    },
+    {
+      "actionType": "UNINSTALL",
+      "actionId": "UNINSTALL",
+      "actionName": "卸载",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "set -x\r\n\r\nrm -f /etc/mysql/*\r\n\r\nsystemctl stop mysqld\r\nyum remove -y mysql-*\r\n\r\nrm -f /var/log/mysqqld.log\r\nrm -rf /var/lib/mysql\r\n",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    },
+    {
+      "actionType": "CHECK_STATE",
+      "actionId": "CHECK_STATE",
+      "actionName": "检查状态",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "if systemctl is-active --quiet mysqld; then\r\n    echo \"output(serviceState=STARTED)\"\r\nelse\r\n    echo \"output(serviceState=STOPPED)\"\r\nfi",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    },
+    {
+      "actionType": "START",
+      "actionId": "START",
+      "actionName": "启动",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "systemctl start mysqld",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    },
+    {
+      "actionType": "STOP",
+      "actionId": "STOP",
+      "actionName": "停止",
+      "remoteScriptDef": {
+        "remoteScript": {
+          "type": "SHELL",
+          "content": "systemctl stop mysqld",
+          "programPath": null
+        },
+        "customForm": {
+          "items": []
+        },
+        "customFormMetaData": {
+          "formClass": "Map",
+          "fieldInfoList": []
+        }
+      }
+    }
+  ],
+  "requirements": []
+}

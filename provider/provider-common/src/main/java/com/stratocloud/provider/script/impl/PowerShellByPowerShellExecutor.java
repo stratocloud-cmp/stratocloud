@@ -46,6 +46,7 @@ public class PowerShellByPowerShellExecutor implements RemoteScriptExecutor {
         } catch (Exception e) {
             log.error("Failed to execute script: ", e);
             stderr.append(e);
+            stdout.append(e);
             return RemoteScriptResult.failed(stdout.toString(), stderr.toString());
         }
     }
@@ -92,13 +93,13 @@ public class PowerShellByPowerShellExecutor implements RemoteScriptExecutor {
         GuestCommandResult result = executor.execute(guestCommand);
 
         if(Utils.isNotBlank(result.output()))
-            stdout.append(result.output());
+            stdout.append(result.output()).append("\n");
 
         if(result.status() != GuestCommandResult.Status.SUCCESS) {
             throw new StratoException(result.error());
         }
 
         if(Utils.isNotBlank(result.error()))
-            stderr.append(result.error());
+            stderr.append(result.error()).append("\n");
     }
 }

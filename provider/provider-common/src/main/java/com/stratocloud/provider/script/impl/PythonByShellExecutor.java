@@ -44,6 +44,7 @@ public class PythonByShellExecutor implements RemoteScriptExecutor {
         } catch (Exception e) {
             log.error("Failed to execute script: ", e);
             stderr.append(e);
+            stdout.append(e);
             return RemoteScriptResult.failed(stdout.toString(), stderr.toString());
         }
     }
