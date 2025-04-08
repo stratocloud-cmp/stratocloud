@@ -34,7 +34,7 @@
       "remoteScriptDef": {
         "remoteScript": {
           "type": "SHELL",
-          "content": "set -x\r\n\r\nrm -f /etc/mysql/*\r\n\r\nsystemctl stop mysqld\r\nyum remove -y mysql-*\r\n\r\nrm -f /var/log/mysqqld.log\r\nrm -rf /var/lib/mysql\r\n",
+          "content": "set -x\r\n\r\nmkdir -p /etc/stratocloud/mysql_backup\r\n\r\ncp -r /var/lib/mysql/* /etc/stratocloud/mysql_backup/\r\nrm -f /etc/mysql/*\r\n\r\nsystemctl stop mysqld\r\nyum remove -y mysql-*\r\n\r\nrm -f /var/log/mysqqld.log\r\nrm -rf /var/lib/mysql\r\n",
           "programPath": null
         },
         "customForm": {
