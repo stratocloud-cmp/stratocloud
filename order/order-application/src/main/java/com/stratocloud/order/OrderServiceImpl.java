@@ -5,6 +5,7 @@ import com.stratocloud.audit.AuditObject;
 import com.stratocloud.auth.CallContext;
 import com.stratocloud.auth.UserSession;
 import com.stratocloud.external.order.JobHandlerGatewayService;
+import com.stratocloud.job.JobContext;
 import com.stratocloud.order.cmd.*;
 import com.stratocloud.order.query.DescribeOrdersRequest;
 import com.stratocloud.order.query.DescribeRollbackTargetsRequest;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -100,7 +102,19 @@ public class OrderServiceImpl implements OrderService {
                 new AuditObject(order.getId().toString(), order.getOrderNo())
         );
 
-        order.onSubmit(message, Map.of());
+        Map<String, Object> runtimeProperties = new HashMap<>();
+
+        for (OrderItem orderItem : order.getOrderItems()) {
+            JobContext.mergeRuntimeProperties(
+                    runtimeProperties,
+                    jobHandlerGatewayService.prepareRuntimeProperties(
+                            orderItem.getJobNode().getJobDefinition().getJobType(),
+                            orderItem.getParameters()
+                    )
+            );
+        }
+
+        order.onSubmit(message, runtimeProperties);
 
         for (OrderItem orderItem : order.getOrderItems())
             jobHandlerGatewayService.preCreateJob(orderItem.getJobNodeInstance().getJob());

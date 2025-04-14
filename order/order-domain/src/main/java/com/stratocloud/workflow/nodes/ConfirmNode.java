@@ -16,6 +16,7 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -51,7 +52,7 @@ public class ConfirmNode extends Node {
 
 
     @Override
-    public NodeInstance createInstance() {
+    public NodeInstance createInstance(Map<String, Object> runtimeProperties) {
         return new ConfirmNodeInstance(this);
     }
 

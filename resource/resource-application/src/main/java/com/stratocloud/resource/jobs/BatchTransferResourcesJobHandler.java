@@ -5,6 +5,7 @@ import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.external.resource.UserGatewayService;
 import com.stratocloud.identity.SimpleUser;
 import com.stratocloud.job.AutoRegisteredJobHandler;
+import com.stratocloud.job.JobContext;
 import com.stratocloud.messaging.MessageBus;
 import com.stratocloud.permission.DynamicPermissionRequired;
 import com.stratocloud.permission.PermissionItem;
@@ -14,10 +15,15 @@ import com.stratocloud.resource.ResourcePermissionTarget;
 import com.stratocloud.resource.ResourceService;
 import com.stratocloud.resource.cmd.BatchTransferCmd;
 import com.stratocloud.resource.cmd.ownership.TransferCmd;
+import com.stratocloud.tag.NestedTag;
+import com.stratocloud.tag.TagRecord;
+import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class BatchTransferResourcesJobHandler
@@ -111,6 +117,26 @@ public class BatchTransferResourcesJobHandler
                 ResourcePermissionTarget.NAME,
                 "TRANSFER",
                 "移交"
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> prepareRuntimeProperties(BatchTransferCmd jobParameters) {
+        List<NestedTag> nestedTags = new ArrayList<>();
+
+        if(Utils.isNotEmpty(jobParameters.getTransfers())){
+            for (TransferCmd transferCmd : jobParameters.getTransfers()) {
+                Resource resource = resourceRepository.findResource(transferCmd.getResourceId());
+
+                if(Utils.isNotEmpty(resource.getTags()))
+                    nestedTags.addAll(resource.getTags());
+            }
+        }
+
+        return Map.of(
+                JobContext.KEY_RELATED_TAGS,
+                TagRecord.fromNestedTags(nestedTags)
         );
     }
 }

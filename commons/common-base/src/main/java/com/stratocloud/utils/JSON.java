@@ -85,6 +85,13 @@ public class JSON {
         return toJavaObject(s, clazz);
     }
 
+    public static <T> List<T> convert(Object o, TypeReference<List<T>> typeReference){
+        if(o == null)
+            return null;
+
+        return toJavaList(toJsonString(o), typeReference);
+    }
+
     public static <T> List<T> toJavaList(String s, TypeReference<List<T>> typeReference){
         try {
             return objectMapper.readValue(s, typeReference);

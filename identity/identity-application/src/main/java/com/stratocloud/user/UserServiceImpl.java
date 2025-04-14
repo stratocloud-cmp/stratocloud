@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -205,7 +206,9 @@ public class UserServiceImpl implements UserService{
         if(builtInUserIds.contains(userId))
             throw new BadCommandException("内置用户无法删除");
 
-        List<UserGroup> userGroups = userGroupRepository.findByFilters(null, List.of(userId), null);
+        List<UserGroup> userGroups = userGroupRepository.findByFilters(
+                null, List.of(userId), null, Map.of(), false
+        );
         if(!userGroups.isEmpty())
             throw new BadCommandException("请先在相关用户组中移除需要删除的用户");
 

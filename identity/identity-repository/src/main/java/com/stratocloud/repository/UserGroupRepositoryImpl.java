@@ -3,6 +3,7 @@ package com.stratocloud.repository;
 import com.stratocloud.auth.CallContext;
 import com.stratocloud.exceptions.EntityNotFoundException;
 import com.stratocloud.group.UserGroup;
+import com.stratocloud.group.UserGroupTag;
 import com.stratocloud.jpa.repository.AbstractTenantedRepository;
 import com.stratocloud.user.User;
 import com.stratocloud.utils.Utils;
@@ -13,7 +14,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class UserGroupRepositoryImpl extends AbstractTenantedRepository<UserGroup, UserGroupJpaRepository>
@@ -33,8 +36,12 @@ public class UserGroupRepositoryImpl extends AbstractTenantedRepository<UserGrou
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserGroup> findByFilters(List<Long> userGroupIds, List<Long> userIds, String search) {
-        Specification<UserGroup> spec = getUserGroupSpecification(userGroupIds, userIds, search, false);
+    public List<UserGroup> findByFilters(List<Long> userGroupIds,
+                                         List<Long> userIds,
+                                         String search,
+                                         Map<String, List<String>> tagsMap,
+                                         boolean allGroups) {
+        Specification<UserGroup> spec = getUserGroupSpecification(userGroupIds, userIds, search, tagsMap, allGroups);
 
         return jpaRepository.findAll(spec);
     }
@@ -42,6 +49,7 @@ public class UserGroupRepositoryImpl extends AbstractTenantedRepository<UserGrou
     private Specification<UserGroup> getUserGroupSpecification(List<Long> userGroupIds,
                                                                List<Long> userIds,
                                                                String search,
+                                                               Map<String, List<String>> tagsMap,
                                                                Boolean allGroups) {
         boolean allGroupsEnabled = allGroups != null ? allGroups : false;
 
@@ -62,7 +70,32 @@ public class UserGroupRepositoryImpl extends AbstractTenantedRepository<UserGrou
         if(Utils.isNotBlank(search))
             spec = spec.and(getSearchSpec(search));
 
+        if(Utils.isNotEmpty(tagsMap))
+            spec = spec.and(getTagSpec(tagsMap));
+
         return spec;
+    }
+
+    private Specification<UserGroup> getTagSpec(Map<String, List<String>> tagsMap) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            for (String tagKey : tagsMap.keySet()) {
+                Join<UserGroupTag, UserGroup> tagJoin = root.join(
+                        "tags", JoinType.LEFT
+                );
+
+                List<String> tagValues = tagsMap.get(tagKey);
+
+                Predicate p1 = criteriaBuilder.equal(tagJoin.get("tagKey"), tagKey);
+                Predicate p2 = tagJoin.get("tagValue").in(tagValues);
+
+                predicates.add(p1);
+                predicates.add(p2);
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
     }
 
     private Specification<UserGroup> getSearchSpec(String search) {
@@ -86,9 +119,10 @@ public class UserGroupRepositoryImpl extends AbstractTenantedRepository<UserGrou
     public Page<UserGroup> page(List<Long> userGroupIds,
                                 List<Long> userIds,
                                 String search,
+                                Map<String, List<String>> tagsMap,
                                 Boolean allGroups,
                                 Pageable pageable) {
-        Specification<UserGroup> spec = getUserGroupSpecification(userGroupIds, userIds, search, allGroups);
+        Specification<UserGroup> spec = getUserGroupSpecification(userGroupIds, userIds, search, tagsMap, allGroups);
         return jpaRepository.findAll(spec, pageable);
     }
 

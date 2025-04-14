@@ -46,7 +46,7 @@ public class WorkflowInstance extends Controllable {
 
     private void initNodeInstances() {
         for (Node node : workflow.getNodes()) {
-            NodeInstance nodeInstance = node.createInstance();
+            NodeInstance nodeInstance = node.createInstance(runtimeProperties);
             addNodeInstance(nodeInstance);
         }
     }

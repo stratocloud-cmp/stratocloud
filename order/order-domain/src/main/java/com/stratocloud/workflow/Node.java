@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -29,7 +30,7 @@ public abstract class Node extends Auditable {
     private List<SequenceFlow> outgoingFlows = new ArrayList<>();
 
 
-    public abstract NodeInstance createInstance();
+    public abstract NodeInstance createInstance(Map<String, Object> runtimeProperties);
 
     public List<Node> getFromNodes() {
         return incomingFlows.stream().map(SequenceFlow::getSource).toList();

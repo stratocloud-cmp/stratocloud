@@ -1,8 +1,8 @@
 package com.stratocloud.group;
 
+import com.stratocloud.group.cmd.NestedUserGroupTag;
 import com.stratocloud.group.query.DescribeSimpleGroupsResponse;
 import com.stratocloud.group.query.NestedUserGroupResponse;
-import com.stratocloud.group.query.NestedUserGroupTag;
 import com.stratocloud.group.query.SimpleUserGroup;
 import com.stratocloud.jpa.entities.EntityUtil;
 import com.stratocloud.utils.Utils;

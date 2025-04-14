@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserGroupServiceImpl implements UserGroupService {
@@ -180,10 +182,26 @@ public class UserGroupServiceImpl implements UserGroupService {
         List<Long> userGroupIds = request.getUserGroupIds();
         List<Long> userIds = request.getUserIds();
         String search = request.getSearch();
+        List<NestedUserGroupTag> tags = request.getTags();
 
-        List<UserGroup> userGroups = repository.findByFilters(userGroupIds, userIds, search);
+        List<UserGroup> userGroups = repository.findByFilters(
+                userGroupIds, userIds, search, toTagsMap(tags), true
+        );
 
         return assembler.toSimpleGroupsResponse(userGroups);
+    }
+
+    private Map<String, List<String>> toTagsMap(List<NestedUserGroupTag> tags) {
+        Map<String, List<String>> map = new HashMap<>();
+
+        if(Utils.isEmpty(tags))
+            return map;
+
+        for (NestedUserGroupTag tag : tags) {
+            map.computeIfAbsent(tag.getTagKey(), k -> new ArrayList<>()).add(tag.getTagValue());
+        }
+
+        return map;
     }
 
     @Override
@@ -194,7 +212,11 @@ public class UserGroupServiceImpl implements UserGroupService {
         String search = request.getSearch();
         Boolean allGroups = request.getAllGroups();
 
-        Page<UserGroup> page = repository.page(userGroupIds, userIds, search, allGroups, request.getPageable());
+        List<NestedUserGroupTag> tags = request.getTags();
+
+        Page<UserGroup> page = repository.page(
+                userGroupIds, userIds, search, toTagsMap(tags), allGroups, request.getPageable()
+        );
         return page.map(assembler::toNestedUserGroupResponse);
     }
 }

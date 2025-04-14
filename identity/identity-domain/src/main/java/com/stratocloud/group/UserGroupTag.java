@@ -1,6 +1,7 @@
 package com.stratocloud.group;
 
 import com.stratocloud.jpa.entities.Auditable;
+import com.stratocloud.tag.NestedTag;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
@@ -13,7 +14,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserGroupTag extends Auditable {
+public class UserGroupTag extends Auditable implements NestedTag {
     @ManyToOne
     private UserGroup group;
 

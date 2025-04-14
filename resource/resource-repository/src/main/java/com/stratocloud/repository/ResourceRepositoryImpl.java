@@ -88,7 +88,7 @@ public class ResourceRepositoryImpl extends AbstractControllableRepository<Resou
         if(Utils.isEmpty(CallContext.current().getCallingUser().grantedTags()))
             spec = spec.and(getCallingOwnerSpec().or(getPublicSpec()));
         else
-            spec = spec.and(getCallingOwnerTagsSpec().or(getPublicSpec()));
+            spec = spec.and(getCallingOwnerTagsSpec().or(getCallingOwnerSpec()).or(getPublicSpec()));
 
         if(Utils.isNotBlank(filters.search()))
             spec = spec.and(getSearchSpec(filters.search()));

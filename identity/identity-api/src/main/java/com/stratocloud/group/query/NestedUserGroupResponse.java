@@ -1,5 +1,6 @@
 package com.stratocloud.group.query;
 
+import com.stratocloud.group.cmd.NestedUserGroupTag;
 import com.stratocloud.request.query.NestedTenanted;
 import lombok.Getter;
 import lombok.Setter;

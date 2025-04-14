@@ -1,5 +1,6 @@
 package com.stratocloud.group.query;
 
+import com.stratocloud.group.cmd.NestedUserGroupTag;
 import com.stratocloud.request.query.PagingRequest;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,4 +15,6 @@ public class DescribeGroupsRequest extends PagingRequest {
     private String search;
 
     private Boolean allGroups = false;
+
+    private List<NestedUserGroupTag> tags;
 }

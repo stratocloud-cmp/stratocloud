@@ -1,6 +1,7 @@
 package com.stratocloud.resource;
 
 import com.stratocloud.jpa.entities.Auditable;
+import com.stratocloud.tag.NestedTag;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import lombok.Setter;
 @Setter(AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-public class ResourceTag extends Auditable {
+public class ResourceTag extends Auditable implements NestedTag {
     @ManyToOne
     private Resource resource;
 

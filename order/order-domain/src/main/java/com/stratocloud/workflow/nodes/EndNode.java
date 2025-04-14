@@ -7,10 +7,12 @@ import com.stratocloud.workflow.runtime.EndNodeInstance;
 import com.stratocloud.workflow.runtime.NodeInstance;
 import jakarta.persistence.Entity;
 
+import java.util.Map;
+
 @Entity
 public class EndNode extends Node {
     @Override
-    public NodeInstance createInstance() {
+    public NodeInstance createInstance(Map<String, Object> runtimeProperties) {
         return new EndNodeInstance(this);
     }
 

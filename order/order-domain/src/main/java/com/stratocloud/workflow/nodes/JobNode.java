@@ -14,6 +14,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Map;
+
 @Getter
 @Setter
 @Entity
@@ -27,7 +29,7 @@ public class JobNode extends Node {
     }
 
     @Override
-    public NodeInstance createInstance() {
+    public NodeInstance createInstance(Map<String, Object> runtimeProperties) {
         return new JobNodeInstance(this);
     }
 

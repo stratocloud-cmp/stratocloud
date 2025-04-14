@@ -1,25 +1,39 @@
 package com.stratocloud.group.jobs;
 
 import com.stratocloud.constant.StratoServices;
+import com.stratocloud.group.UserGroup;
 import com.stratocloud.group.UserGroupService;
 import com.stratocloud.group.cmd.DeleteUserGroupsCmd;
 import com.stratocloud.job.AutoRegisteredJobHandler;
+import com.stratocloud.job.JobContext;
 import com.stratocloud.messaging.MessageBus;
 import com.stratocloud.permission.DynamicPermissionRequired;
 import com.stratocloud.permission.PermissionItem;
+import com.stratocloud.repository.UserGroupRepository;
+import com.stratocloud.tag.NestedTag;
+import com.stratocloud.tag.TagRecord;
+import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class DeleteUserGroupsJobHandler
         implements AutoRegisteredJobHandler<DeleteUserGroupsCmd>, DynamicPermissionRequired {
     private final UserGroupService userGroupService;
 
+    private final UserGroupRepository userGroupRepository;
+
     private final MessageBus messageBus;
 
-    public DeleteUserGroupsJobHandler(UserGroupService userGroupService, MessageBus messageBus) {
+    public DeleteUserGroupsJobHandler(UserGroupService userGroupService,
+                                      UserGroupRepository userGroupRepository,
+                                      MessageBus messageBus) {
         this.userGroupService = userGroupService;
+        this.userGroupRepository = userGroupRepository;
         this.messageBus = messageBus;
     }
 
@@ -76,5 +90,25 @@ public class DeleteUserGroupsJobHandler
     @Override
     public PermissionItem getPermissionItem() {
         return new PermissionItem("UserGroup", "用户组", "DELETE", "删除");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> prepareRuntimeProperties(DeleteUserGroupsCmd jobParameters) {
+        List<NestedTag> nestedTags = new ArrayList<>();
+
+        if(Utils.isNotEmpty(jobParameters.getUserGroupIds())){
+            for (Long userGroupId : jobParameters.getUserGroupIds()) {
+                UserGroup userGroup = userGroupRepository.findUserGroup(userGroupId);
+
+                if(Utils.isNotEmpty(userGroup.getTags()))
+                    nestedTags.addAll(userGroup.getTags());
+            }
+        }
+
+        return Map.of(
+                JobContext.KEY_RELATED_TAGS,
+                TagRecord.fromNestedTags(nestedTags)
+        );
     }
 }

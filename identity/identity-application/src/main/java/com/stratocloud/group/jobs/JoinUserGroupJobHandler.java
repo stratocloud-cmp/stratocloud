@@ -7,13 +7,21 @@ import com.stratocloud.group.UserGroupService;
 import com.stratocloud.group.cmd.AddUsersToGroupCmd;
 import com.stratocloud.group.cmd.JoinUserGroupCmd;
 import com.stratocloud.job.AutoRegisteredJobHandler;
+import com.stratocloud.job.JobContext;
 import com.stratocloud.jpa.repository.EntityManager;
 import com.stratocloud.messaging.MessageBus;
 import com.stratocloud.permission.DynamicPermissionRequired;
 import com.stratocloud.permission.PermissionItem;
+import com.stratocloud.tag.NestedTag;
+import com.stratocloud.tag.TagRecord;
+import com.stratocloud.utils.Utils;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class JoinUserGroupJobHandler
@@ -60,6 +68,7 @@ public class JoinUserGroupJobHandler
     @Override
     public void preCreateJob(JoinUserGroupCmd parameters) {
         validatePermission();
+        JobContext.current().addOutput("newMemberId", CallContext.current().getCallingUser().userId());
     }
 
     @Override
@@ -74,10 +83,12 @@ public class JoinUserGroupJobHandler
 
     @Override
     public void onStartJob(JoinUserGroupCmd parameters) {
+        Long newMemberId = MapUtils.getLong(JobContext.current().getRuntimeVariables(), "newMemberId");
+
         AddUsersToGroupCmd cmd = new AddUsersToGroupCmd();
         cmd.setUserGroupId(parameters.getUserGroupId());
         CallContext currentContext = CallContext.current();
-        cmd.setUserIds(List.of(currentContext.getCallingUser().userId()));
+        cmd.setUserIds(List.of(newMemberId));
         CallContext.registerSystemSession();
         tryFinishJob(messageBus, ()->userGroupService.addUsersToGroup(cmd));
         CallContext.registerBack(currentContext);
@@ -92,5 +103,23 @@ public class JoinUserGroupJobHandler
     @Override
     public PermissionItem getPermissionItem() {
         return new PermissionItem("UserGroup", "用户组", "JOIN", "申请加入");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> prepareRuntimeProperties(JoinUserGroupCmd jobParameters) {
+        List<NestedTag> nestedTags = new ArrayList<>();
+
+        if(jobParameters.getUserGroupId() != null){
+            UserGroup group = entityManager.findById(UserGroup.class, jobParameters.getUserGroupId());
+
+            if(Utils.isNotEmpty(group.getTags()))
+                nestedTags.addAll(group.getTags());
+        }
+
+        return Map.of(
+                JobContext.KEY_RELATED_TAGS,
+                TagRecord.fromNestedTags(nestedTags)
+        );
     }
 }

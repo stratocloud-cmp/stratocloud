@@ -4,16 +4,32 @@ import com.stratocloud.constant.StratoServices;
 import com.stratocloud.job.AsyncJob;
 import com.stratocloud.job.AsyncJobContext;
 import com.stratocloud.job.AsyncJobHandler;
+import com.stratocloud.job.JobContext;
+import com.stratocloud.repository.RelationshipRepository;
+import com.stratocloud.resource.Relationship;
 import com.stratocloud.resource.ResourceService;
 import com.stratocloud.resource.cmd.relationship.BatchDisconnectResourcesCmd;
+import com.stratocloud.tag.NestedTag;
+import com.stratocloud.tag.TagRecord;
+import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class BatchDisconnectResourcesJobHandler implements AsyncJobHandler<BatchDisconnectResourcesCmd> {
+
     private final ResourceService resourceService;
 
-    public BatchDisconnectResourcesJobHandler(ResourceService resourceService) {
+    private final RelationshipRepository relationshipRepository;
+
+    public BatchDisconnectResourcesJobHandler(ResourceService resourceService,
+                                              RelationshipRepository relationshipRepository) {
         this.resourceService = resourceService;
+        this.relationshipRepository = relationshipRepository;
     }
 
     @Override
@@ -65,5 +81,25 @@ public class BatchDisconnectResourcesJobHandler implements AsyncJobHandler<Batch
     public void onStartJob(BatchDisconnectResourcesCmd parameters) {
         AsyncJob asyncJob = AsyncJobContext.current().getAsyncJob();
         asyncJob.start();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> prepareRuntimeProperties(BatchDisconnectResourcesCmd jobParameters) {
+        List<NestedTag> nestedTags = new ArrayList<>();
+
+        if(Utils.isNotEmpty(jobParameters.getRelationshipIds())){
+            for (Long relationshipId : jobParameters.getRelationshipIds()) {
+                Relationship relationship = relationshipRepository.findRelationship(relationshipId);
+
+                if(Utils.isNotEmpty(relationship.getSource().getTags()))
+                    nestedTags.addAll(relationship.getSource().getTags());
+            }
+        }
+
+        return Map.of(
+                JobContext.KEY_RELATED_TAGS,
+                TagRecord.fromNestedTags(nestedTags)
+        );
     }
 }

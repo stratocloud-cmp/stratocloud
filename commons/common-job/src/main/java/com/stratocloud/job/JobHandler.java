@@ -79,4 +79,8 @@ public interface JobHandler<P extends JobParameters> {
             messageBus.publish(message);
         }
     }
+
+    default Map<String, Object> prepareRuntimeProperties(P jobParameters){
+        return Map.of();
+    }
 }

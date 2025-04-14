@@ -101,8 +101,19 @@ public class JobServiceImpl implements JobService {
         );
 
 
+        if(runtimeProperties == null)
+            runtimeProperties = new HashMap<>();
+        else
+            runtimeProperties = new HashMap<>(runtimeProperties);
+
+        JobContext.mergeRuntimeProperties(
+                runtimeProperties,
+                jobHandlerGatewayService.prepareRuntimeProperties(jobType, jobParameters)
+        );
+
         if(jobDefinition.getDefaultWorkflowRequireOrder()){
             Order order = orderFactory.createOrder(note, defaultWorkflow, jobNode.getNodeKey(), jobParameters);
+
             order.createWorkflowInstance(runtimeProperties);
 
             Job job = order.getOrderItems().get(0).getJobNodeInstance().getJob();

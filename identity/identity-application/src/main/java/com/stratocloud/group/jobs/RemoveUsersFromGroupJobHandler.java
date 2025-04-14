@@ -5,13 +5,20 @@ import com.stratocloud.group.UserGroup;
 import com.stratocloud.group.UserGroupService;
 import com.stratocloud.group.cmd.RemoveUsersFromGroupCmd;
 import com.stratocloud.job.AutoRegisteredJobHandler;
+import com.stratocloud.job.JobContext;
 import com.stratocloud.jpa.repository.EntityManager;
 import com.stratocloud.messaging.MessageBus;
 import com.stratocloud.permission.DynamicPermissionRequired;
 import com.stratocloud.permission.PermissionItem;
+import com.stratocloud.tag.NestedTag;
+import com.stratocloud.tag.TagRecord;
+import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class RemoveUsersFromGroupJobHandler
@@ -84,5 +91,23 @@ public class RemoveUsersFromGroupJobHandler
     @Override
     public PermissionItem getPermissionItem() {
         return new PermissionItem("UserGroup", "用户组", "REMOVE_USERS", "移除成员");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> prepareRuntimeProperties(RemoveUsersFromGroupCmd jobParameters) {
+        List<NestedTag> nestedTags = new ArrayList<>();
+
+        if(jobParameters.getUserGroupId() != null){
+            UserGroup group = entityManager.findById(UserGroup.class, jobParameters.getUserGroupId());
+
+            if(Utils.isNotEmpty(group.getTags()))
+                nestedTags.addAll(group.getTags());
+        }
+
+        return Map.of(
+                JobContext.KEY_RELATED_TAGS,
+                TagRecord.fromNestedTags(nestedTags)
+        );
     }
 }

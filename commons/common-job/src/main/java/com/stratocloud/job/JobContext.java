@@ -3,6 +3,7 @@ package com.stratocloud.job;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.utils.Utils;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -59,5 +60,28 @@ public class JobContext {
 
     public Map<String, Object> getRuntimeVariables() {
         return runtimeProperties;
+    }
+
+    public static final String KEY_RELATED_TAGS = "relatedTags";
+
+    @SuppressWarnings("unchecked")
+    public static void mergeRuntimeProperties(Map<String, Object> target, Map<String, Object> source){
+        if(Utils.isEmpty(source))
+            return;
+
+        if(target == null)
+            return;
+
+        for (Map.Entry<String, Object> entry : source.entrySet()) {
+            if(entry.getValue() == null)
+                continue;
+
+            if(entry.getValue() instanceof Collection<?> sourceList &&
+                    target.get(entry.getKey()) instanceof Collection<?> targetList){
+                ((Collection<Object>) targetList).addAll(sourceList);
+            } else {
+                target.put(entry.getKey(), entry.getValue());
+            }
+        }
     }
 }

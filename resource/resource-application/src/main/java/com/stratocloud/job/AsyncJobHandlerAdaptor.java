@@ -187,7 +187,7 @@ public class AsyncJobHandlerAdaptor<P extends JobParameters> implements AsyncJob
 
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<String> collectSummaryData(P jobParameters) {
         if(JobContext.exists()){
             AsyncJob asyncJob = getAsyncJobRepository().findById(JobContext.current().getJobId()).orElseThrow(

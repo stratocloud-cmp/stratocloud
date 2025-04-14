@@ -4,9 +4,18 @@ import com.stratocloud.constant.StratoServices;
 import com.stratocloud.job.AsyncJob;
 import com.stratocloud.job.AsyncJobContext;
 import com.stratocloud.job.AsyncJobHandler;
+import com.stratocloud.job.JobContext;
 import com.stratocloud.resource.ResourceService;
 import com.stratocloud.resource.cmd.BatchCreateResourcesCmd;
+import com.stratocloud.resource.cmd.create.CreateResourcesCmd;
+import com.stratocloud.tag.NestedTag;
+import com.stratocloud.tag.TagRecord;
+import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class BatchCreateResourcesJobHandler implements AsyncJobHandler<BatchCreateResourcesCmd> {
@@ -66,5 +75,23 @@ public class BatchCreateResourcesJobHandler implements AsyncJobHandler<BatchCrea
     public void onStartJob(BatchCreateResourcesCmd parameters) {
         AsyncJob asyncJob = AsyncJobContext.current().getAsyncJob();
         asyncJob.start();
+    }
+
+    @Override
+    public Map<String, Object> prepareRuntimeProperties(BatchCreateResourcesCmd jobParameters) {
+        List<NestedTag> nestedTags = new ArrayList<>();
+
+        if(Utils.isNotEmpty(jobParameters.getResources())){
+            for (CreateResourcesCmd resource : jobParameters.getResources()) {
+                if(resource.getResource()!=null && Utils.isNotEmpty(resource.getResource().getTags())){
+                    nestedTags.addAll(resource.getResource().getTags());
+                }
+            }
+        }
+
+        return Map.of(
+                JobContext.KEY_RELATED_TAGS,
+                TagRecord.fromNestedTags(nestedTags)
+        );
     }
 }
