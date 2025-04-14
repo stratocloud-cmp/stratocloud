@@ -29,7 +29,7 @@ StratoCloud
 
 # 逻辑架构
 <p>
-  <img src="./docs/architecture.jpg" alt="Architecture" style="border-radius: 6px;"/><br>
+  <img src="docs/architecture_20250414.jpg" alt="Architecture" style="border-radius: 6px;"/><br>
 </p>
 
 # 为什么选择StratoCloud?
