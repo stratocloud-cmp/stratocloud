@@ -150,7 +150,7 @@ public class AsyncJobHandlerAdaptor<P extends JobParameters> implements AsyncJob
 
         AsyncJobContext.create(asyncJob);
         jobHandler.onStartJob(parameters);
-        getAsyncJobRepository().save(asyncJob);
+        getAsyncJobRepository().saveWithSystemSession(asyncJob);
         AsyncJobContext.destroy();
     }
 

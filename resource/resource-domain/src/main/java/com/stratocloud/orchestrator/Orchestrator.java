@@ -5,6 +5,7 @@ import com.stratocloud.job.Execution;
 import com.stratocloud.job.ExecutionStep;
 import com.stratocloud.job.Task;
 import com.stratocloud.resource.*;
+import com.stratocloud.utils.GraphUtil;
 import com.stratocloud.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -72,6 +73,8 @@ public class Orchestrator {
                 for (Relationship capability : capabilities) {
                     Resource capabilityResource = capability.getSource();
                     validateNonRootCapability(rootIds, capabilityResource);
+                    if(resourceQueue.contains(capabilityResource))
+                        continue;
                     resourceQueue.offer(capabilityResource);
                 }
             }
@@ -100,6 +103,16 @@ public class Orchestrator {
                 t -> !ResourceState.getAliveStateSet().contains(t.getState())
         ).anyMatch(
                 t -> !readyTargetIds.contains(t.getId())
+        );
+    }
+
+    private static boolean isTargetsNotBehind(Set<Long> behindTargetIds,
+                                              Set<Long> relevantResourceIds,
+                                              List<Relationship> requirements) {
+        return requirements.stream().map(
+                Relationship::getTarget
+        ).anyMatch(
+                t -> relevantResourceIds.contains(t.getId()) && !behindTargetIds.contains(t.getId())
         );
     }
 
@@ -163,6 +176,10 @@ public class Orchestrator {
 
         Set<Long> rootIds = roots.stream().map(Resource::getId).collect(Collectors.toSet());
 
+        Set<Long> behindTargetIds = new HashSet<>();
+
+        Set<Long> relevantResourceIds = getRelevantResourceIds(roots, isRecycleCapabilities);
+
         while (!resourceQueue.isEmpty()){
             int size = resourceQueue.size();
             ExecutionStep stopStep = new ExecutionStep();
@@ -173,6 +190,14 @@ public class Orchestrator {
 
             for (int i = 0; i < size; i++) {
                 Resource current = Objects.requireNonNull(resourceQueue.poll());
+
+                if(isTargetsNotBehind(behindTargetIds, relevantResourceIds, current.getRequirements())){
+                    log.warn("Requirement targets of {} are not behind yet, skipping this one.", current.getName());
+                    continue;
+                }
+
+                if(behindTargetIds.contains(current.getId()))
+                    continue;
 
                 var stopHandler = current.getResourceHandler().getActionHandler(ResourceActions.STOP);
                 if(stopHandler.isPresent() && stopHandler.get().getAllowedStates().contains(current.getState()))
@@ -198,6 +223,8 @@ public class Orchestrator {
 
                         Resource capabilityResource = capability.getSource();
                         validateNonRootCapability(rootIds, capabilityResource);
+                        if(resourceQueue.contains(capabilityResource))
+                            continue;
                         resourceQueue.offer(capabilityResource);
                     }
                 } else {
@@ -218,10 +245,34 @@ public class Orchestrator {
             execution.insertStep(0, destroyStep);
             execution.insertStep(0, disconnectStep);
             execution.insertStep(0, stopStep);
+
+            destroyStep.getTasks().forEach(t -> behindTargetIds.add(t.getEntityId()));
         }
 
 
 
         return execution;
+    }
+
+    private Set<Long> getRelevantResourceIds(List<Resource> roots, boolean isRecycleCapabilities) {
+        Set<Long> result = new HashSet<>();
+
+        if(Utils.isEmpty(roots))
+            return result;
+
+        if(!isRecycleCapabilities) {
+            result.addAll(roots.stream().map(Resource::getId).toList());
+            return result;
+        }
+
+        for (Resource root : roots)
+            result.addAll(
+                    GraphUtil.bfs(
+                            root,
+                            r -> r.getCapabilities().stream().map(Relationship::getSource).toList()
+                    ).stream().map(Resource::getId).toList()
+            );
+
+        return result;
     }
 }

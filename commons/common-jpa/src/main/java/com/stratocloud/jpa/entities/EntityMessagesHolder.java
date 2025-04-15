@@ -26,12 +26,15 @@ public class EntityMessagesHolder {
         queue.offer(message);
     }
 
-    public static void flushEntityMessages(Long entityId){
+    public static void flushEntityMessages(Long entityId, boolean doesPublishWithSystemSession){
         Queue<Message> queue = ensureQueue(entityId);
         while (!queue.isEmpty()){
             Message message = queue.poll();
             MessageBus messageBus = ContextUtil.getBean(MessageBus.class);
-            messageBus.publish(message);
+            if(doesPublishWithSystemSession)
+                messageBus.publishWithSystemSession(message);
+            else
+                messageBus.publish(message);
         }
         eraseQueue(entityId);
     }

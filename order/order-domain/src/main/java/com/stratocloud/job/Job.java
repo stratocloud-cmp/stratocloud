@@ -122,4 +122,10 @@ public class Job extends Controllable {
     public void reassignId(Long jobId){
         setId(jobId);
     }
+
+
+    @Override
+    protected boolean doesPublishWithSystemSession() {
+        return true;
+    }
 }

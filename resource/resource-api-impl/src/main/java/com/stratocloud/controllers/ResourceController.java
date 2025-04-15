@@ -1,6 +1,7 @@
 package com.stratocloud.controllers;
 
 import com.stratocloud.audit.SendAuditLog;
+import com.stratocloud.exceptions.BadCommandException;
 import com.stratocloud.permission.PermissionRequired;
 import com.stratocloud.permission.PermissionTarget;
 import com.stratocloud.resource.ResourceApi;
@@ -11,10 +12,13 @@ import com.stratocloud.resource.query.*;
 import com.stratocloud.resource.query.inquiry.*;
 import com.stratocloud.resource.query.metadata.*;
 import com.stratocloud.resource.response.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @PermissionTarget(target = ResourcePermissionTarget.ID, targetName = ResourcePermissionTarget.NAME)
 @RestController
 public class ResourceController implements ResourceApi {
@@ -137,7 +141,12 @@ public class ResourceController implements ResourceApi {
             objectTypeName = "云资源"
     )
     public DropResourcesResponse dropResources(@RequestBody BatchDropCmd cmd) {
-        return service.dropResources(cmd);
+        try {
+            return service.dropResources(cmd);
+        }catch (DataIntegrityViolationException e){
+            log.warn(e.toString());
+            throw new BadCommandException("该资源仍被资源栈使用");
+        }
     }
 
     @Override

@@ -1,7 +1,7 @@
 {
   "definitionKey": "MYSQL",
-  "name": "MySQL (RHEL 7 or CentOS 7)",
-  "description": null,
+  "name": "MySQL",
+  "description": "Supports RHEL7/CentOS7",
   "softwareType": "DATABASE",
   "osType": "Linux",
   "publicDefinition": true,

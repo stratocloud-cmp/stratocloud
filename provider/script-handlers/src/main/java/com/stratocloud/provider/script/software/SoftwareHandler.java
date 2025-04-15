@@ -2,6 +2,7 @@ package com.stratocloud.provider.script.software;
 
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.custom.CustomForm;
 import com.stratocloud.provider.AbstractResourceHandler;
@@ -119,7 +120,7 @@ public class SoftwareHandler extends AbstractResourceHandler implements DynamicR
         }
 
         Resource guestOsResource = resource.getExclusiveTargetByTargetHandler(GuestOsHandler.class).orElseThrow(
-                () -> new StratoException("Guest os resource not found when synchronizing software")
+                () -> new ExternalResourceNotFoundException("Guest os resource not found when synchronizing software")
         );
 
         RemoteScript remoteScript = softwareAction.get().getRemoteScriptDef().getRemoteScript();

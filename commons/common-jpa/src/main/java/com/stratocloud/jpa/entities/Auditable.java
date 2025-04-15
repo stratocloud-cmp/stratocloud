@@ -35,11 +35,6 @@ public abstract class Auditable {
     @Column
     private LocalDateTime lastModifiedAt;
 
-    public void softDelete(){
-        this.softDeleted = true;
-        this.deleteTimestamp = System.currentTimeMillis();
-    }
-
     public Long getId() {
         if(id == null){
             id = SnowflakeId.nextId();
@@ -51,15 +46,19 @@ public abstract class Auditable {
         EntityMessagesHolder.offer(getId(), message);
     }
 
+    protected boolean doesPublishWithSystemSession(){
+        return false;
+    }
+
     @PostPersist
     @PostUpdate
     protected void afterSave(){
-        EntityMessagesHolder.flushEntityMessages(getId());
+        EntityMessagesHolder.flushEntityMessages(getId(), doesPublishWithSystemSession());
     }
 
     @PostRemove
     protected void afterDeleted(){
-        EntityMessagesHolder.flushEntityMessages(getId());
+        EntityMessagesHolder.flushEntityMessages(getId(), doesPublishWithSystemSession());
     }
 
     @PrePersist

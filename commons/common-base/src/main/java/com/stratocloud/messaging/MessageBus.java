@@ -6,10 +6,19 @@ public interface MessageBus {
     void publish(Message message);
 
     default void publishWithSystemSession(Message message){
+        CallContext current = null;
+
+        if(CallContext.exists())
+            current = CallContext.current();
+
         CallContext.registerSystemSession();
         message.setTriggeredBy(CallContext.current().getCallingUser().userId());
         publish(message);
-        CallContext.unregister();
+
+        if(current != null)
+            CallContext.registerBack(current);
+        else
+            CallContext.unregister();
     }
 
     void subscribe(MessageConsumer consumer);
