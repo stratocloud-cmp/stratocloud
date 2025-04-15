@@ -40,7 +40,7 @@ StratoCloud
 * 资源拓扑
   * StratoCloud的资源模型设计参考[TOSCA标准](https://docs.oasis-open.org/tosca/TOSCA/v2.0/TOSCA-v2.0.html)，自动化构建、发现和同步您的资源拓扑
 * 领域驱动设计
-  * 采用领域驱动的模块化设计思路，基于纯Java实现，易于部署和维护，支持国产化部署，满足信创需求。详见[设计考虑](./docs/DESIGN_CONSIDERATIONS)
+  * 采用领域驱动的模块化设计思路，基于纯Java实现，易于部署和维护，支持国产化部署，满足信创需求。详见[设计考虑](./docs/DESIGN_CONSIDERATIONS.md)
 * 可扩展性
   * 所有云平台的对接模块均为可插拔、开箱即用的Maven模块，无需改动主体代码，提升云平台对接开发效率。详见[二次开发参考](./docs/DEVELOPER_REFERENCE.md)
 * 快速交付
