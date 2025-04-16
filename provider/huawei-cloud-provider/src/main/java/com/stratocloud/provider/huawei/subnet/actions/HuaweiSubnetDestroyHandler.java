@@ -34,7 +34,7 @@ public class HuaweiSubnetDestroyHandler implements DestroyResourceActionHandler 
 
     @Override
     public Class<? extends ResourceActionInput> getInputClass() {
-        return HuaweiSubnetBuildInput.class;
+        return ResourceActionInput.Dummy.class;
     }
 
     @Override

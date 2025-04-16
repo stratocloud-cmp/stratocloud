@@ -621,6 +621,10 @@ public class ResourceServiceImpl implements ResourceService {
 
         for (RecycleCmd recycleCmd : inquiry.getResources()) {
             Long resourceId = recycleCmd.getResourceId();
+
+            if(resourceId == null)
+                continue;
+
             Map<String, Object> destroyParameters = recycleCmd.getDestroyParameters();
             Resource resource = repository.findResource(resourceId);
 
@@ -644,6 +648,9 @@ public class ResourceServiceImpl implements ResourceService {
             Long resourceId = actionCmd.getResourceId();
             String actionId = actionCmd.getActionId();
             Map<String, Object> parameters = actionCmd.getParameters();
+
+            if(resourceId == null || Utils.isBlank(actionId))
+                continue;
 
             Resource resource = repository.findResource(resourceId);
             ResourceActionHandler actionHandler = resource.getActionHandler(actionId);

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class AsyncJobHandlerAdaptor<P extends JobParameters> implements AsyncJobHandler<P> {
@@ -206,5 +207,10 @@ public class AsyncJobHandlerAdaptor<P extends JobParameters> implements AsyncJob
             AsyncJobContext.destroy();
             return result;
         }
+    }
+
+    @Override
+    public Map<String, Object> prepareRuntimeProperties(P jobParameters) {
+        return jobHandler.prepareRuntimeProperties(jobParameters);
     }
 }
