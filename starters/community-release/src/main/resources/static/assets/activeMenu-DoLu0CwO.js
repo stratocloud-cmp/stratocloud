@@ -1,0 +1,1 @@
+import{N as t}from"./index-CJwSUwqU.js";const s=t("stratoActiveMenu",{state:()=>({activeMenu:void 0,currentSideMenus:void 0}),actions:{setActiveMenu(e){this.activeMenu=e},setCurrentSideMenus(e){this.currentSideMenus=e}},persist:{storage:localStorage,paths:["activeMenu","currentSideMenus"]}});export{s as u};

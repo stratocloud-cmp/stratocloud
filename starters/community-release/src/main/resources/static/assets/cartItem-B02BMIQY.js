@@ -1,0 +1,1 @@
+import{s as r}from"./request-IeLrxslB.js";const s=e=>r({url:"/resource-service/describe-all-cart-items",method:"post",data:e}),c=e=>r({url:"/resource-service/create-cart-item",method:"post",data:e}),o=e=>r({url:"/resource-service/delete-cart-items",method:"post",data:e}),a=e=>r({url:"/resource-service/submit-cart-items",method:"post",data:e});export{o as a,c,s as d,a as s};
