@@ -1,0 +1,1 @@
+import{s as t}from"./request-BLvKnTIl.js";const s=e=>t({url:"/identity-service/describe-roles",method:"post",data:e}),o=e=>t({url:"/identity-service/create-role",method:"post",data:e}),i=e=>t({url:"/identity-service/update-role",method:"post",data:e}),d=e=>t({url:"/identity-service/delete-roles",method:"post",data:e});export{d as a,o as c,s as d,i as u};

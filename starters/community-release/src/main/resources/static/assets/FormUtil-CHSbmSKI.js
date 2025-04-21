@@ -1,1 +1,0 @@
-import{l}from"./request-IeLrxslB.js";import{x as n}from"./index-CJwSUwqU.js";function v(t,r){a(t,!0,0,r)}const f=l.throttle(()=>n.error("表单校验失败"),3e3,{trailing:!1});function a(t,r,o,i){if(!t[o]){r||f(),i(r);return}t[o].validate(e=>{a(t,r&&e,o+1,i)})}export{v};
