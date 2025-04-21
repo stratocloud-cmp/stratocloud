@@ -116,7 +116,7 @@ public class ResourceActionTaskHandler implements TaskHandler {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void onDiscard(Task task) {
         ResourceTaskInputs taskInputs = (ResourceTaskInputs) task.getTaskInputs();
         Optional<Resource> resource = resourceRepository.findById(task.getEntityId());

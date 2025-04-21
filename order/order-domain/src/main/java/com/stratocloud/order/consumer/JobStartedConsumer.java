@@ -1,5 +1,6 @@
 package com.stratocloud.order.consumer;
 
+import com.stratocloud.exceptions.TryConsumeLaterException;
 import com.stratocloud.jpa.repository.EntityManager;
 import com.stratocloud.messaging.Message;
 import com.stratocloud.messaging.MessageConsumer;
@@ -10,11 +11,13 @@ import com.stratocloud.workflow.messaging.WorkflowReportJobStartedPayload;
 import com.stratocloud.workflow.messaging.WorkflowTopics;
 import com.stratocloud.workflow.runtime.NodeInstance;
 import com.stratocloud.workflow.runtime.WorkflowInstance;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+@Slf4j
 @Component
 public class JobStartedConsumer implements MessageConsumer {
 
@@ -31,6 +34,9 @@ public class JobStartedConsumer implements MessageConsumer {
     @Transactional
     public void consume(Message message) {
         var payload = JSON.toJavaObject(message.getPayload(), WorkflowReportJobStartedPayload.class);
+
+        if(!entityManager.existById(NodeInstance.class, payload.nodeInstanceId()))
+            throw new TryConsumeLaterException("Node instance not found");
 
         NodeInstance nodeInstance = entityManager.findById(NodeInstance.class, payload.nodeInstanceId());
         WorkflowInstance workflowInstance = nodeInstance.getWorkflowInstance();

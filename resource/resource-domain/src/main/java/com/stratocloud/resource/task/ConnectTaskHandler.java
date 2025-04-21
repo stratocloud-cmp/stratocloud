@@ -101,7 +101,7 @@ public class ConnectTaskHandler implements TaskHandler {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void onDiscard(Task task) {
         Long relationshipId = task.getEntityId();
 

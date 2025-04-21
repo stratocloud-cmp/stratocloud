@@ -2,11 +2,13 @@ package com.stratocloud;
 
 import com.stratocloud.auth.CallContext;
 import com.stratocloud.auth.UserSession;
+import com.stratocloud.config.MonolithOnly;
+import com.stratocloud.exceptions.TryConsumeLaterException;
 import com.stratocloud.messaging.Message;
 import com.stratocloud.messaging.MessageBus;
 import com.stratocloud.messaging.MessageConsumer;
 import com.stratocloud.utils.ContextUtil;
-import com.stratocloud.config.MonolithOnly;
+import com.stratocloud.utils.concurrent.SleepUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
@@ -14,7 +16,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 @Slf4j
 @Component
@@ -29,13 +34,18 @@ public class MemoryMessageBus implements MessageBus {
 
     @Override
     public void publish(Message message) {
-        Queue<QueuedMessage> queue = queueMap.computeIfAbsent(
-                message.getTopic(), k -> new LinkedBlockingQueue<>()
-        );
+        QueuedMessage queuedMessage = new QueuedMessage(message, CallContext.current().getCallingUser());
 
-        queue.offer(new QueuedMessage(message, CallContext.current().getCallingUser()));
+        offerMessage(queuedMessage);
 
         log.debug("Message published. Topic={}. UUID={}.", message.getTopic(), message.getUuid());
+    }
+
+    private void offerMessage(QueuedMessage queuedMessage) {
+        Queue<QueuedMessage> queue = queueMap.computeIfAbsent(
+                queuedMessage.message().getTopic(), k -> new LinkedBlockingQueue<>()
+        );
+        queue.offer(queuedMessage);
     }
 
 
@@ -130,10 +140,20 @@ public class MemoryMessageBus implements MessageBus {
                         consumer.getConsumerGroup(), message.getTopic(), message.getUuid());
                 consumer.consume(message);
                 log.debug("Message consumed successfully. Topic={}. UUID={}.", message.getTopic(), message.getUuid());
-            }catch (Exception e){
+            } catch (TryConsumeLaterException e) {
+                log.warn("Try consuming message 20s later. Topic={}. UUID={}. Reason: {}",
+                        message.getTopic(), message.getUuid(), e.getMessage());
+                SleepUtil.sleep(20);
+                try {
+                    consumer.consume(message);
+                } catch (Exception ex){
+                    log.error("Failed to consume message. Topic={}. UUID={}. Payload={}.",
+                            message.getTopic(), message.getUuid(), message.getPayload(), ex);
+                }
+            } catch (Exception e) {
                 log.error("Failed to consume message. Topic={}. UUID={}. Payload={}.",
                         message.getTopic(), message.getUuid(), message.getPayload(), e);
-            }finally {
+            } finally {
                 CallContext.unregister();
             }
         }

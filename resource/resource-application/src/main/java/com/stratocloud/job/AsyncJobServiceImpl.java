@@ -1,7 +1,6 @@
 package com.stratocloud.job;
 
 import com.stratocloud.auth.RunWithSystemSession;
-import com.stratocloud.request.JobParameters;
 import com.stratocloud.external.resource.OrderJobGatewayService;
 import com.stratocloud.identifier.SnowflakeId;
 import com.stratocloud.job.cmd.RunAsyncJobCmd;
@@ -11,9 +10,10 @@ import com.stratocloud.job.response.RunAsyncJobResponse;
 import com.stratocloud.lock.DistributedLock;
 import com.stratocloud.repository.AsyncJobRepository;
 import com.stratocloud.repository.TaskRepository;
-import com.stratocloud.utils.concurrent.ConcurrentUtil;
+import com.stratocloud.request.JobParameters;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
+import com.stratocloud.utils.concurrent.ConcurrentUtil;
 import com.stratocloud.validate.ValidateRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopContext;
@@ -21,7 +21,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -50,7 +49,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional
     @ValidateRequest
     public RunAsyncJobResponse runAsyncJob(RunAsyncJobCmd cmd) {
         String jobType = cmd.getJobType();

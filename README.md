@@ -51,6 +51,7 @@ StratoCloud
 ## 1.环境准备
 * 最低配置：CPU 4核, 内存 8GB, 存储 50GB, Java 17
 * 推荐配置：CPU 8核, 内存 16GB, 存储 50GB, Java 21
+* 如果未安装Java，请前往[https://jdk.java.net/java-se-ri/21](https://jdk.java.net/java-se-ri/21)获取
 * StratoCloud可运行在Java 17及以上版本(建议选用Java 21)，您可以使用`java -version`命令检查您的Java版本:
 ```shell
 $ java -version

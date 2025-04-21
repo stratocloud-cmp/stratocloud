@@ -108,12 +108,8 @@ public class DisconnectTaskHandler implements TaskHandler {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onDiscard(Task task) {
-        Long relationshipId = task.getEntityId();
-
-        Optional<Relationship> relationship = relationshipRepository.findById(relationshipId);
-        relationship.ifPresent(relationshipRepository::delete);
+        log.warn("Disconnect task for {} discarded.", task.getEntityDescription());
     }
 
 

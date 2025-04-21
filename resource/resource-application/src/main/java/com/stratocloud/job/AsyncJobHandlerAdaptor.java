@@ -3,13 +3,12 @@ package com.stratocloud.job;
 import com.stratocloud.audit.AuditLogContext;
 import com.stratocloud.audit.AuditObject;
 import com.stratocloud.exceptions.EntityNotFoundException;
+import com.stratocloud.exceptions.TryConsumeLaterException;
 import com.stratocloud.repository.AsyncJobRepository;
 import com.stratocloud.request.JobParameters;
 import com.stratocloud.utils.ContextUtil;
 import com.stratocloud.utils.Utils;
-import com.stratocloud.utils.concurrent.SleepUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -135,18 +134,14 @@ public class AsyncJobHandlerAdaptor<P extends JobParameters> implements AsyncJob
     }
 
     @Override
-    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @Transactional
     public void onStartJob(P parameters) {
         Long jobId = JobContext.current().getJobId();
         AsyncJob asyncJob;
         try {
             asyncJob = getAsyncJobRepository().lockAsyncJob(jobId);
         }catch (EntityNotFoundException e){
-            int retryAfterSeconds = 3;
-            log.warn("Attempting to start async job {} but it's not found, retrying {}s later",
-                    jobId, retryAfterSeconds);
-            SleepUtil.sleep(retryAfterSeconds);
-            asyncJob = getAsyncJobRepository().lockAsyncJob(jobId);
+            throw new TryConsumeLaterException(e.getMessage(), e);
         }
 
         AsyncJobContext.create(asyncJob);

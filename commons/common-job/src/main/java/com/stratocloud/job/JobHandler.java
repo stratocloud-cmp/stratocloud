@@ -6,6 +6,7 @@ import com.stratocloud.messaging.MessageBus;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.AopContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,9 +42,10 @@ public interface JobHandler<P extends JobParameters> {
         return new ArrayList<>();
     }
 
+    @SuppressWarnings("unchecked")
     default List<String> collectSummaryData(Map<String, Object> jobParametersMap){
         P jobParameters = toTypedJobParameters(jobParametersMap);
-        return collectSummaryData(jobParameters);
+        return ((JobHandler<P>) AopContext.currentProxy()).collectSummaryData(jobParameters);
     }
 
     default P toTypedJobParameters(Map<String, Object> jobParametersMap) {

@@ -98,9 +98,14 @@ public class AliyunComputeServiceImpl extends AliyunAbstractService implements A
     private List<DescribeAvailableResourceResponseBody.DescribeAvailableResourceResponseBodyAvailableZonesAvailableZone> doDescribeAvailableResources(DescribeAvailableResourceRequest describeAvailableResourceRequest) {
         describeAvailableResourceRequest.setRegionId(config.getRegionId());
 
-        var result = tryInvoke(
+        var zones = tryInvoke(
                 () -> buildClient().describeAvailableResource(describeAvailableResourceRequest)
-        ).getBody().getAvailableZones().getAvailableZone();
+        ).getBody().getAvailableZones();
+
+        if(zones == null)
+            return new ArrayList<>();
+
+        var result = zones.getAvailableZone();
 
         if(Utils.isEmpty(result))
             return new ArrayList<>();
