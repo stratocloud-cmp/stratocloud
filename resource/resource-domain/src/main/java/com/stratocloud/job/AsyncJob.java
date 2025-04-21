@@ -15,6 +15,7 @@ import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -129,7 +130,7 @@ public class AsyncJob extends Controllable {
     }
 
     public void checkIfNotStartedSuccessfully(){
-        if(isAnyExecutionAwaitingStart() && isNoExecutionRunning()) {
+        if(isCreatedAnHourAgo() && isAnyExecutionAwaitingStart() && isNoExecutionRunning()) {
             this.ended = true;
             Message message = Message.create(
                     JobTopics.WORKER_REPORT_JOB_FAILED,
@@ -137,6 +138,11 @@ public class AsyncJob extends Controllable {
             );
             publish(message);
         }
+    }
+
+    private boolean isCreatedAnHourAgo() {
+        LocalDateTime createdAt = getCreatedAt();
+        return createdAt!=null && createdAt.isBefore(LocalDateTime.now().minusHours(1L));
     }
 
     private boolean isAnyExecutionAwaitingStart() {
