@@ -1,6 +1,6 @@
 StratoCloud
 ==========
-**StratoCloud**是一款开源的**多云/混合云管理平台(Cloud Management Platform, CMP)**，
+**StratoCloud**是一款开源的**多云/混合云管理平台(Multi-cloud and Hybrid-Cloud Management Platform, CMP)**，
 屏蔽多云/混合云环境不同云厂商之间操作逻辑和API的差异，帮助您实现云资源的一站式编排、申请、审批与管理。
 
 # 关键特性
@@ -28,7 +28,7 @@ StratoCloud
   * 支持通过SSH/WinRM在私有云环境部署软件或执行脚本
 
 # 逻辑架构
-![arch](./docs/architecture_20250423.jpg)
+![arch](./docs/architecture_20250424.jpg)
 
 # 为什么选择StratoCloud?
 * 多云/混合云管理
