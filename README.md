@@ -28,7 +28,7 @@ StratoCloud
   * 支持通过SSH/WinRM在私有云环境部署软件或执行脚本
 
 # 逻辑架构
-![arch](./docs/architecture_20250422.jpg)
+![arch](./docs/architecture_20250423.jpg)
 
 # 为什么选择StratoCloud?
 * 多云/混合云管理
