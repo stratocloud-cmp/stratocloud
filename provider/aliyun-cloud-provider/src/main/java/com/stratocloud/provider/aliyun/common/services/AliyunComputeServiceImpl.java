@@ -19,6 +19,7 @@ import com.stratocloud.provider.aliyun.nic.AliyunNic;
 import com.stratocloud.provider.aliyun.securitygroup.AliyunSecurityGroup;
 import com.stratocloud.provider.aliyun.securitygroup.policy.AliyunSecurityGroupPolicy;
 import com.stratocloud.provider.aliyun.securitygroup.policy.AliyunSecurityGroupPolicyId;
+import com.stratocloud.provider.aliyun.snapshot.AliyunSnapshot;
 import com.stratocloud.provider.aliyun.zone.AliyunZone;
 import com.stratocloud.resource.ResourceState;
 import com.stratocloud.utils.JSON;
@@ -1081,5 +1082,71 @@ public class AliyunComputeServiceImpl extends AliyunAbstractService implements A
                     invocation, invocation.detail().getInvocationStatus());
 
         return invocation;
+    }
+
+    @Override
+    public List<AliyunSnapshot> describeSnapshots(DescribeSnapshotsRequest request) {
+        request.setRegionId(config.getRegionId());
+        return queryAllByToken(
+                () -> buildClient().describeSnapshots(request).getBody(),
+                resp -> resp.getSnapshots().getSnapshot(),
+                resp -> resp.getNextToken(),
+                request::setNextToken
+        ).stream().map(
+                s -> new AliyunSnapshot(s)
+        ).toList();
+    }
+
+    @Override
+    public Optional<AliyunSnapshot> describeSnapshot(String snapshotId) {
+        DescribeSnapshotsRequest request = new DescribeSnapshotsRequest();
+        request.setSnapshotIds(JSON.toJsonString(List.of(snapshotId)));
+        return describeSnapshots(request).stream().findAny();
+    }
+
+    @Override
+    public String createSnapshot(CreateSnapshotRequest request) {
+        CreateSnapshotResponseBody responseBody = tryInvoke(
+                () -> buildClient().createSnapshot(request)
+        ).getBody();
+        String requestId = responseBody.getRequestId();
+        String snapshotId = responseBody.getSnapshotId();
+
+        log.info("Aliyun create snapshot request sent. RequestId={}. SnapshotId={}.",
+                requestId, snapshotId);
+
+        return snapshotId;
+    }
+
+    @Override
+    public void deleteSnapshot(String snapshotId) {
+        DeleteSnapshotRequest request = new DeleteSnapshotRequest();
+        request.setSnapshotId(snapshotId);
+        request.setForce(true);
+        DeleteSnapshotResponseBody responseBody = tryInvoke(
+                () -> buildClient().deleteSnapshot(request)
+        ).getBody();
+
+        log.info("Aliyun delete snapshot request sent. RequestId={}. SnapshotId={}.",
+                responseBody.getRequestId(), snapshotId);
+    }
+
+    @Override
+    public void rollbackToSnapshot(String diskId, String snapshotId, boolean dryRun) {
+        ResetDiskRequest request = new ResetDiskRequest();
+        request.setSnapshotId(snapshotId);
+        request.setDiskId(diskId);
+        request.setDryRun(dryRun);
+
+        if(dryRun){
+            tryInvoke(() -> buildClient().resetDisk(request));
+        } else {
+            ResetDiskResponseBody responseBody = tryInvoke(
+                    () -> buildClient().resetDisk(request)
+            ).getBody();
+
+            log.info("Aliyun reset disk request sent. RequestId={}. SnapshotId={}.",
+                    responseBody.getRequestId(), snapshotId);
+        }
     }
 }

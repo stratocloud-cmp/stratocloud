@@ -217,7 +217,7 @@ public class TencentEipHandler extends AbstractResourceHandler implements Monito
         Dimension dimension2 = new Dimension();
         dimension2.setName("appId");
         dimension2.setValue(appId);
-        instance.setDimensions(new Dimension[]{dimension});
+        instance.setDimensions(new Dimension[]{dimension, dimension2});
 
         request.setInstances(new com.tencentcloudapi.monitor.v20180724.models.Instance[]{instance});
         request.setPeriod(10L);

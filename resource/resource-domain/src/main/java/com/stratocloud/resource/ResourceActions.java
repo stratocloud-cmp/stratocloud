@@ -56,4 +56,7 @@ public class ResourceActions {
     public static final ResourceAction RESET_PASSWORD = new ResourceAction(
             "RESET_PASSWORD", "重置密码", 301
     );
+    public static final ResourceAction ROLLBACK_TO_SNAPSHOT = new ResourceAction(
+            "ROLLBACK_TO_SNAPSHOT", "恢复快照", 302
+    );
 }

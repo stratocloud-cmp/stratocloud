@@ -12,6 +12,7 @@ import com.stratocloud.provider.tencent.lb.rule.TencentL7RuleId;
 import com.stratocloud.provider.tencent.securitygroup.policy.TencentSecurityGroupPolicyId;
 import com.tencentcloudapi.cam.v20190116.models.GetUserAppIdResponse;
 import com.tencentcloudapi.cbs.v20170312.models.*;
+import com.tencentcloudapi.cbs.v20170312.models.Snapshot;
 import com.tencentcloudapi.clb.v20180317.models.*;
 import com.tencentcloudapi.cvm.v20170312.models.Image;
 import com.tencentcloudapi.cvm.v20170312.models.ZoneInfo;
@@ -280,4 +281,17 @@ public interface TencentCloudClient {
     void modifyInstancesAttribute(ModifyInstancesAttributeRequest request);
 
     void resetInstancesPassword(ResetInstancesPasswordRequest request);
+
+    List<Snapshot> describeSnapshots(DescribeSnapshotsRequest request);
+
+    Optional<Snapshot> describeSnapshot(String snapshotId);
+
+    String createSnapshot(CreateSnapshotRequest request);
+
+    void deleteSnapshot(String snapshotId);
+
+    void rollbackToSnapshot(String diskId,
+                            String snapshotId,
+                            Boolean autoStop,
+                            Boolean autoStart);
 }

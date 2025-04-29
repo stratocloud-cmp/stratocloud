@@ -26,6 +26,7 @@ import com.tencentcloudapi.cam.v20190116.models.GetUserAppIdRequest;
 import com.tencentcloudapi.cam.v20190116.models.GetUserAppIdResponse;
 import com.tencentcloudapi.cbs.v20170312.CbsClient;
 import com.tencentcloudapi.cbs.v20170312.models.*;
+import com.tencentcloudapi.cbs.v20170312.models.Snapshot;
 import com.tencentcloudapi.clb.v20180317.ClbClient;
 import com.tencentcloudapi.clb.v20180317.models.*;
 import com.tencentcloudapi.common.AbstractModel;
@@ -1828,5 +1829,70 @@ public class TencentCloudClientImpl implements TencentCloudClient{
                 () -> buildCvmClient().ResetInstancesPassword(request)
         );
         log.info("Tencent reset instances password request sent, requestId={}", response.getRequestId());
+    }
+
+
+    @Override
+    public List<Snapshot> describeSnapshots(DescribeSnapshotsRequest request){
+        return queryAll(
+                () -> buildCbsClient().DescribeSnapshots(request),
+                DescribeSnapshotsResponse::getSnapshotSet,
+                DescribeSnapshotsResponse::getTotalCount,
+                request::setOffset,
+                request::setLimit
+        );
+    }
+
+    @Override
+    public Optional<Snapshot> describeSnapshot(String snapshotId) {
+        DescribeSnapshotsRequest request = new DescribeSnapshotsRequest();
+
+        request.setSnapshotIds(new String[]{snapshotId});
+
+        return describeSnapshots(request).stream().findAny();
+    }
+
+    @Override
+    public String createSnapshot(CreateSnapshotRequest request) {
+        CreateSnapshotResponse response = tryInvoke(
+                () -> buildCbsClient().CreateSnapshot(request)
+        );
+
+        log.info("Tencent create snapshot request sent. RequestId={}. SnapshotId={}.",
+                response.getRequestId(), response.getSnapshotId());
+
+        return response.getSnapshotId();
+    }
+
+    @Override
+    public void deleteSnapshot(String snapshotId){
+        DeleteSnapshotsRequest request = new DeleteSnapshotsRequest();
+        request.setSnapshotIds(new String[]{snapshotId});
+        DeleteSnapshotsResponse response = tryInvoke(
+                () -> buildCbsClient().DeleteSnapshots(request)
+        );
+
+        log.info("Tencent delete snapshot request sent. RequestId={}. SnapshotId={}.",
+                response.getRequestId(), snapshotId);
+    }
+
+    @Override
+    public void rollbackToSnapshot(String diskId,
+                                   String snapshotId,
+                                   Boolean autoStop,
+                                   Boolean autoStart){
+        ApplySnapshotRequest request = new ApplySnapshotRequest();
+
+        request.setDiskId(diskId);
+        request.setSnapshotId(snapshotId);
+        request.setAutoStopInstance(autoStop);
+        request.setAutoStartInstance(autoStart);
+
+        ApplySnapshotResponse response = tryInvoke(
+                () -> buildCbsClient().ApplySnapshot(request)
+        );
+
+        log.info("Tencent apply snapshot request sent. RequestId={}. SnapshotId={}.",
+                response.getRequestId(), snapshotId);
     }
 }

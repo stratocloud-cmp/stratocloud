@@ -19,4 +19,14 @@ public interface HuaweiEvsService {
     void resizeVolume(String volumeId, Integer newSize);
 
     void updateVolume(UpdateVolumeRequest request);
+
+    Optional<SnapshotList> describeSnapshot(String snapshotId);
+
+    List<SnapshotList> describeSnapshots(ListSnapshotsRequest request);
+
+    String createSnapshot(CreateSnapshotRequest request);
+
+    void deleteSnapshot(String snapshotId);
+
+    void rollbackToSnapshot(String volumeId, String snapshotId);
 }

@@ -117,9 +117,9 @@ public abstract class HuaweiAbstractService {
     }
 
     protected <E> List<E> queryAll(Supplier<List<E>> supplier,
-                                 Consumer<Integer> limitSetter,
-                                 Consumer<String> markerSetter,
-                                 Function<E, String> idGetter){
+                                   Consumer<Integer> limitSetter,
+                                   Consumer<String> markerSetter,
+                                   Function<E, String> idGetter){
         int limit = 100;
         String marker;
 
@@ -136,6 +136,31 @@ public abstract class HuaweiAbstractService {
 
             marker = idGetter.apply(response.get(response.size()-1));
             markerSetter.accept(marker);
+            response = tryInvoke(supplier);
+        }
+
+        return result;
+    }
+
+    protected <E> List<E> queryAll(Supplier<List<E>> supplier,
+                                   Consumer<Integer> limitSetter,
+                                   Consumer<Integer> offsetSetter){
+        int limit = 100;
+
+        limitSetter.accept(limit);
+
+        List<E> result = new ArrayList<>();
+        offsetSetter.accept(0);
+        List<E> response = tryInvoke(supplier);
+
+
+        while (Utils.isNotEmpty(response)) {
+            result.addAll(response);
+
+            if(response.size() < limit)
+                break;
+
+            offsetSetter.accept(result.size());
             response = tryInvoke(supplier);
         }
 

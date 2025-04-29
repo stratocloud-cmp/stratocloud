@@ -82,4 +82,11 @@ public class Utils {
         int half = keepNumber/2;
         return s.substring(0, half) + " ...(Dropped)... " + s.substring(s.length()-half);
     }
+
+    public static boolean equalsIgnoreCase(String s1, String s2) {
+        if(s1 == null || s2 == null)
+            return false;
+
+        return s1.equalsIgnoreCase(s2);
+    }
 }

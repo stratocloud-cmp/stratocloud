@@ -279,4 +279,18 @@ public class ResourceCategories {
             "cloud-mq",
             261
     );
+    public static final ResourceCategory INSTANCE_SNAPSHOT = new ResourceCategory(
+            ResourceCategoryGroups.COMPUTE_INSTANCE_RELATED,
+            "INSTANCE_SNAPSHOT",
+            "云主机快照",
+            "vm-snapshot",
+            106
+    );
+    public static final ResourceCategory DISK_SNAPSHOT = new ResourceCategory(
+            ResourceCategoryGroups.STORAGE_RELATED,
+            "DISK_SNAPSHOT",
+            "云硬盘快照",
+            "disk-snapshot",
+            107
+    );
 }

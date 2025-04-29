@@ -145,4 +145,57 @@ public class HuaweiEvsServiceImpl extends HuaweiAbstractService implements Huawe
         if(!Objects.equals(currentStatus, ShowJobResponse.StatusEnum.SUCCESS))
             throw new StratoException("Evs job is in status %s.".formatted(currentStatus));
     }
+
+    @Override
+    public Optional<SnapshotList> describeSnapshot(String snapshotId) {
+        return describeSnapshots(
+                new ListSnapshotsRequest().withId(snapshotId)
+        ).stream().findAny();
+    }
+
+    @Override
+    public List<SnapshotList> describeSnapshots(ListSnapshotsRequest request){
+        return queryAll(
+                () -> buildClient().listSnapshots(request).getSnapshots(),
+                request::setLimit,
+                request::setOffset
+        );
+    }
+
+    @Override
+    public String createSnapshot(CreateSnapshotRequest request) {
+        String snapshotId = tryInvoke(
+                () -> buildClient().createSnapshot(request)
+        ).getSnapshot().getId();
+
+        log.info("Huawei create snapshot request sent. SnapshotId={}.", snapshotId);
+
+        return snapshotId;
+    }
+
+    @Override
+    public void deleteSnapshot(String snapshotId) {
+        tryInvoke(
+                () -> buildClient().deleteSnapshot(
+                        new DeleteSnapshotRequest().withSnapshotId(snapshotId)
+                )
+        );
+
+        log.info("Huawei delete snapshot request sent. SnapshotId={}.", snapshotId);
+    }
+
+    @Override
+    public void rollbackToSnapshot(String volumeId, String snapshotId) {
+        tryInvoke(
+                () -> buildClient().rollbackSnapshot(
+                        new RollbackSnapshotRequest().withSnapshotId(snapshotId).withBody(
+                                new RollbackSnapshotRequestBody().withRollback(
+                                        new RollbackSnapshotOption().withVolumeId(volumeId)
+                                )
+                        )
+                )
+        );
+
+        log.info("Huawei rollback snapshot request sent. SnapshotId={}.", snapshotId);
+    }
 }

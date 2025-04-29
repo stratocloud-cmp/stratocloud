@@ -13,6 +13,7 @@ import com.stratocloud.provider.aliyun.nic.AliyunNic;
 import com.stratocloud.provider.aliyun.securitygroup.AliyunSecurityGroup;
 import com.stratocloud.provider.aliyun.securitygroup.policy.AliyunSecurityGroupPolicy;
 import com.stratocloud.provider.aliyun.securitygroup.policy.AliyunSecurityGroupPolicyId;
+import com.stratocloud.provider.aliyun.snapshot.AliyunSnapshot;
 import com.stratocloud.provider.aliyun.zone.AliyunZone;
 
 import java.util.List;
@@ -151,4 +152,14 @@ public interface AliyunComputeService {
     Optional<AliyunInvocation> describeInvocation(String invokeId);
 
     AliyunInvocation runCommand(RunCommandRequest request);
+
+    List<AliyunSnapshot> describeSnapshots(DescribeSnapshotsRequest request);
+
+    Optional<AliyunSnapshot> describeSnapshot(String snapshotId);
+
+    String createSnapshot(CreateSnapshotRequest request);
+
+    void deleteSnapshot(String snapshotId);
+
+    void rollbackToSnapshot(String diskId, String snapshotId, boolean dryRun);
 }
