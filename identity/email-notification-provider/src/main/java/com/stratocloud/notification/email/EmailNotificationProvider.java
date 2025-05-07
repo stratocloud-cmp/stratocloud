@@ -54,7 +54,7 @@ public class EmailNotificationProvider implements NotificationProvider {
 
             mimeMessageHelper.setTo(user.getEmailAddress());
 
-            mimeMessageHelper.setSubject(receiver.getNotification().getPolicy().getEventTypeName());
+            mimeMessageHelper.setSubject(receiver.getNotification().getPolicy().getEventType().getEventTypeName());
 
             mimeMessageHelper.setText(receiver.getRenderedHtmlMessage(), true);
 
