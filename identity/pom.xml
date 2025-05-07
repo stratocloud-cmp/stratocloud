@@ -20,6 +20,8 @@
         <module>identity-application</module>
         <module>identity-domain</module>
         <module>identity-repository</module>
+        <module>email-notification-provider</module>
+        <module>identity-primitive</module>
     </modules>
 
 
