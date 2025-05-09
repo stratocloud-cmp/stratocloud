@@ -45,7 +45,7 @@ public class NotificationReceiver extends Auditable {
     }
 
     public void send(){
-        NotificationWay notificationWay = notification.getNotificationWay();
+        NotificationWay notificationWay = notification.getPolicy().getNotificationWay();
 
         try {
             notificationWay.getProvider().sendNotification(this);
