@@ -45,13 +45,13 @@ public class NotificationPolicyServiceImpl implements NotificationPolicyService 
 
         NotificationPolicy notificationPolicy = new NotificationPolicy(
                 eventType,
+                cmd.getPolicyKey(),
                 cmd.getName(),
                 cmd.getDescription(),
                 cmd.getReceiverType(),
                 cmd.getPresetUserIds(),
                 cmd.getPresetUserGroupIds(),
                 cmd.getPresetRoleIds(),
-                cmd.getReceiverProvidingScript(),
                 notificationWay,
                 cmd.getTemplate(),
                 cmd.getMaxNotificationTimes(),
@@ -79,7 +79,6 @@ public class NotificationPolicyServiceImpl implements NotificationPolicyService 
                 cmd.getPresetUserIds(),
                 cmd.getPresetUserGroupIds(),
                 cmd.getPresetRoleIds(),
-                cmd.getReceiverProvidingScript(),
                 cmd.getTemplate(),
                 cmd.getMaxNotificationTimes(),
                 cmd.getNotificationIntervalMinutes()
@@ -140,6 +139,7 @@ public class NotificationPolicyServiceImpl implements NotificationPolicyService 
 
         result.setEventType(notificationEventType.getEventType());
         result.setEventTypeName(notificationEventType.getEventTypeName());
+        result.setEventPropertiesExample(notificationEventType.getEventPropertiesExample());
 
         return result;
     }
@@ -151,13 +151,13 @@ public class NotificationPolicyServiceImpl implements NotificationPolicyService 
 
         result.setEventType(policy.getEventType().getEventType());
         result.setEventTypeName(policy.getEventType().getEventTypeName());
+        result.setPolicyKey(policy.getPolicyKey());
         result.setName(policy.getName());
         result.setDescription(policy.getDescription());
         result.setReceiverType(policy.getReceiverType());
         result.setPresetUserIds(policy.getPresetUserIds());
         result.setPresetUserGroupIds(policy.getPresetUserGroupIds());
         result.setPresetRoleIds(policy.getPresetRoleIds());
-        result.setReceiverProvidingScript(policy.getReceiverProvidingScript());
         result.setNotificationWayId(policy.getNotificationWay().getId());
         result.setNotificationWayName(policy.getNotificationWay().getName());
         result.setTemplate(policy.getTemplate());

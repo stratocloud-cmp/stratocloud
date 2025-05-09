@@ -132,4 +132,13 @@ public class SecurityUtil {
         byte[] bytes = Base64.getDecoder().decode(s);
         return new String(bytes);
     }
+
+    public static boolean isSensitiveProperty(String propertyName){
+        if(Utils.isBlank(propertyName))
+            return false;
+        String lowerCase = propertyName.toLowerCase();
+        return lowerCase.contains("pass") ||
+                lowerCase.contains("key") ||
+                lowerCase.contains("secret");
+    }
 }

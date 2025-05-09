@@ -1,8 +1,10 @@
 package com.stratocloud.notification;
 
+import com.stratocloud.auth.RunWithSystemSession;
 import com.stratocloud.exceptions.BadCommandException;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.jpa.entities.EntityUtil;
+import com.stratocloud.lock.DistributedLock;
 import com.stratocloud.notification.cmd.CreateNotificationWayCmd;
 import com.stratocloud.notification.cmd.DeleteNotificationWaysCmd;
 import com.stratocloud.notification.cmd.UpdateNotificationWayCmd;
@@ -14,11 +16,13 @@ import com.stratocloud.repository.NotificationWayRepository;
 import com.stratocloud.utils.Utils;
 import com.stratocloud.validate.ValidateRequest;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class NotificationWayServiceImpl implements NotificationWayService {
@@ -87,13 +91,10 @@ public class NotificationWayServiceImpl implements NotificationWayService {
     private void deleteNotificationWay(Long wayId, boolean force) {
         NotificationWay notificationWay = repository.findNotificationWay(wayId);
 
-        if(!force){
-            if(Utils.isNotEmpty(notificationWay.getNotifications()))
-                throw new BadCommandException("该通知方式下存在通知记录，无法删除");
-
+        if(!force)
             if(Utils.isNotEmpty(notificationWay.getPolicies()))
                 throw new BadCommandException("该通知方式下存在通知策略，无法删除");
-        }
+
 
         repository.delete(notificationWay);
     }
@@ -148,5 +149,20 @@ public class NotificationWayServiceImpl implements NotificationWayService {
         result.setErrorMessage(way.getErrorMessage());
 
         return result;
+    }
+
+    @RunWithSystemSession
+    @DistributedLock(lockName = "CHECK_NOTIFICATION_WAYS_STATE_SCHEDULED_JOB", waitIfLocked = false)
+    @Scheduled(fixedDelay = 60L, timeUnit = TimeUnit.MINUTES)
+    @Transactional
+    public void checkNotificationWaysState(){
+        List<NotificationWay> notificationWays = repository.findAll();
+
+        if(Utils.isEmpty(notificationWays))
+            return;
+
+        notificationWays.forEach(NotificationWay::checkConnectionQuietly);
+
+        repository.saveAll(notificationWays);
     }
 }

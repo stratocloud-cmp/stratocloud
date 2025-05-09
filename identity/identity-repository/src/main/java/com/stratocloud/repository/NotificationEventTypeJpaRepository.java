@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface NotificationEventTypeJpaRepository extends AuditableJpaRepository<NotificationEventType> {
     Optional<NotificationEventType> findByEventType(String eventType);
+
+    boolean existsByEventType(String evenType);
 }

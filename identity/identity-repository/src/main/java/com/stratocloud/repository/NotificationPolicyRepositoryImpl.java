@@ -11,6 +11,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Objects;
+
 @Repository
 public class NotificationPolicyRepositoryImpl extends AbstractTenantedRepository<NotificationPolicy, NotificationPolicyJpaRepository> implements NotificationPolicyRepository {
 
@@ -35,6 +38,18 @@ public class NotificationPolicyRepositoryImpl extends AbstractTenantedRepository
             spec = spec.and(getSearchSpec(search));
 
         return jpaRepository.findAll(spec, pageable);
+    }
+
+    @Override
+    public List<NotificationPolicy> findAllByEventType(String eventType) {
+        return findAll().stream().filter(
+                p -> Objects.equals(eventType, p.getEventType().getEventType())
+        ).toList();
+    }
+
+    @Override
+    public boolean existsByPolicyKey(String policyKey) {
+        return jpaRepository.existsByPolicyKey(policyKey);
     }
 
     private Specification<NotificationPolicy> getSearchSpec(String search) {

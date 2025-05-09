@@ -43,8 +43,6 @@ public class NotificationWay extends Tenanted {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NotificationPolicy> policies;
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Notification> notifications;
 
     public NotificationWay(String providerId,
                            String name,

@@ -13,6 +13,7 @@ public class NestedNotificationPolicy extends NestedTenanted {
     private String eventType;
     private String eventTypeName;
 
+    private String policyKey;
     private String name;
     private String description;
 
@@ -20,7 +21,6 @@ public class NestedNotificationPolicy extends NestedTenanted {
     private List<Long> presetUserIds;
     private List<Long> presetUserGroupIds;
     private List<Long> presetRoleIds;
-    private String receiverProvidingScript;
 
     private Long notificationWayId;
     private String notificationWayName;

@@ -17,7 +17,6 @@ public class UpdateNotificationPolicyCmd implements ApiCommand {
     private List<Long> presetUserIds;
     private List<Long> presetUserGroupIds;
     private List<Long> presetRoleIds;
-    private String receiverProvidingScript;
 
     private String template;
     private int maxNotificationTimes = 1;

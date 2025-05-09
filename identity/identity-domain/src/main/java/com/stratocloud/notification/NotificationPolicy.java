@@ -15,9 +15,15 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(
+        uniqueConstraints = @UniqueConstraint(name = "unique_idx_policy_key", columnNames = "policy_key")
+)
 public class NotificationPolicy extends Tenanted {
     @ManyToOne
     private NotificationEventType eventType;
+
+    @Column(nullable = false)
+    private String policyKey;
 
     @Column(nullable = false)
     private String name;
@@ -34,9 +40,6 @@ public class NotificationPolicy extends Tenanted {
     private List<Long> presetUserGroupIds;
     @Column
     private List<Long> presetRoleIds;
-    @Column(columnDefinition = "TEXT")
-    private String receiverProvidingScript;
-
 
     @ManyToOne
     private NotificationWay notificationWay;
@@ -51,25 +54,28 @@ public class NotificationPolicy extends Tenanted {
     private List<Notification> notifications;
 
     public NotificationPolicy(NotificationEventType eventType,
+                              String policyKey,
                               String name,
                               String description,
                               NotificationReceiverType receiverType,
                               List<Long> presetUserIds,
                               List<Long> presetUserGroupIds,
                               List<Long> presetRoleIds,
-                              String receiverProvidingScript,
                               NotificationWay notificationWay,
                               String template,
                               int maxNotificationTimes,
                               int notificationIntervalMinutes) {
+        if(maxNotificationTimes <= 0)
+            maxNotificationTimes = 1;
+
         this.eventType = eventType;
+        this.policyKey = policyKey;
         this.name = name;
         this.description = description;
         this.receiverType = receiverType;
         this.presetUserIds = presetUserIds;
         this.presetUserGroupIds = presetUserGroupIds;
         this.presetRoleIds = presetRoleIds;
-        this.receiverProvidingScript = receiverProvidingScript;
         this.notificationWay = notificationWay;
         this.template = template;
         this.maxNotificationTimes = maxNotificationTimes;
@@ -82,17 +88,18 @@ public class NotificationPolicy extends Tenanted {
                        List<Long> presetUserIds,
                        List<Long> presetUserGroupIds,
                        List<Long> presetRoleIds,
-                       String receiverProvidingScript,
                        String template,
                        int maxNotificationTimes,
                        int notificationIntervalMinutes){
+        if(maxNotificationTimes <= 0)
+            maxNotificationTimes = 1;
+
         this.name = name;
         this.description = description;
         this.receiverType = receiverType;
         this.presetUserIds = presetUserIds;
         this.presetUserGroupIds = presetUserGroupIds;
         this.presetRoleIds = presetRoleIds;
-        this.receiverProvidingScript = receiverProvidingScript;
         this.template = template;
         this.maxNotificationTimes = maxNotificationTimes;
         this.notificationIntervalMinutes = notificationIntervalMinutes;

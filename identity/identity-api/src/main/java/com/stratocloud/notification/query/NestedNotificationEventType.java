@@ -4,9 +4,12 @@ import com.stratocloud.request.query.NestedAuditable;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
+
 @Getter
 @Setter
 public class NestedNotificationEventType extends NestedAuditable {
     private String eventType;
     private String eventTypeName;
+    private Map<String, Object> eventPropertiesExample;
 }

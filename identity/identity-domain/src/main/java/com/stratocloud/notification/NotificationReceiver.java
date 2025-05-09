@@ -36,6 +36,14 @@ public class NotificationReceiver extends Auditable {
     @Column(columnDefinition = "TEXT")
     private String errorMessage;
 
+    public NotificationReceiver(Notification notification,
+                                Long receiverUserId,
+                                String receiverUserRealName) {
+        this.notification = notification;
+        this.receiverUserId = receiverUserId;
+        this.receiverUserRealName = receiverUserRealName;
+    }
+
     public void send(){
         NotificationWay notificationWay = notification.getNotificationWay();
 

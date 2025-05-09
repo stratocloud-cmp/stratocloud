@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stratocloud.jpa.entities.Tenanted;
 import com.stratocloud.utils.JSON;
+import com.stratocloud.utils.SecurityUtil;
 import com.stratocloud.utils.Utils;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -111,7 +112,7 @@ public class AuditLog extends Tenanted {
             Iterator<Map.Entry<String, JsonNode>> iterator = objectNode.fields();
             while (iterator.hasNext()){
                 Map.Entry<String, JsonNode> entry = iterator.next();
-                if(isSensitiveProperty(entry.getKey()))
+                if(SecurityUtil.isSensitiveProperty(entry.getKey()))
                     iterator.remove();
                 else
                     eraseSensitiveProperties(entry.getValue());
@@ -119,10 +120,5 @@ public class AuditLog extends Tenanted {
         }
     }
 
-    private boolean isSensitiveProperty(String propertyName){
-        return Utils.isNotBlank(propertyName) &&
-                propertyName.toLowerCase().contains("pass") &&
-                propertyName.toLowerCase().contains("key") &&
-                propertyName.toLowerCase().contains("secret");
-    }
+
 }

@@ -12,6 +12,7 @@ import com.stratocloud.resource.Relationship;
 import com.stratocloud.resource.RelationshipActionResult;
 import com.stratocloud.resource.ResourceSynchronizer;
 import com.stratocloud.resource.ResourceTaskLockService;
+import com.stratocloud.resource.event.ResourceRelationshipsEventHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -31,16 +32,20 @@ public class ConnectTaskHandler implements TaskHandler {
 
     private final ResourceTaskLockService resourceTaskLockService;
 
+    private final ResourceRelationshipsEventHandler eventHandler;
+
     public static final TaskType TASK_TYPE = new TaskType("CONNECT_RESOURCE", "资源建立关联任务");
 
     public ConnectTaskHandler(RelationshipRepository relationshipRepository,
                               ExternalAccountRepository accountRepository,
                               ResourceSynchronizer resourceSynchronizer,
-                              ResourceTaskLockService resourceTaskLockService) {
+                              ResourceTaskLockService resourceTaskLockService,
+                              ResourceRelationshipsEventHandler eventHandler) {
         this.relationshipRepository = relationshipRepository;
         this.accountRepository = accountRepository;
         this.resourceSynchronizer = resourceSynchronizer;
         this.resourceTaskLockService = resourceTaskLockService;
+        this.eventHandler = eventHandler;
     }
 
     @Override
@@ -88,11 +93,21 @@ public class ConnectTaskHandler implements TaskHandler {
                 relationship.onConnected();
                 task.onFinished();
                 resourceTaskLockService.releaseTaskLockOnTarget(relationship);
+
+                if(relationshipHandler.supportConnectEvent())
+                    eventHandler.handleEventQuietly(
+                            eventHandler.getEvent(relationship, true, true)
+                    );
             }
             case FAILED -> {
                 relationship.onConnectionFailed(result.errorMessage());
                 task.onFailed(result.errorMessage());
                 resourceTaskLockService.releaseTaskLockOnTarget(relationship);
+
+                if(relationshipHandler.supportConnectEvent())
+                    eventHandler.handleEventQuietly(
+                            eventHandler.getEvent(relationship, true,false)
+                    );
             }
             case STARTED -> log.warn("{} is connecting, checking later...", relationship.getEntityDescription());
         }

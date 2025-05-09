@@ -143,4 +143,18 @@ public interface RelationshipHandler {
     default boolean isolatedTargetContext(){
         return false;
     }
+
+    default boolean supportConnectEvent() {
+        boolean isChangeableEssential = this instanceof ChangeableEssentialHandler;
+        boolean isExclusiveRequirement = this instanceof ExclusiveRequirementHandler;
+        boolean isEssentialRequirement = this instanceof EssentialRequirementHandler;
+
+        return isChangeableEssential || (isExclusiveRequirement && !isEssentialRequirement);
+    }
+
+    default boolean supportDisconnectEvent() {
+        boolean isExclusiveRequirement = this instanceof ExclusiveRequirementHandler;
+        boolean isEssentialRequirement = this instanceof EssentialRequirementHandler;
+        return isExclusiveRequirement && !isEssentialRequirement;
+    }
 }

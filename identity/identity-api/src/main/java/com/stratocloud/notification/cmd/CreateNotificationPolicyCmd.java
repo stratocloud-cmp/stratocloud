@@ -12,6 +12,7 @@ public class CreateNotificationPolicyCmd implements ApiCommand {
 
     private String eventType;
 
+    private String policyKey;
     private String name;
     private String description;
 
@@ -19,7 +20,6 @@ public class CreateNotificationPolicyCmd implements ApiCommand {
     private List<Long> presetUserIds;
     private List<Long> presetUserGroupIds;
     private List<Long> presetRoleIds;
-    private String receiverProvidingScript;
 
     private Long notificationWayId;
     private String template;

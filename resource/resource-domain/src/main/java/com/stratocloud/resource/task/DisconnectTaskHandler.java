@@ -10,6 +10,7 @@ import com.stratocloud.provider.relationship.RelationshipHandler;
 import com.stratocloud.repository.ExternalAccountRepository;
 import com.stratocloud.repository.RelationshipRepository;
 import com.stratocloud.resource.*;
+import com.stratocloud.resource.event.ResourceRelationshipsEventHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -29,16 +30,20 @@ public class DisconnectTaskHandler implements TaskHandler {
 
     private final ResourceTaskLockService resourceTaskLockService;
 
+    private final ResourceRelationshipsEventHandler eventHandler;
+
     public static final TaskType TASK_TYPE = new TaskType("DISCONNECT_RESOURCE", "资源解除关联任务");
 
     public DisconnectTaskHandler(RelationshipRepository relationshipRepository,
                                  ExternalAccountRepository accountRepository,
                                  ResourceSynchronizer resourceSynchronizer,
-                                 ResourceTaskLockService resourceTaskLockService) {
+                                 ResourceTaskLockService resourceTaskLockService,
+                                 ResourceRelationshipsEventHandler eventHandler) {
         this.relationshipRepository = relationshipRepository;
         this.accountRepository = accountRepository;
         this.resourceSynchronizer = resourceSynchronizer;
         this.resourceTaskLockService = resourceTaskLockService;
+        this.eventHandler = eventHandler;
     }
 
     @Override
@@ -95,11 +100,21 @@ public class DisconnectTaskHandler implements TaskHandler {
                 relationship.onDisconnected();
                 task.onFinished();
                 resourceTaskLockService.releaseTaskLockOnTarget(relationship);
+
+                if(relationshipHandler.supportDisconnectEvent())
+                    eventHandler.handleEventQuietly(
+                            eventHandler.getEvent(relationship, false, true)
+                    );
             }
             case FAILED -> {
                 relationship.onDisconnectionFailed(result.errorMessage());
                 task.onFailed(result.errorMessage());
                 resourceTaskLockService.releaseTaskLockOnTarget(relationship);
+
+                if(relationshipHandler.supportDisconnectEvent())
+                    eventHandler.handleEventQuietly(
+                            eventHandler.getEvent(relationship, false, false)
+                    );
             }
             case STARTED -> log.warn("{} is disconnecting, checking later...", relationship.getEntityDescription());
         }

@@ -1,5 +1,7 @@
 package com.stratocloud.resource.task;
 
+import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.event.*;
 import com.stratocloud.job.Task;
 import com.stratocloud.job.TaskHandler;
 import com.stratocloud.job.TaskInputs;
@@ -7,14 +9,18 @@ import com.stratocloud.job.TaskType;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.repository.ResourceRepository;
 import com.stratocloud.resource.*;
+import com.stratocloud.resource.event.ResourceActionEventProperties;
+import com.stratocloud.resource.event.ResourceActionsEventHandler;
 import com.stratocloud.resource.license.LicensedResourcesLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -30,14 +36,18 @@ public class ResourceActionTaskHandler implements TaskHandler {
 
     private final LicensedResourcesLimiter licensedResourcesLimiter;
 
+    private final ResourceActionsEventHandler eventHandler;
+
     public ResourceActionTaskHandler(ResourceRepository resourceRepository,
                                      ResourceSynchronizer resourceSynchronizer,
                                      ResourceTaskLockService lockService,
-                                     LicensedResourcesLimiter licensedResourcesLimiter) {
+                                     LicensedResourcesLimiter licensedResourcesLimiter,
+                                     ResourceActionsEventHandler eventHandler) {
         this.resourceRepository = resourceRepository;
         this.resourceSynchronizer = resourceSynchronizer;
         this.lockService = lockService;
         this.licensedResourcesLimiter = licensedResourcesLimiter;
+        this.eventHandler = eventHandler;
     }
 
     @Override
@@ -104,15 +114,41 @@ public class ResourceActionTaskHandler implements TaskHandler {
                 resource.releasePreAllocatedUsagesByTaskId(task.getId());
                 task.onFinished();
                 lockService.releaseTaskLock(resource, action);
+                eventHandler.handleEventQuietly(getEvent(resource, action, parameters, true));
             }
             case FAILED -> {
                 task.onFailed(result.errorMessage());
                 lockService.releaseTaskLock(resource, action);
+                eventHandler.handleEventQuietly(getEvent(resource, action, parameters, false));
             }
             case STARTED -> log.warn("Task {} is running, checking later...", task.getId());
         }
 
         resourceRepository.save(resource);
+    }
+
+    private StratoEvent<ResourceActionEventProperties> getEvent(Resource resource,
+                                                                ResourceAction action,
+                                                                Map<String, Object> actionInputs,
+                                                                boolean success) {
+        ExternalAccount account = resource.getResourceHandler().getAccountRepository().findExternalAccount(
+                resource.getAccountId()
+        );
+        ResourceActionEventProperties eventProperties = ResourceActionEventProperties.create(
+                resource, account, action, actionInputs
+        );
+
+        StratoEventType eventType = eventHandler.getEventType(resource.getActionHandler(action.id()), success);
+        return new StratoEvent<>(
+                UUID.randomUUID().toString(),
+                eventType,
+                success ? StratoEventLevel.INFO : StratoEventLevel.WARNING,
+                StratoEventSource.STRATO_ACTION,
+                eventHandler.getEventObject(resource),
+                eventType.name() + ": " + resource.getName(),
+                LocalDateTime.now(),
+                eventProperties
+        );
     }
 
     @Override
