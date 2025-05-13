@@ -58,7 +58,8 @@ public class EventNotificationConsumer implements MessageConsumer {
         }
     }
 
-    private void createNotification(NotificationPolicy policy, EventNotificationPayload payload) {
+    private void createNotification(NotificationPolicy policy,
+                                    EventNotificationPayload payload) {
         Notification notification = new Notification(
                 payload.eventId(),
                 payload.eventLevel(),
@@ -70,7 +71,7 @@ public class EventNotificationConsumer implements MessageConsumer {
                 policy
         );
 
-        List<NotificationReceiver> receivers = getReceivers(policy, notification);
+        List<NotificationReceiver> receivers = getReceivers(policy, notification, payload);
 
         notification.setReceivers(receivers);
 
@@ -78,7 +79,8 @@ public class EventNotificationConsumer implements MessageConsumer {
     }
 
     private List<NotificationReceiver> getReceivers(NotificationPolicy policy,
-                                                    Notification notification) {
+                                                    Notification notification,
+                                                    EventNotificationPayload payload) {
         NotificationReceiverType receiverType = policy.getReceiverType();
 
         UserFilters userFilters = null;
@@ -124,6 +126,18 @@ public class EventNotificationConsumer implements MessageConsumer {
                     userFilters = new UserFilters(
                             null,
                             List.of(notification.getEventObjectOwnerId()),
+                            null,
+                            null,
+                            null,
+                            false,
+                            null
+                    );
+            }
+            case ORDER_HANDLERS -> {
+                if(Utils.isNotEmpty(payload.eventObject().orderHandlerIds()))
+                    userFilters = new UserFilters(
+                            null,
+                            payload.eventObject().orderHandlerIds(),
                             null,
                             null,
                             null,

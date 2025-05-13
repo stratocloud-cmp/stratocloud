@@ -55,6 +55,14 @@ public class JSON {
         }
     }
 
+    public static String toPrettyJsonString(Object o){
+        try {
+            return objectMapper.readTree(toJsonString(o)).toPrettyString();
+        } catch (JsonProcessingException e) {
+            throw new StratoException(e);
+        }
+    }
+
     public static <T> T toJavaObject(String s, Class<T> clazz){
         try {
             return objectMapper.readValue(s, clazz);

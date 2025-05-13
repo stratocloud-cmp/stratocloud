@@ -114,12 +114,12 @@ public class ResourceActionTaskHandler implements TaskHandler {
                 resource.releasePreAllocatedUsagesByTaskId(task.getId());
                 task.onFinished();
                 lockService.releaseTaskLock(resource, action);
-                eventHandler.handleEventQuietly(getEvent(resource, action, parameters, true));
+                eventHandler.handleEvent(getEvent(resource, action, parameters, true));
             }
             case FAILED -> {
                 task.onFailed(result.errorMessage());
                 lockService.releaseTaskLock(resource, action);
-                eventHandler.handleEventQuietly(getEvent(resource, action, parameters, false));
+                eventHandler.handleEvent(getEvent(resource, action, parameters, false));
             }
             case STARTED -> log.warn("Task {} is running, checking later...", task.getId());
         }

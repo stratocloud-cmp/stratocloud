@@ -11,6 +11,7 @@ import com.stratocloud.permission.DynamicPermissionRequired;
 import com.stratocloud.permission.PermissionItem;
 import com.stratocloud.repository.ResourceRepository;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceJobHelper;
 import com.stratocloud.resource.ResourcePermissionTarget;
 import com.stratocloud.resource.ResourceService;
 import com.stratocloud.resource.cmd.BatchTransferCmd;
@@ -37,14 +38,18 @@ public class BatchTransferResourcesJobHandler
 
     private final UserGatewayService userGatewayService;
 
+    private final ResourceJobHelper resourceJobHelper;
+
     public BatchTransferResourcesJobHandler(MessageBus messageBus,
                                             ResourceService resourceService,
                                             ResourceRepository resourceRepository,
-                                            UserGatewayService userGatewayService) {
+                                            UserGatewayService userGatewayService,
+                                            ResourceJobHelper resourceJobHelper) {
         this.messageBus = messageBus;
         this.resourceService = resourceService;
         this.resourceRepository = resourceRepository;
         this.userGatewayService = userGatewayService;
+        this.resourceJobHelper = resourceJobHelper;
     }
 
 
@@ -124,10 +129,12 @@ public class BatchTransferResourcesJobHandler
     @Transactional(readOnly = true)
     public Map<String, Object> prepareRuntimeProperties(BatchTransferCmd jobParameters) {
         List<NestedTag> nestedTags = new ArrayList<>();
+        List<Long> resourceIds = new ArrayList<>();
 
         if(Utils.isNotEmpty(jobParameters.getTransfers())){
             for (TransferCmd transferCmd : jobParameters.getTransfers()) {
                 Resource resource = resourceRepository.findResource(transferCmd.getResourceId());
+                resourceIds.add(resource.getId());
 
                 if(Utils.isNotEmpty(resource.getTags()))
                     nestedTags.addAll(resource.getTags());
@@ -136,7 +143,9 @@ public class BatchTransferResourcesJobHandler
 
         return Map.of(
                 JobContext.KEY_RELATED_TAGS,
-                TagRecord.fromNestedTags(nestedTags)
+                TagRecord.fromNestedTags(nestedTags),
+                JobContext.KEY_RESOURCES,
+                resourceJobHelper.getNestedResources(resourceIds)
         );
     }
 }

@@ -1,14 +1,12 @@
 package com.stratocloud.resource.jobs;
 
 import com.stratocloud.constant.StratoServices;
-import com.stratocloud.job.AsyncJob;
-import com.stratocloud.job.AsyncJobContext;
-import com.stratocloud.job.AsyncJobHandler;
-import com.stratocloud.job.JobContext;
+import com.stratocloud.job.*;
 import com.stratocloud.permission.DynamicPermissionRequired;
 import com.stratocloud.permission.PermissionItem;
 import com.stratocloud.repository.ResourceRepository;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceJobHelper;
 import com.stratocloud.resource.ResourcePermissionTarget;
 import com.stratocloud.resource.ResourceService;
 import com.stratocloud.resource.cmd.BatchRecycleCmd;
@@ -30,10 +28,14 @@ public class BatchRecycleJobHandler implements AsyncJobHandler<BatchRecycleCmd>,
 
     private final ResourceRepository resourceRepository;
 
+    private final ResourceJobHelper resourceJobHelper;
+
     public BatchRecycleJobHandler(ResourceService resourceService,
-                                  ResourceRepository resourceRepository) {
+                                  ResourceRepository resourceRepository,
+                                  ResourceJobHelper resourceJobHelper) {
         this.resourceService = resourceService;
         this.resourceRepository = resourceRepository;
+        this.resourceJobHelper = resourceJobHelper;
     }
 
     @Override
@@ -98,10 +100,13 @@ public class BatchRecycleJobHandler implements AsyncJobHandler<BatchRecycleCmd>,
     @Transactional(readOnly = true)
     public Map<String, Object> prepareRuntimeProperties(BatchRecycleCmd jobParameters) {
         List<NestedTag> nestedTags = new ArrayList<>();
+        List<Long> resourceIds = new ArrayList<>();
 
         if(Utils.isNotEmpty(jobParameters.getResources())){
             for (RecycleCmd recycleCmd : jobParameters.getResources()) {
                 Resource resource = resourceRepository.findResource(recycleCmd.getResourceId());
+
+                resourceIds.add(resource.getId());
 
                 if(Utils.isNotEmpty(resource.getTags()))
                     nestedTags.addAll(resource.getTags());
@@ -110,7 +115,9 @@ public class BatchRecycleJobHandler implements AsyncJobHandler<BatchRecycleCmd>,
 
         return Map.of(
                 JobContext.KEY_RELATED_TAGS,
-                TagRecord.fromNestedTags(nestedTags)
+                TagRecord.fromNestedTags(nestedTags),
+                JobContext.KEY_RESOURCES,
+                resourceJobHelper.getNestedResources(resourceIds)
         );
     }
 }

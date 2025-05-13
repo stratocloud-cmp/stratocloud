@@ -1,5 +1,6 @@
 package com.stratocloud.notification.email;
 
+import com.stratocloud.config.StratoConfiguration;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.notification.NotificationProvider;
 import com.stratocloud.notification.NotificationReceiver;
@@ -24,8 +25,12 @@ public class EmailNotificationProvider implements NotificationProvider {
 
     private final UserRepository userRepository;
 
-    public EmailNotificationProvider(UserRepository userRepository) {
+    private final StratoConfiguration stratoConfiguration;
+
+    public EmailNotificationProvider(UserRepository userRepository,
+                                     StratoConfiguration stratoConfiguration) {
         this.userRepository = userRepository;
+        this.stratoConfiguration = stratoConfiguration;
     }
 
     @Override
@@ -45,7 +50,7 @@ public class EmailNotificationProvider implements NotificationProvider {
         if(Utils.isBlank(user.getEmailAddress()))
             throw new StratoException("用户%s未设置邮箱".formatted(user.getRealName()));
 
-        JavaMailSender sender = getSender(receiver.getNotification().getNotificationWay());
+        JavaMailSender sender = getSender(receiver.getNotification().getPolicy().getNotificationWay());
 
         try {
             MimeMessage mimeMessage = sender.createMimeMessage();
@@ -56,7 +61,10 @@ public class EmailNotificationProvider implements NotificationProvider {
 
             mimeMessageHelper.setSubject(receiver.getNotification().getPolicy().getEventType().getEventTypeName());
 
-            mimeMessageHelper.setText(receiver.getRenderedHtmlMessage(), true);
+            mimeMessageHelper.setText(
+                    receiver.getRenderedHtmlMessage(stratoConfiguration.getStratoDomainName()),
+                    true
+            );
 
             sender.send(mimeMessage);
         }catch (Exception e){

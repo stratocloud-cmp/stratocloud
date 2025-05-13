@@ -7,6 +7,7 @@ import com.stratocloud.job.AsyncJobHandler;
 import com.stratocloud.job.JobContext;
 import com.stratocloud.repository.ResourceRepository;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceJobHelper;
 import com.stratocloud.resource.ResourceService;
 import com.stratocloud.resource.cmd.relationship.BatchChangeEssentialRequirementsCmd;
 import com.stratocloud.resource.cmd.relationship.ChangeEssentialRequirementCmd;
@@ -27,10 +28,14 @@ public class BatchChangeEssentialRequirementsJobHandler implements AsyncJobHandl
 
     private final ResourceRepository resourceRepository;
 
+    private final ResourceJobHelper resourceJobHelper;
+
     public BatchChangeEssentialRequirementsJobHandler(ResourceService resourceService,
-                                                      ResourceRepository resourceRepository) {
+                                                      ResourceRepository resourceRepository,
+                                                      ResourceJobHelper resourceJobHelper) {
         this.resourceService = resourceService;
         this.resourceRepository = resourceRepository;
+        this.resourceJobHelper = resourceJobHelper;
     }
 
     @Override
@@ -89,19 +94,26 @@ public class BatchChangeEssentialRequirementsJobHandler implements AsyncJobHandl
     @Transactional(readOnly = true)
     public Map<String, Object> prepareRuntimeProperties(BatchChangeEssentialRequirementsCmd jobParameters) {
         List<NestedTag> nestedTags = new ArrayList<>();
+        List<Long> resourceIds = new ArrayList<>();
 
         if(Utils.isNotEmpty(jobParameters.getChanges())){
             for (ChangeEssentialRequirementCmd change : jobParameters.getChanges()) {
                 Resource resource = resourceRepository.findResource(change.getSourceId());
 
+                resourceIds.add(resource.getId());
+
                 if(Utils.isNotEmpty(resource.getTags()))
                     nestedTags.addAll(resource.getTags());
             }
+
+
         }
 
         return Map.of(
                 JobContext.KEY_RELATED_TAGS,
-                TagRecord.fromNestedTags(nestedTags)
+                TagRecord.fromNestedTags(nestedTags),
+                JobContext.KEY_RESOURCES,
+                resourceJobHelper.getNestedResources(resourceIds)
         );
     }
 }

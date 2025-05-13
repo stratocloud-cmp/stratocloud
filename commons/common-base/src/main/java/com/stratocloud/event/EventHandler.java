@@ -4,8 +4,6 @@ import com.stratocloud.messaging.Message;
 import com.stratocloud.messaging.MessageBus;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
-import org.slf4j.LoggerFactory;
-import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -17,21 +15,11 @@ import java.util.Set;
 public interface EventHandler<P extends EventProperties> extends ApplicationContextAware {
     void handleEvent(StratoEvent<P> event);
 
-    default void handleEventQuietly(StratoEvent<P> event){
-        try {
-            @SuppressWarnings("unchecked")
-            EventHandler<P> eventHandler = (EventHandler<P>) AopContext.currentProxy();
-            eventHandler.handleEvent(event);
-        }catch (Exception e){
-            LoggerFactory.getLogger(getClass()).warn("Failed to handle event.", e);
-        }
-    }
-
     Set<StratoEventType> getSupportedEventTypes(ApplicationContext applicationContext);
 
     P getExampleEventProperties();
 
-    List<BuiltInNotificationPolicy> getBuiltInNotificationPolicies();
+    List<BuiltInNotificationPolicy> getBuiltInNotificationPolicies(ApplicationContext applicationContext);
 
     @Override
     default void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -47,7 +35,7 @@ public interface EventHandler<P extends EventProperties> extends ApplicationCont
                         new InitEventTypesPayload(
                                 new ArrayList<>(eventTypes),
                                 JSON.toMap(getExampleEventProperties()),
-                                getBuiltInNotificationPolicies()
+                                getBuiltInNotificationPolicies(applicationContext)
                         )
                 )
         );

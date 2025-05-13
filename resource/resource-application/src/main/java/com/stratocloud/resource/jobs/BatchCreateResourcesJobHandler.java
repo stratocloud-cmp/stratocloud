@@ -5,6 +5,7 @@ import com.stratocloud.job.AsyncJob;
 import com.stratocloud.job.AsyncJobContext;
 import com.stratocloud.job.AsyncJobHandler;
 import com.stratocloud.job.JobContext;
+import com.stratocloud.resource.ResourceJobHelper;
 import com.stratocloud.resource.ResourceService;
 import com.stratocloud.resource.cmd.BatchCreateResourcesCmd;
 import com.stratocloud.resource.cmd.create.CreateResourcesCmd;
@@ -22,8 +23,12 @@ public class BatchCreateResourcesJobHandler implements AsyncJobHandler<BatchCrea
 
     private final ResourceService resourceService;
 
-    public BatchCreateResourcesJobHandler(ResourceService resourceService) {
+    private final ResourceJobHelper resourceJobHelper;
+
+    public BatchCreateResourcesJobHandler(ResourceService resourceService,
+                                          ResourceJobHelper resourceJobHelper) {
         this.resourceService = resourceService;
+        this.resourceJobHelper = resourceJobHelper;
     }
 
     @Override
@@ -53,7 +58,9 @@ public class BatchCreateResourcesJobHandler implements AsyncJobHandler<BatchCrea
 
     @Override
     public void preCreateJob(BatchCreateResourcesCmd parameters) {
-        resourceService.create(parameters);
+        List<Long> resourceIds = resourceService.create(parameters).getResourceIds();
+
+        resourceJobHelper.addResourcesToJobContext(resourceIds);
     }
 
     @Override
@@ -62,7 +69,9 @@ public class BatchCreateResourcesJobHandler implements AsyncJobHandler<BatchCrea
 
         asyncJob.discardCurrentExecutions();
 
-        resourceService.create(parameters);
+        List<Long> resourceIds = resourceService.create(parameters).getResourceIds();
+
+        resourceJobHelper.addResourcesToJobContext(resourceIds);
     }
 
     @Override

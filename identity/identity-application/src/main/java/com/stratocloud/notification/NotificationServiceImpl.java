@@ -118,9 +118,10 @@ public class NotificationServiceImpl implements NotificationService{
         return new ResendNotificationResponse();
     }
 
-    @RunWithSystemSession
-    @DistributedLock(lockName = "SEND_NOTIFICATIONS_SCHEDULED_JOB", waitIfLocked = false)
+
     @Scheduled(fixedDelay = 10L, timeUnit = TimeUnit.SECONDS)
+    @DistributedLock(lockName = "SEND_NOTIFICATIONS_SCHEDULED_JOB", waitIfLocked = false)
+    @RunWithSystemSession
     public void sendNotifications() {
         List<NotificationPolicy> policies = notificationPolicyRepository.findAll();
 
@@ -156,9 +157,10 @@ public class NotificationServiceImpl implements NotificationService{
                     continue;
 
                 notification.sendToAll();
-                repository.save(notification);
             }catch (Exception e){
                 log.warn(e.toString());
+            }finally {
+                repository.save(notification);
             }
         }
     }

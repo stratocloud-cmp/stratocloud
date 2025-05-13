@@ -9,12 +9,14 @@ import com.stratocloud.permission.DynamicPermissionRequired;
 import com.stratocloud.permission.PermissionItem;
 import com.stratocloud.repository.ResourceRepository;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceJobHelper;
 import com.stratocloud.resource.ResourcePermissionTarget;
 import com.stratocloud.resource.ResourceService;
 import com.stratocloud.resource.cmd.BatchClaimCmd;
 import com.stratocloud.resource.cmd.BatchTransferCmd;
 import com.stratocloud.resource.cmd.ownership.ClaimCmd;
 import com.stratocloud.resource.cmd.ownership.TransferCmd;
+import com.stratocloud.utils.Utils;
 import org.apache.commons.collections.MapUtils;
 import org.springframework.stereotype.Component;
 
@@ -31,12 +33,16 @@ public class BatchClaimResourcesJobHandler
 
     private final ResourceRepository resourceRepository;
 
+    private final ResourceJobHelper resourceJobHelper;
+
     public BatchClaimResourcesJobHandler(MessageBus messageBus,
                                          ResourceService resourceService,
-                                         ResourceRepository resourceRepository) {
+                                         ResourceRepository resourceRepository,
+                                         ResourceJobHelper resourceJobHelper) {
         this.messageBus = messageBus;
         this.resourceService = resourceService;
         this.resourceRepository = resourceRepository;
+        this.resourceJobHelper = resourceJobHelper;
     }
 
 
@@ -69,6 +75,13 @@ public class BatchClaimResourcesJobHandler
     public void preCreateJob(BatchClaimCmd parameters) {
         JobContext.current().addOutput("newOwnerId", CallContext.current().getCallingUser().userId());
         JobContext.current().addOutput("newTenantId", CallContext.current().getCallingUser().tenantId());
+
+        if(Utils.isNotEmpty(parameters.getClaims()))
+            resourceJobHelper.addResourcesToJobContext(
+                    parameters.getClaims().stream().map(
+                            ClaimCmd::getResourceId
+                    ).toList()
+            );
     }
 
     @Override

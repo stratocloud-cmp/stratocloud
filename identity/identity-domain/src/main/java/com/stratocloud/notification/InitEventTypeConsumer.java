@@ -9,6 +9,7 @@ import com.stratocloud.repository.NotificationWayRepository;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class InitEventTypeConsumer implements MessageConsumer {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void consume(Message message) {
         InitEventTypesPayload payload = JSON.toJavaObject(message.getPayload(), InitEventTypesPayload.class);
 
@@ -72,26 +73,20 @@ public class InitEventTypeConsumer implements MessageConsumer {
 
                 NotificationWay notificationWay;
 
-                notificationWay = existedWay.orElse(
-                        notificationWayRepository.save(
-                                new NotificationWay(
-                                        builtInNotificationWay.providerId(),
-                                        builtInNotificationWay.name(),
-                                        builtInNotificationWay.description(),
-                                        builtInNotificationWay.properties()
-                                )
-                        )
-                );
+                notificationWay = existedWay.orElseGet(()->{
+                    NotificationWay newWay = new NotificationWay(
+                            builtInNotificationWay.providerId(),
+                            builtInNotificationWay.name(),
+                            builtInNotificationWay.description(),
+                            builtInNotificationWay.properties()
+                    );
+                    newWay.checkConnectionQuietly();
+                    return notificationWayRepository.save(newWay);
+                });
 
-                NotificationReceiverType receiverType;
-                if(Utils.isNotEmpty(policy.presetUserIds()))
-                    receiverType = NotificationReceiverType.PRESET_USERS;
-                else if(Utils.isNotEmpty(policy.presetRoleIds()))
-                    receiverType = NotificationReceiverType.PRESET_ROLES;
-                else if(Utils.isNotEmpty(policy.presetUserGroupIds()))
-                    receiverType = NotificationReceiverType.PRESET_USER_GROUPS;
-                else
-                    receiverType = NotificationReceiverType.EVENT_OBJECT_OWNER;
+                NotificationReceiverType receiverType = NotificationReceiverType.fromValue(
+                        policy.receiverType()
+                ).orElse(NotificationReceiverType.EVENT_OBJECT_OWNER);
 
                 NotificationPolicy notificationPolicy = new NotificationPolicy(
                         eventType,
@@ -108,7 +103,7 @@ public class InitEventTypeConsumer implements MessageConsumer {
                         policy.notificationIntervalMinutes()
                 );
 
-                notificationPolicyRepository.saveIgnoreDuplicateKey(notificationPolicy);
+                notificationPolicyRepository.save(notificationPolicy);
             }
         }
     }

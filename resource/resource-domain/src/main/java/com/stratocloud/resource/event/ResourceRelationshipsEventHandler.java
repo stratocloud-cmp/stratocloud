@@ -10,12 +10,16 @@ import com.stratocloud.resource.Relationship;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.ResourceCategory;
 import com.stratocloud.utils.Utils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Slf4j
 @Component
 public class ResourceRelationshipsEventHandler implements EventHandler<ResourceRelationshipEventProperties> {
 
@@ -30,16 +34,21 @@ public class ResourceRelationshipsEventHandler implements EventHandler<ResourceR
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleEvent(StratoEvent<ResourceRelationshipEventProperties> event) {
-        ResourceEvent resourceEvent = ResourceEvent.from(event);
-        eventRepository.save(resourceEvent);
+        try {
+            ResourceEvent resourceEvent = ResourceEvent.from(event);
+            eventRepository.save(resourceEvent);
 
-        messageBus.publishWithSystemSession(
-                Message.create(
-                        EventTopics.EVENT_NOTIFICATION_TOPIC,
-                        EventNotificationPayload.from(event)
-                )
-        );
+            messageBus.publishWithSystemSession(
+                    Message.create(
+                            EventTopics.EVENT_NOTIFICATION_TOPIC,
+                            EventNotificationPayload.from(event)
+                    )
+            );
+        }catch (Exception e){
+            log.warn("Failed to handle resource relationship event.", e);
+        }
     }
 
     @Override
@@ -109,7 +118,7 @@ public class ResourceRelationshipsEventHandler implements EventHandler<ResourceR
     }
 
     @Override
-    public List<BuiltInNotificationPolicy> getBuiltInNotificationPolicies() {
+    public List<BuiltInNotificationPolicy> getBuiltInNotificationPolicies(ApplicationContext applicationContext) {
         return List.of();
     }
 
@@ -122,7 +131,8 @@ public class ResourceRelationshipsEventHandler implements EventHandler<ResourceR
                 resourceCategory.name(),
                 source.getId(),
                 source.getName(),
-                source.getOwnerId()
+                source.getOwnerId(),
+                null
         );
     }
 

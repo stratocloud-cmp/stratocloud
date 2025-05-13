@@ -7,6 +7,7 @@ import com.stratocloud.job.AsyncJobHandler;
 import com.stratocloud.job.JobContext;
 import com.stratocloud.repository.ResourceRepository;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceJobHelper;
 import com.stratocloud.resource.ResourceService;
 import com.stratocloud.resource.cmd.BatchRunActionsCmd;
 import com.stratocloud.resource.cmd.action.RunActionCmd;
@@ -27,10 +28,14 @@ public class BatchRunActionsJobHandler implements AsyncJobHandler<BatchRunAction
 
     private final ResourceRepository resourceRepository;
 
+    private final ResourceJobHelper resourceJobHelper;
+
     public BatchRunActionsJobHandler(ResourceService resourceService,
-                                     ResourceRepository resourceRepository) {
+                                     ResourceRepository resourceRepository,
+                                     ResourceJobHelper resourceJobHelper) {
         this.resourceService = resourceService;
         this.resourceRepository = resourceRepository;
+        this.resourceJobHelper = resourceJobHelper;
     }
 
     @Override
@@ -89,10 +94,12 @@ public class BatchRunActionsJobHandler implements AsyncJobHandler<BatchRunAction
     @Transactional(readOnly = true)
     public Map<String, Object> prepareRuntimeProperties(BatchRunActionsCmd jobParameters) {
         List<NestedTag> nestedTags = new ArrayList<>();
+        List<Long> resourceIds = new ArrayList<>();
 
         if(Utils.isNotEmpty(jobParameters.getActions())){
             for (RunActionCmd runActionCmd : jobParameters.getActions()) {
                 Resource resource = resourceRepository.findResource(runActionCmd.getResourceId());
+                resourceIds.add(resource.getId());
 
                 if(Utils.isNotEmpty(resource.getTags()))
                     nestedTags.addAll(resource.getTags());
@@ -101,7 +108,9 @@ public class BatchRunActionsJobHandler implements AsyncJobHandler<BatchRunAction
 
         return Map.of(
                 JobContext.KEY_RELATED_TAGS,
-                TagRecord.fromNestedTags(nestedTags)
+                TagRecord.fromNestedTags(nestedTags),
+                JobContext.KEY_RESOURCES,
+                resourceJobHelper.getNestedResources(resourceIds)
         );
     }
 }

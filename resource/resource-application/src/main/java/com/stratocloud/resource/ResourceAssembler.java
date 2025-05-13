@@ -321,4 +321,10 @@ public class ResourceAssembler {
         EntityUtil.fillOwnerInfo(responsePage, userGatewayService);
         return responsePage;
     }
+
+    public List<NestedResourceResponse> convertList(List<Resource> list) {
+        List<NestedResourceResponse> result = list.stream().map(this::toResourceResponse).toList();
+        EntityUtil.fillOwnerInfo(result, userGatewayService);
+        return result;
+    }
 }

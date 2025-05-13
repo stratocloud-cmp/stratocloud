@@ -105,6 +105,7 @@ public class NotificationWayServiceImpl implements NotificationWayService {
     public Page<NestedNotificationWay> describeNotificationWays(DescribeNotificationWaysRequest request) {
         Page<NotificationWay> page = repository.page(
                 request.getSearch(),
+                request.getNotificationWayIds(),
                 request.getPageable()
         );
 
@@ -151,9 +152,10 @@ public class NotificationWayServiceImpl implements NotificationWayService {
         return result;
     }
 
-    @RunWithSystemSession
-    @DistributedLock(lockName = "CHECK_NOTIFICATION_WAYS_STATE_SCHEDULED_JOB", waitIfLocked = false)
+
     @Scheduled(fixedDelay = 60L, timeUnit = TimeUnit.MINUTES)
+    @DistributedLock(lockName = "CHECK_NOTIFICATION_WAYS_STATE_SCHEDULED_JOB", waitIfLocked = false)
+    @RunWithSystemSession
     @Transactional
     public void checkNotificationWaysState(){
         List<NotificationWay> notificationWays = repository.findAll();

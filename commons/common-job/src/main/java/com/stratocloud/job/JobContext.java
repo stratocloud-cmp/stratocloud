@@ -64,6 +64,8 @@ public class JobContext {
 
     public static final String KEY_RELATED_TAGS = "relatedTags";
 
+    public static final String KEY_RESOURCES = "resources";
+
     @SuppressWarnings("unchecked")
     public static void mergeRuntimeProperties(Map<String, Object> target, Map<String, Object> source){
         if(Utils.isEmpty(source))

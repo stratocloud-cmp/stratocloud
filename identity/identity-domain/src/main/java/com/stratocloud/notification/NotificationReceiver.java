@@ -1,5 +1,6 @@
 package com.stratocloud.notification;
 
+import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.jpa.entities.Auditable;
 import com.stratocloud.utils.Utils;
 import jakarta.persistence.*;
@@ -8,11 +9,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.Velocity;
 
+import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 @Slf4j
@@ -58,18 +59,31 @@ public class NotificationReceiver extends Auditable {
     }
 
 
-    public String getRenderedHtmlMessage() {
+    public String getRenderedHtmlMessage(String stratoDomainName) {
         Map<String, Object> inputParameters = new HashMap<>();
 
+        inputParameters.put("receiverId", receiverUserId);
         inputParameters.put("receiverName", receiverUserRealName);
+        inputParameters.put("domainName", stratoDomainName);
 
         if(Utils.isNotEmpty(notification.getEventProperties()))
             inputParameters.putAll(notification.getEventProperties());
 
-        TemplateEngine templateEngine = new TemplateEngine();
+        Velocity.init();
+        VelocityContext velocityContext = new VelocityContext(inputParameters);
 
-        Context context = new Context(Locale.getDefault(), inputParameters);
+        StringWriter stringWriter = new StringWriter();
 
-        return templateEngine.process(notification.getPolicy().getTemplate(), context);
+        boolean evaluated = Velocity.evaluate(
+                velocityContext,
+                stringWriter,
+                notification.getPolicy().getPolicyKey(),
+                notification.getPolicy().getTemplate()
+        );
+
+        if(!evaluated)
+            throw new StratoException("Velocity evaluation failed");
+
+        return stringWriter.toString();
     }
 }

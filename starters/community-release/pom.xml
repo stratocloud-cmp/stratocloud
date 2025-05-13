@@ -29,6 +29,11 @@
             <artifactId>identity-repository</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.stratocloud</groupId>
+            <artifactId>email-notification-provider</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <!--    resource modules    -->
         <dependency>
             <groupId>com.stratocloud</groupId>

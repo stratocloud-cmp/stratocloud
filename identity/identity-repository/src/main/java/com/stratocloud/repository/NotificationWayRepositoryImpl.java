@@ -11,6 +11,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Repository
 public class NotificationWayRepositoryImpl
         extends AbstractTenantedRepository<NotificationWay, NotificationWayJpaRepository>
@@ -30,11 +32,14 @@ public class NotificationWayRepositoryImpl
 
     @Override
     @Transactional(readOnly = true)
-    public Page<NotificationWay> page(String search, Pageable pageable) {
+    public Page<NotificationWay> page(String search, List<Long> notificationWayIds, Pageable pageable) {
         Specification<NotificationWay> spec = getCallingTenantSpec();
 
         if(Utils.isNotBlank(search))
             spec = spec.and(getSearchSpec(search));
+
+        if(Utils.isNotEmpty(notificationWayIds))
+            spec = spec.and(getIdSpec(notificationWayIds));
 
         return jpaRepository.findAll(spec, pageable);
     }

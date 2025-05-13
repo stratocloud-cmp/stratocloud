@@ -1,12 +1,13 @@
 package com.stratocloud.notification.internal;
 
-import com.stratocloud.auth.RunWithSystemSession;
+import com.stratocloud.config.StratoConfiguration;
 import com.stratocloud.notification.NotificationProvider;
 import com.stratocloud.notification.NotificationReceiver;
 import com.stratocloud.notification.NotificationWay;
 import com.stratocloud.notification.NotificationWayProperties;
 import com.stratocloud.repository.InternalMailRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
@@ -16,8 +17,12 @@ public class InternalMailNotificationProvider implements NotificationProvider {
 
     private final InternalMailRepository internalMailRepository;
 
-    public InternalMailNotificationProvider(InternalMailRepository internalMailRepository) {
+    private final StratoConfiguration stratoConfiguration;
+
+    public InternalMailNotificationProvider(InternalMailRepository internalMailRepository,
+                                            StratoConfiguration stratoConfiguration) {
         this.internalMailRepository = internalMailRepository;
+        this.stratoConfiguration = stratoConfiguration;
     }
 
     @Override
@@ -31,12 +36,15 @@ public class InternalMailNotificationProvider implements NotificationProvider {
     }
 
     @Override
-    @RunWithSystemSession
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendNotification(NotificationReceiver receiver) {
-        String renderedMessage = receiver.getRenderedHtmlMessage();
-        internalMailRepository.save(
-                new InternalMail(receiver.getReceiverUserId(), renderedMessage)
+        String renderedMessage = receiver.getRenderedHtmlMessage(stratoConfiguration.getStratoDomainName());
+        internalMailRepository.saveWithSystemSession(
+                new InternalMail(
+                        receiver.getNotification().getEventId(),
+                        receiver.getReceiverUserId(),
+                        renderedMessage
+                )
         );
     }
 

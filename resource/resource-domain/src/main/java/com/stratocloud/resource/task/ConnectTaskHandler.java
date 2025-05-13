@@ -95,7 +95,7 @@ public class ConnectTaskHandler implements TaskHandler {
                 resourceTaskLockService.releaseTaskLockOnTarget(relationship);
 
                 if(relationshipHandler.supportConnectEvent())
-                    eventHandler.handleEventQuietly(
+                    eventHandler.handleEvent(
                             eventHandler.getEvent(relationship, true, true)
                     );
             }
@@ -105,7 +105,7 @@ public class ConnectTaskHandler implements TaskHandler {
                 resourceTaskLockService.releaseTaskLockOnTarget(relationship);
 
                 if(relationshipHandler.supportConnectEvent())
-                    eventHandler.handleEventQuietly(
+                    eventHandler.handleEvent(
                             eventHandler.getEvent(relationship, true,false)
                     );
             }

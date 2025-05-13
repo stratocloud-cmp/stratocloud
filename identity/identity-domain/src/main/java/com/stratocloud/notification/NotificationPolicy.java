@@ -50,7 +50,7 @@ public class NotificationPolicy extends Tenanted {
     @Column(nullable = false)
     private int notificationIntervalMinutes = 30;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "policy")
     private List<Notification> notifications;
 
     public NotificationPolicy(NotificationEventType eventType,

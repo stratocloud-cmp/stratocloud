@@ -12,11 +12,14 @@ import com.stratocloud.notification.response.UpdateNotificationPolicyResponse;
 import com.stratocloud.repository.NotificationEventTypeRepository;
 import com.stratocloud.repository.NotificationPolicyRepository;
 import com.stratocloud.repository.NotificationWayRepository;
+import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
 import com.stratocloud.validate.ValidateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
 
 @Service
 public class NotificationPolicyServiceImpl implements NotificationPolicyService {
@@ -128,7 +131,11 @@ public class NotificationPolicyServiceImpl implements NotificationPolicyService 
     @Transactional(readOnly = true)
     @ValidateRequest
     public DescribeNotificationEventTypesResponse describeNotificationEventTypes(DescribeNotificationEventTypesRequest request) {
-        var list = eventTypeRepository.findAll().stream().map(this::toNestedNotificationEventType).toList();
+        var list = eventTypeRepository.findAll().stream().map(
+                this::toNestedNotificationEventType
+        ).sorted(
+                Comparator.comparing(NestedNotificationEventType::getEventType)
+        ).toList();
         return new DescribeNotificationEventTypesResponse(list);
     }
 
@@ -139,7 +146,7 @@ public class NotificationPolicyServiceImpl implements NotificationPolicyService 
 
         result.setEventType(notificationEventType.getEventType());
         result.setEventTypeName(notificationEventType.getEventTypeName());
-        result.setEventPropertiesExample(notificationEventType.getEventPropertiesExample());
+        result.setEventPropertiesExample(JSON.toPrettyJsonString(notificationEventType.getEventPropertiesExample()));
 
         return result;
     }

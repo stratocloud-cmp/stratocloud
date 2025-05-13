@@ -1,9 +1,11 @@
 package com.stratocloud.order.consumer;
 
+import com.stratocloud.event.StratoEventLevel;
 import com.stratocloud.jpa.repository.EntityManager;
 import com.stratocloud.messaging.Message;
 import com.stratocloud.messaging.MessageConsumer;
 import com.stratocloud.order.Order;
+import com.stratocloud.order.event.OrderEventHandler;
 import com.stratocloud.repository.OrderRepository;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.workflow.messaging.WorkflowReportWorkflowFinishedPayload;
@@ -20,9 +22,14 @@ public class WorkflowFinishedConsumer implements MessageConsumer {
     private final EntityManager entityManager;
     private final OrderRepository orderRepository;
 
-    public WorkflowFinishedConsumer(EntityManager entityManager, OrderRepository orderRepository) {
+    private final OrderEventHandler eventHandler;
+
+    public WorkflowFinishedConsumer(EntityManager entityManager,
+                                    OrderRepository orderRepository,
+                                    OrderEventHandler eventHandler) {
         this.entityManager = entityManager;
         this.orderRepository = orderRepository;
+        this.eventHandler = eventHandler;
     }
 
 
@@ -40,7 +47,15 @@ public class WorkflowFinishedConsumer implements MessageConsumer {
 
         order.get().onFinished();
 
-        orderRepository.save(order.get());
+        Order saved = orderRepository.save(order.get());
+
+        eventHandler.handleEvent(
+                eventHandler.getEvent(
+                        saved,
+                        OrderEventHandler.ORDER_FINISHED_EVENT_TYPE,
+                        StratoEventLevel.REMIND
+                )
+        );
     }
 
     @Override

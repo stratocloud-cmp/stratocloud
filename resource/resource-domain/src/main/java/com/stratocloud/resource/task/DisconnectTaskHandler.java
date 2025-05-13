@@ -102,7 +102,7 @@ public class DisconnectTaskHandler implements TaskHandler {
                 resourceTaskLockService.releaseTaskLockOnTarget(relationship);
 
                 if(relationshipHandler.supportDisconnectEvent())
-                    eventHandler.handleEventQuietly(
+                    eventHandler.handleEvent(
                             eventHandler.getEvent(relationship, false, true)
                     );
             }
@@ -112,7 +112,7 @@ public class DisconnectTaskHandler implements TaskHandler {
                 resourceTaskLockService.releaseTaskLockOnTarget(relationship);
 
                 if(relationshipHandler.supportDisconnectEvent())
-                    eventHandler.handleEventQuietly(
+                    eventHandler.handleEvent(
                             eventHandler.getEvent(relationship, false, false)
                     );
             }

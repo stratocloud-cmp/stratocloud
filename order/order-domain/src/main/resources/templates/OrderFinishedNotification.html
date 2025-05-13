@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+    <head>
+        <title>
+            工单审批通知
+        </title>
+    </head>
+    <body>
+        <div>
+            尊敬的用户(账号ID: ${receiverId}, 账号名: ${receiverName})<br>
+            您好, 您的工单已执行成功<br>
+            工单号: ${orderNo}<br>
+            #foreach ($orderItem in $orderItems)
+                #if ($orderItem.jobType=='BATCH_CREATE_RESOURCES')
+                    资源列表<br>
+                    <!--suppress HtmlDeprecatedAttribute -->
+                    <table border="1">
+                        #foreach ($resource in $runtimeProperties.resources)
+                        <tr>
+                            <td>
+                                $resource.name
+                            </td>
+                        </tr>
+                        #end
+                    </table>
+                #elseif ($summary)
+                    $summary
+                #end
+            #end
+            <!--suppress HtmlUnknownTarget -->
+            请前往<a href="${domainName}">${domainName}</a>查看
+        </div>
+    </body>
+</html>

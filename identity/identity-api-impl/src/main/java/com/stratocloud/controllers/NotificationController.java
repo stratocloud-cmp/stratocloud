@@ -11,10 +11,10 @@ import com.stratocloud.permission.PermissionRequired;
 import com.stratocloud.permission.PermissionTarget;
 import com.stratocloud.permission.ReadPermissionRequired;
 import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
-@Component
+@RestController
 @PermissionTarget(target = "Notification", targetName = "通知记录")
 public class NotificationController implements NotificationApi {
 

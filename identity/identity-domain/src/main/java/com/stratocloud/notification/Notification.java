@@ -61,7 +61,7 @@ public class Notification extends Tenanted {
 
     @ManyToOne
     private NotificationPolicy policy;
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "notification")
     private List<NotificationReceiver> receivers;
 
     public Notification(String eventId,

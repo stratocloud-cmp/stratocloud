@@ -36,12 +36,12 @@ public class NotificationWay extends Tenanted {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private NotificationProviderStatus providerStatus;
+    private NotificationProviderStatus providerStatus = NotificationProviderStatus.NO_STATE;
 
     @Column(columnDefinition = "TEXT")
     private String errorMessage;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "notificationWay")
     private List<NotificationPolicy> policies;
 
     public NotificationWay(String providerId,

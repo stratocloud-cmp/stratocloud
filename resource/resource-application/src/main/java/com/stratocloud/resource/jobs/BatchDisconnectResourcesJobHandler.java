@@ -7,6 +7,7 @@ import com.stratocloud.job.AsyncJobHandler;
 import com.stratocloud.job.JobContext;
 import com.stratocloud.repository.RelationshipRepository;
 import com.stratocloud.resource.Relationship;
+import com.stratocloud.resource.ResourceJobHelper;
 import com.stratocloud.resource.ResourceService;
 import com.stratocloud.resource.cmd.relationship.BatchDisconnectResourcesCmd;
 import com.stratocloud.tag.NestedTag;
@@ -26,10 +27,14 @@ public class BatchDisconnectResourcesJobHandler implements AsyncJobHandler<Batch
 
     private final RelationshipRepository relationshipRepository;
 
+    private final ResourceJobHelper resourceJobHelper;
+
     public BatchDisconnectResourcesJobHandler(ResourceService resourceService,
-                                              RelationshipRepository relationshipRepository) {
+                                              RelationshipRepository relationshipRepository,
+                                              ResourceJobHelper resourceJobHelper) {
         this.resourceService = resourceService;
         this.relationshipRepository = relationshipRepository;
+        this.resourceJobHelper = resourceJobHelper;
     }
 
     @Override
@@ -87,11 +92,12 @@ public class BatchDisconnectResourcesJobHandler implements AsyncJobHandler<Batch
     @Transactional(readOnly = true)
     public Map<String, Object> prepareRuntimeProperties(BatchDisconnectResourcesCmd jobParameters) {
         List<NestedTag> nestedTags = new ArrayList<>();
+        List<Long> resourceIds = new ArrayList<>();
 
         if(Utils.isNotEmpty(jobParameters.getRelationshipIds())){
             for (Long relationshipId : jobParameters.getRelationshipIds()) {
                 Relationship relationship = relationshipRepository.findRelationship(relationshipId);
-
+                resourceIds.add(relationship.getSource().getId());
                 if(Utils.isNotEmpty(relationship.getSource().getTags()))
                     nestedTags.addAll(relationship.getSource().getTags());
             }
@@ -99,7 +105,9 @@ public class BatchDisconnectResourcesJobHandler implements AsyncJobHandler<Batch
 
         return Map.of(
                 JobContext.KEY_RELATED_TAGS,
-                TagRecord.fromNestedTags(nestedTags)
+                TagRecord.fromNestedTags(nestedTags),
+                JobContext.KEY_RESOURCES,
+                resourceJobHelper.getNestedResources(resourceIds)
         );
     }
 }
