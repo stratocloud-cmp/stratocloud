@@ -4,9 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.stratocloud.exceptions.BadCommandException;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.exceptions.ProviderConnectionException;
+import com.stratocloud.identifier.SnowflakeId;
 import com.stratocloud.job.Task;
 import com.stratocloud.job.TaskTargetEntity;
 import com.stratocloud.jpa.entities.Controllable;
+import com.stratocloud.jpa.entities.EntityUtil;
 import com.stratocloud.provider.ProviderRegistry;
 import com.stratocloud.provider.relationship.*;
 import com.stratocloud.provider.resource.ResourceActionHandler;
@@ -185,6 +187,7 @@ public class Resource extends Controllable implements TaskTargetEntity {
                                        String relationshipTypeId,
                                        Map<String, Object> relationshipProperties) {
         Relationship requirement = createRelationship(this, target, relationshipTypeId, relationshipProperties);
+        EntityUtil.forceSetId(requirement, SnowflakeId.nextId());
         this.requirements.add(requirement);
         return requirement;
     }

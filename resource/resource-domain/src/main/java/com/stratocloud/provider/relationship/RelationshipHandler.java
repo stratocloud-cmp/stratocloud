@@ -145,16 +145,10 @@ public interface RelationshipHandler {
     }
 
     default boolean supportConnectEvent() {
-        boolean isChangeableEssential = this instanceof ChangeableEssentialHandler;
-        boolean isExclusiveRequirement = this instanceof ExclusiveRequirementHandler;
-        boolean isEssentialRequirement = this instanceof EssentialRequirementHandler;
-
-        return isChangeableEssential || (isExclusiveRequirement && !isEssentialRequirement);
+        return false;
     }
 
     default boolean supportDisconnectEvent() {
-        boolean isExclusiveRequirement = this instanceof ExclusiveRequirementHandler;
-        boolean isEssentialRequirement = this instanceof EssentialRequirementHandler;
-        return isExclusiveRequirement && !isEssentialRequirement;
+        return false;
     }
 }

@@ -3,9 +3,13 @@ package com.stratocloud.resource.event;
 import com.stratocloud.event.*;
 import com.stratocloud.messaging.Message;
 import com.stratocloud.messaging.MessageBus;
+import com.stratocloud.provider.ProviderRegistry;
 import com.stratocloud.provider.resource.ResourceActionHandler;
+import com.stratocloud.provider.resource.ResourceHandler;
+import com.stratocloud.provider.resource.event.EventAwareResourceHandler;
 import com.stratocloud.repository.ResourceEventRepository;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceAction;
 import com.stratocloud.resource.ResourceCategory;
 import com.stratocloud.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +18,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -34,6 +41,11 @@ public class ResourceActionsEventHandler implements EventHandler<ResourceActionE
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleEvent(StratoEvent<ResourceActionEventProperties> event) {
         try {
+            ResourceHandler resourceHandler = ProviderRegistry.getResourceHandler(event.properties().getResourceTypeId());
+
+            if(!(resourceHandler instanceof EventAwareResourceHandler))
+                return;
+
             ResourceEvent resourceEvent = ResourceEvent.from(event);
             eventRepository.save(resourceEvent);
 
@@ -49,16 +61,24 @@ public class ResourceActionsEventHandler implements EventHandler<ResourceActionE
     }
 
     public StratoEventType getEventType(ResourceActionHandler actionHandler, boolean success){
+        ResourceCategory resourceCategory = actionHandler.getResourceHandler().getResourceCategory();
+        ResourceAction resourceAction = actionHandler.getAction();
+        return getEventType(resourceCategory, resourceAction, success);
+    }
+
+    public static StratoEventType getEventType(ResourceCategory resourceCategory,
+                                               ResourceAction resourceAction,
+                                               boolean success) {
         String eventTypePrefix = "%s.%s".formatted(
-                actionHandler.getResourceHandler().getResourceCategory().id(),
-                actionHandler.getAction().id()
+                resourceCategory.id(),
+                resourceAction.id()
         );
         String eventTypeSuffix = success ? ".SUCCESS" : ".FAILED";
         String eventType = eventTypePrefix + eventTypeSuffix;
 
         String eventTypeNamePrefix = "%s%s".formatted(
-                actionHandler.getResourceHandler().getResourceCategory().name(),
-                actionHandler.getAction().name()
+                resourceCategory.name(),
+                resourceAction.name()
         );
         String eventTypeNameSuffix = success ? "成功" : "失败";
         String eventTypeName = eventTypeNamePrefix + eventTypeNameSuffix;
@@ -79,6 +99,9 @@ public class ResourceActionsEventHandler implements EventHandler<ResourceActionE
             return eventTypes;
 
         for (ResourceActionHandler actionHandler : handlerMap.values()) {
+            if(!(actionHandler.getResourceHandler() instanceof EventAwareResourceHandler))
+                continue;
+
             StratoEventType successEventType = getEventType(actionHandler, true);
             StratoEventType failedEventType = getEventType(actionHandler, false);
 

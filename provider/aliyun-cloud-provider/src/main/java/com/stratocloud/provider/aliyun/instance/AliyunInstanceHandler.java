@@ -5,15 +5,15 @@ import com.aliyun.ecs20140526.models.DescribeInstancesRequest;
 import com.aliyun.ecs20140526.models.DescribePriceRequest;
 import com.aliyun.ecs20140526.models.DescribeRenewalPriceRequest;
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.event.ExternalResourceEvent;
+import com.stratocloud.event.StratoEventLevel;
+import com.stratocloud.event.StratoEventSource;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.RuntimePropertiesUtil;
 import com.stratocloud.provider.aliyun.AliyunCloudProvider;
-import com.stratocloud.provider.aliyun.common.AliyunClient;
-import com.stratocloud.provider.aliyun.common.AliyunMetricDataPoint;
-import com.stratocloud.provider.aliyun.common.AliyunMetricUtil;
-import com.stratocloud.provider.aliyun.common.AliyunTimeUtil;
+import com.stratocloud.provider.aliyun.common.*;
 import com.stratocloud.provider.aliyun.common.services.AliyunCmsService;
 import com.stratocloud.provider.aliyun.disk.AliyunDisk;
 import com.stratocloud.provider.aliyun.instance.command.AliyunPowerShellCommandExecutorFactory;
@@ -22,6 +22,7 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.constants.UsageTypes;
 import com.stratocloud.provider.guest.GuestOsHandler;
 import com.stratocloud.provider.guest.command.ProviderGuestCommandExecutorFactory;
+import com.stratocloud.provider.resource.event.EventAwareResourceHandler;
 import com.stratocloud.provider.resource.monitor.MonitoredResourceHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.resource.monitor.ResourceQuickStats;
@@ -40,7 +41,7 @@ import java.util.Optional;
 
 @Component
 public class AliyunInstanceHandler extends AbstractResourceHandler
-        implements MonitoredResourceHandler, GuestOsHandler {
+        implements MonitoredResourceHandler, GuestOsHandler, EventAwareResourceHandler {
 
     private final AliyunCloudProvider provider;
 
@@ -452,5 +453,46 @@ public class AliyunInstanceHandler extends AbstractResourceHandler
             return List.of(powerShellCommandExecutorFactory);
         else
             return List.of();
+    }
+
+    @Override
+    public List<ExternalResourceEvent> describeResourceEvents(ExternalAccount account,
+                                                              String externalId,
+                                                              LocalDateTime happenedAfter) {
+        AliyunClient client = provider.buildClient(account);
+
+        List<String> eventNames = AliyunEventTypes.instanceEventTypes.stream().map(
+                AliyunEventTypes.AliyunEventType::externalEventName
+        ).toList();
+
+        List<AliyunEvent> events = client.trail().describeEvents(
+                eventNames, "ACS::ECS::Instance", externalId, happenedAfter
+        );
+
+        List<ExternalResourceEvent> result = new ArrayList<>();
+
+        for (AliyunEvent event : events) {
+            var aliyunEventType = AliyunEventTypes.fromInstanceEventName(event.getEventName());
+
+            if(aliyunEventType.isEmpty())
+                continue;
+
+            ExternalResourceEvent externalResourceEvent = new ExternalResourceEvent(
+                    event.getRequestId(),
+                    aliyunEventType.get().eventType(),
+                    StratoEventLevel.INFO,
+                    StratoEventSource.EXTERNAL_ACTION,
+                    getResourceTypeId(),
+                    account.getId(),
+                    externalId,
+                    event.getEventName(),
+                    AliyunTimeUtil.toLocalDateTime(event.getEventTime())
+            );
+            result.add(
+                    externalResourceEvent
+            );
+        }
+
+        return result;
     }
 }

@@ -17,6 +17,7 @@ import com.stratocloud.provider.tencent.lb.rule.TencentL7Rule;
 import com.stratocloud.provider.tencent.lb.rule.TencentL7RuleId;
 import com.stratocloud.provider.tencent.securitygroup.policy.TencentSecurityGroupPolicyId;
 import com.stratocloud.utils.JSON;
+import com.stratocloud.utils.TimeUtil;
 import com.stratocloud.utils.concurrent.SleepUtil;
 import com.stratocloud.utils.Utils;
 import com.tencentcloudapi.billing.v20180709.BillingClient;
@@ -29,6 +30,11 @@ import com.tencentcloudapi.cbs.v20170312.models.*;
 import com.tencentcloudapi.cbs.v20170312.models.Snapshot;
 import com.tencentcloudapi.clb.v20180317.ClbClient;
 import com.tencentcloudapi.clb.v20180317.models.*;
+import com.tencentcloudapi.cloudaudit.v20190319.CloudauditClient;
+import com.tencentcloudapi.cloudaudit.v20190319.models.DescribeEventsRequest;
+import com.tencentcloudapi.cloudaudit.v20190319.models.DescribeEventsResponse;
+import com.tencentcloudapi.cloudaudit.v20190319.models.Event;
+import com.tencentcloudapi.cloudaudit.v20190319.models.LookupAttribute;
 import com.tencentcloudapi.common.AbstractModel;
 import com.tencentcloudapi.common.Credential;
 import com.tencentcloudapi.common.exception.TencentCloudSDKException;
@@ -58,6 +64,7 @@ import com.tencentcloudapi.vpc.v20170312.VpcClient;
 import com.tencentcloudapi.vpc.v20170312.models.*;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -177,6 +184,10 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
     private TatClient buildTatClient(){
         return new TatClient(credential, region, createClientProfile());
+    }
+
+    private CloudauditClient buildAuditClient(){
+        return new CloudauditClient(credential, region, createClientProfile());
     }
 
     private String buildCacheKey(String targetName, AbstractModel queryRequest){
@@ -1894,5 +1905,77 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
         log.info("Tencent apply snapshot request sent. RequestId={}. SnapshotId={}.",
                 response.getRequestId(), snapshotId);
+    }
+
+
+    @Override
+    public List<Event> describeEvents(List<String> eventNames,
+                                      String resourceType,
+                                      String resourceId,
+                                      LocalDateTime startTime) {
+        DescribeEventsRequest request = new DescribeEventsRequest();
+
+        List<LookupAttribute> attributes = new ArrayList<>();
+        if(Utils.isNotEmpty(eventNames)){
+            for (String eventName : eventNames) {
+                LookupAttribute attribute = new LookupAttribute();
+                attribute.setAttributeKey("EventName");
+                attribute.setAttributeValue(eventName);
+                attributes.add(attribute);
+            }
+        }
+
+        if(Utils.isNotBlank(resourceType)){
+            LookupAttribute attribute = new LookupAttribute();
+            attribute.setAttributeKey("ResourceType");
+            attribute.setAttributeValue(resourceType);
+            attributes.add(attribute);
+        }
+
+        if(Utils.isNotBlank(resourceId)){
+            LookupAttribute attribute = new LookupAttribute();
+            attribute.setAttributeKey("ResourceId");
+            attribute.setAttributeValue(resourceId);
+            attributes.add(attribute);
+        }
+
+        LookupAttribute actionTypeAttribute = new LookupAttribute();
+
+        actionTypeAttribute.setAttributeKey("ActionType");
+        actionTypeAttribute.setAttributeValue("Write");
+        attributes.add(actionTypeAttribute);
+
+        LocalDateTime endTime = LocalDateTime.now().minusSeconds(5L);
+        LocalDateTime earliestStartTime = endTime.minusDays(30L).plusSeconds(1L);
+
+        if(earliestStartTime.isAfter(startTime))
+            startTime = earliestStartTime;
+
+        request.setLookupAttributes(attributes.toArray(LookupAttribute[]::new));
+        request.setStartTime(startTime.atZone(TimeUtil.BEIJING_ZONE_ID).toEpochSecond());
+        request.setEndTime(endTime.atZone(TimeUtil.BEIJING_ZONE_ID).toEpochSecond());
+        request.setMaxResults(50L);
+
+        boolean listOver = false;
+        Long nextToken = null;
+        List<Event> result = new ArrayList<>();
+
+        while (!listOver){
+            try {
+                request.setNextToken(nextToken);
+                DescribeEventsResponse response = tryInvoke(() -> buildAuditClient().DescribeEvents(request));
+                if(Utils.isEmpty(response.getEvents()))
+                    break;
+
+                result.addAll(List.of(response.getEvents()));
+                listOver = response.getListOver() == null || response.getListOver();
+                nextToken = response.getNextToken();
+            }catch (Exception e){
+                log.warn("Failed to retrieve tencent events.", e);
+                break;
+            }
+        }
+
+        return result;
     }
 }

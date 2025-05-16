@@ -46,13 +46,14 @@ public class JobHandlerGatewayServiceImpl implements JobHandlerGatewayService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<String> collectSummaryData(Job job) {
-        var jobHandler = JobHandlerRegistry.getJobHandler(
+        var jobHandler = (JobHandler<JobParameters>) JobHandlerRegistry.getJobHandler(
                 job.getJobDefinition().getJobType()
         );
         Map<String, Object> runtimeProperties = job.getJobNodeInstance().getWorkflowInstance().getRuntimeProperties();
         JobContext.create(job.getId(), job.getJobDefinition().getJobType(), runtimeProperties);
-        return jobHandler.collectSummaryData(job.getParameters());
+        return jobHandler.collectSummaryData(jobHandler.toTypedJobParameters(job.getParameters()));
     }
 
     @Override

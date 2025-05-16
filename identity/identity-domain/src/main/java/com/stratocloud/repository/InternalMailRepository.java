@@ -6,5 +6,5 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface InternalMailRepository extends AuditableRepository<InternalMail> {
-    Page<InternalMail> page(String search, Pageable pageable);
+    Page<InternalMail> page(String search, Boolean read, Pageable pageable);
 }

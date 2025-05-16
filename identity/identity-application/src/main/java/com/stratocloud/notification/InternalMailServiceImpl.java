@@ -4,7 +4,7 @@ import com.stratocloud.exceptions.EntityNotFoundException;
 import com.stratocloud.jpa.entities.EntityUtil;
 import com.stratocloud.notification.cmd.MarkInternalMailsReadCmd;
 import com.stratocloud.notification.internal.InternalMail;
-import com.stratocloud.notification.query.DescribeInternalMailRequest;
+import com.stratocloud.notification.query.DescribeInternalMailsRequest;
 import com.stratocloud.notification.query.NestedInternalMail;
 import com.stratocloud.notification.response.MarkInternalMailsReadResponse;
 import com.stratocloud.repository.InternalMailRepository;
@@ -26,9 +26,10 @@ public class InternalMailServiceImpl implements InternalMailService{
     @Override
     @Transactional(readOnly = true)
     @ValidateRequest
-    public Page<NestedInternalMail> describeInternalMails(DescribeInternalMailRequest request) {
+    public Page<NestedInternalMail> describeInternalMails(DescribeInternalMailsRequest request) {
         Page<InternalMail> page = repository.page(
                 request.getSearch(),
+                request.getRead(),
                 request.getPageable()
         );
         return page.map(this::toNestedInternalMail);

@@ -81,4 +81,9 @@ public class AliyunClientImpl implements AliyunClient {
     public AliyunCmsService cms() {
         return new AliyunCmsServiceImpl(cacheService, config);
     }
+
+    @Override
+    public AliyunTrailService trail(){
+        return new AliyunTrailServiceImpl(cacheService, config);
+    }
 }

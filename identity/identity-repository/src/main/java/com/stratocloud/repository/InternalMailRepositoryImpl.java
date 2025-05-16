@@ -22,7 +22,7 @@ public class InternalMailRepositoryImpl
 
     @Override
     @Transactional(readOnly = true)
-    public Page<InternalMail> page(String search, Pageable pageable) {
+    public Page<InternalMail> page(String search, Boolean read, Pageable pageable) {
         Specification<InternalMail> spec = getSpec();
 
         spec = spec.and(getReceiverIdSpec());
@@ -30,7 +30,15 @@ public class InternalMailRepositoryImpl
         if(Utils.isNotBlank(search))
             spec = spec.and(getSearchSpec(search));
 
+        if(read != null)
+            spec = spec.and(getReadSpec(read));
+
         return jpaRepository.findAll(spec, pageable);
+    }
+
+    private Specification<InternalMail> getReadSpec(Boolean read) {
+        return (root, query, criteriaBuilder)
+                -> criteriaBuilder.equal(root.get("read"), read);
     }
 
     private Specification<InternalMail> getSearchSpec(String search) {

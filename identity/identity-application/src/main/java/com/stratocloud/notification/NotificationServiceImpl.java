@@ -10,6 +10,7 @@ import com.stratocloud.notification.query.NestedNotificationReceiver;
 import com.stratocloud.notification.response.ResendNotificationResponse;
 import com.stratocloud.repository.NotificationPolicyRepository;
 import com.stratocloud.repository.NotificationRepository;
+import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
 import com.stratocloud.validate.ValidateRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +70,7 @@ public class NotificationServiceImpl implements NotificationService{
         result.setEventSummary(notification.getEventSummary());
         result.setEventHappenedAt(notification.getEventHappenedAt());
 
-        result.setEventProperties(notification.getEventProperties());
+        result.setEventProperties(JSON.toPrettyJsonString(notification.getEventProperties()));
         result.setSentCount(notification.getSentCount());
         result.setLastSentTime(notification.getLastSentTime());
         result.setNotificationPolicyId(policy.getId());

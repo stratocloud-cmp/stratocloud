@@ -1,9 +1,12 @@
 package com.stratocloud.resource.event;
 
+import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.event.ExternalResourceEvent;
 import com.stratocloud.event.StratoEvent;
 import com.stratocloud.event.StratoEventLevel;
 import com.stratocloud.event.StratoEventSource;
 import com.stratocloud.jpa.entities.Controllable;
+import com.stratocloud.resource.Resource;
 import com.stratocloud.utils.JSON;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,6 +19,8 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -87,5 +92,56 @@ public class ResourceEvent extends Controllable {
         resourceEvent.setOwnerId(event.properties().getResourceOwnerId());
         resourceEvent.setTenantId(event.properties().getResourceTenantId());
         return resourceEvent;
+    }
+
+    public static ResourceEvent from(ExternalAccount account,
+                                     Resource resource,
+                                     ExternalResourceEvent externalEvent) {
+        ResourceEvent resourceEvent = new ResourceEvent();
+        resourceEvent.setInternalEventId(UUID.randomUUID().toString());
+        resourceEvent.setExternalEventId(externalEvent.id());
+        resourceEvent.setEventType(externalEvent.type().id());
+        resourceEvent.setEventTypeName(externalEvent.type().name());
+        resourceEvent.setLevel(externalEvent.level());
+        resourceEvent.setSource(externalEvent.source());
+        resourceEvent.setSummary(externalEvent.message());
+        resourceEvent.setEventHappenedAt(externalEvent.happenedAt());
+        resourceEvent.setEventProperties(Map.of());
+        resourceEvent.setProviderId(account.getProvider().getId());
+        resourceEvent.setProviderName(account.getProvider().getName());
+        resourceEvent.setAccountId(account.getId());
+        resourceEvent.setAccountName(account.getName());
+        resourceEvent.setResourceCategory(resource.getCategory());
+        resourceEvent.setResourceCategoryName(resource.getResourceHandler().getResourceCategory().name());
+        resourceEvent.setResourceTypeId(resource.getResourceHandler().getResourceTypeId());
+        resourceEvent.setResourceTypeName(resource.getResourceHandler().getResourceTypeName());
+        resourceEvent.setResourceId(resource.getId());
+        resourceEvent.setResourceName(resource.getName());
+        resourceEvent.setOwnerId(resource.getOwnerId());
+        resourceEvent.setTenantId(resource.getTenantId());
+        return resourceEvent;
+    }
+
+    public void updateByExternal(ExternalResourceEvent externalEvent) {
+        setExternalEventId(externalEvent.id());
+    }
+
+    public boolean isSameEvent(Resource resource, ExternalResourceEvent externalEvent) {
+        if(Objects.equals(externalEventId, externalEvent.id()))
+            return true;
+
+        if(!Objects.equals(accountId, externalEvent.accountId()))
+            return false;
+
+        if(!Objects.equals(resourceId, resource.getId()))
+            return false;
+
+        if(!Objects.equals(eventType, externalEvent.type().id()))
+            return false;
+
+        if(eventHappenedAt.minusMinutes(5L).isAfter(externalEvent.happenedAt()))
+            return false;
+
+        return !eventHappenedAt.plusMinutes(5L).isBefore(externalEvent.happenedAt());
     }
 }

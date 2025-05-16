@@ -1,12 +1,11 @@
 package com.stratocloud.job;
 
-import com.stratocloud.request.JobParameters;
 import com.stratocloud.messaging.Message;
 import com.stratocloud.messaging.MessageBus;
+import com.stratocloud.request.JobParameters;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
 import org.slf4j.LoggerFactory;
-import org.springframework.aop.framework.AopContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,12 +39,6 @@ public interface JobHandler<P extends JobParameters> {
 
     default List<String> collectSummaryData(P jobParameters){
         return new ArrayList<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    default List<String> collectSummaryData(Map<String, Object> jobParametersMap){
-        P jobParameters = toTypedJobParameters(jobParametersMap);
-        return ((JobHandler<P>) AopContext.currentProxy()).collectSummaryData(jobParameters);
     }
 
     default P toTypedJobParameters(Map<String, Object> jobParametersMap) {

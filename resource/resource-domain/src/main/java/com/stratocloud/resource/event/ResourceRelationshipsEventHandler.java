@@ -91,17 +91,35 @@ public class ResourceRelationshipsEventHandler implements EventHandler<ResourceR
     public StratoEventType getEventType(RelationshipHandler relationshipHandler,
                                         boolean connectAction,
                                         boolean success){
+        ResourceCategory sourceCategory = relationshipHandler.getSource().getResourceCategory();
+        ResourceCategory targetCategory = relationshipHandler.getTarget().getResourceCategory();
+        String connectActionName = relationshipHandler.getConnectActionName();
+        String disconnectActionName = relationshipHandler.getDisconnectActionName();
+
+        return getEventType(
+                sourceCategory, targetCategory, connectActionName, disconnectActionName, connectAction,
+                success
+        );
+    }
+
+    public static StratoEventType getEventType(ResourceCategory sourceCategory,
+                                               ResourceCategory targetCategory,
+                                               String connectActionName,
+                                               String disconnectActionName,
+                                               boolean connectAction,
+                                               boolean success) {
         String eventTypePrefix = "%s.%s.%s".formatted(
-                relationshipHandler.getSource().getResourceCategory().id(),
+                sourceCategory.id(),
                 connectAction ? "CONNECT_TO" : "DISCONNECT_FROM",
-                relationshipHandler.getTarget().getResourceCategory().id()
+                targetCategory.id()
         );
         String eventTypeSuffix = success ? ".SUCCESS" : ".FAILED";
         String eventType = eventTypePrefix + eventTypeSuffix;
 
+
         String eventTypeNamePrefix = "%s%s".formatted(
-                relationshipHandler.getSource().getResourceCategory().name(),
-                connectAction ? relationshipHandler.getConnectActionName() : relationshipHandler.getDisconnectActionName()
+                sourceCategory.name(),
+                connectAction ? connectActionName : disconnectActionName
         );
         String eventTypeNameSuffix = success ? "成功" : "失败";
         String eventTypeName = eventTypeNamePrefix + eventTypeNameSuffix;
@@ -158,7 +176,7 @@ public class ResourceRelationshipsEventHandler implements EventHandler<ResourceR
                 success ? StratoEventLevel.INFO : StratoEventLevel.WARNING,
                 StratoEventSource.STRATO_ACTION,
                 getEventObject(relationship),
-                eventType+": "+source.getName(),
+                eventType.name()+": "+source.getName(),
                 LocalDateTime.now(),
                 eventProperties
         );

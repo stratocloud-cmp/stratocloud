@@ -11,25 +11,40 @@
             尊敬的用户(账号ID: ${receiverId}, 账号名: ${receiverName})<br>
             您好, 您的工单已执行成功<br>
             工单号: ${orderNo}<br>
+            工单内容<br>
+            <hr style="border: 1px dashed">
             #foreach ($orderItem in $orderItems)
-                #if ($orderItem.jobType=='BATCH_CREATE_RESOURCES')
+                工单任务$foreach.count: $orderItem.jobTypeName<br>
+                #if ($runtimeProperties.resources && $runtimeProperties.resources.size()>0)
                     资源列表<br>
                     <!--suppress HtmlDeprecatedAttribute -->
                     <table border="1">
-                        #foreach ($resource in $runtimeProperties.resources)
                         <tr>
-                            <td>
-                                $resource.name
-                            </td>
+                            <th>资源名称</th>
+                            <th>资源类型</th>
+                            <th>云平台</th>
                         </tr>
+                        #foreach ($resource in $runtimeProperties.resources)
+                            <tr>
+                                <td>
+                                    $resource.name
+                                </td>
+                                <td>
+                                    $resource.categoryName
+                                </td>
+                                <td>
+                                    $resource.providerName
+                                </td>
+                            </tr>
                         #end
                     </table>
                 #elseif ($summary)
                     $summary
                 #end
             #end
+            <hr style="border: 1px dashed">
             <!--suppress HtmlUnknownTarget -->
-            请前往<a href="${domainName}">${domainName}</a>查看
+            请前往<a href="http://${domainName}">http://${domainName}</a>查看
         </div>
     </body>
 </html>

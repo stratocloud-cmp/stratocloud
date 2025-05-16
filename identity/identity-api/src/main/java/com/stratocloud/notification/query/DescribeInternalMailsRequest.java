@@ -6,6 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class DescribeInternalMailRequest extends PagingRequest {
+public class DescribeInternalMailsRequest extends PagingRequest {
     private String search;
+    private Boolean read;
 }

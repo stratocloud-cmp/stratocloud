@@ -3,6 +3,7 @@ package com.stratocloud.cart;
 import com.stratocloud.job.JobHandler;
 import com.stratocloud.job.JobHandlerRegistry;
 import com.stratocloud.jpa.entities.Controllable;
+import com.stratocloud.request.JobParameters;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import lombok.AccessLevel;
@@ -38,10 +39,11 @@ public class CartItem extends Controllable {
         setJobParameters(jobParameters);
     }
 
+    @SuppressWarnings("unchecked")
     public void setJobParameters(Map<String, Object> jobParameters) {
         this.jobParameters = jobParameters;
-        JobHandler<?> jobHandler = JobHandlerRegistry.getJobHandler(jobType);
-        List<String> summaryData = jobHandler.collectSummaryData(jobParameters);
+        JobHandler<JobParameters> jobHandler = (JobHandler<JobParameters>) JobHandlerRegistry.getJobHandler(jobType);
+        List<String> summaryData = jobHandler.collectSummaryData(jobHandler.toTypedJobParameters(jobParameters));
         this.summary = String.join("\n", summaryData);
     }
 

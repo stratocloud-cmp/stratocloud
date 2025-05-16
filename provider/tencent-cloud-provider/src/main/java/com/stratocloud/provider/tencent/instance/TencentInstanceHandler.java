@@ -1,6 +1,9 @@
 package com.stratocloud.provider.tencent.instance;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.event.ExternalResourceEvent;
+import com.stratocloud.event.StratoEventLevel;
+import com.stratocloud.event.StratoEventSource;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
@@ -9,9 +12,11 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.constants.UsageTypes;
 import com.stratocloud.provider.guest.GuestOsHandler;
 import com.stratocloud.provider.guest.command.ProviderGuestCommandExecutorFactory;
+import com.stratocloud.provider.resource.event.EventAwareResourceHandler;
 import com.stratocloud.provider.resource.monitor.MonitoredResourceHandler;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.common.TencentCloudClient;
+import com.stratocloud.provider.tencent.common.TencentEventTypes;
 import com.stratocloud.provider.tencent.common.TencentTimeUtil;
 import com.stratocloud.provider.tencent.instance.command.TencentPowerShellCommandExecutorFactory;
 import com.stratocloud.provider.tencent.instance.command.TencentShellCommandExecutorFactory;
@@ -20,6 +25,7 @@ import com.stratocloud.resource.monitor.ResourceQuickStats;
 import com.stratocloud.tag.Tag;
 import com.stratocloud.tag.TagEntry;
 import com.stratocloud.utils.Utils;
+import com.tencentcloudapi.cloudaudit.v20190319.models.Event;
 import com.tencentcloudapi.cvm.v20170312.models.*;
 import com.tencentcloudapi.monitor.v20180724.models.DataPoint;
 import com.tencentcloudapi.monitor.v20180724.models.Dimension;
@@ -30,13 +36,11 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Component
-public class TencentInstanceHandler extends AbstractResourceHandler implements GuestOsHandler, MonitoredResourceHandler {
+public class TencentInstanceHandler extends AbstractResourceHandler
+        implements GuestOsHandler, MonitoredResourceHandler, EventAwareResourceHandler {
 
     private final TencentCloudProvider provider;
 
@@ -368,5 +372,44 @@ public class TencentInstanceHandler extends AbstractResourceHandler implements G
             return List.of(powerShellCommandExecutorFactory);
         else
             return List.of();
+    }
+
+    @Override
+    public List<ExternalResourceEvent> describeResourceEvents(ExternalAccount account,
+                                                              String externalId,
+                                                              LocalDateTime happenedAfter) {
+        TencentCloudClient client = provider.buildClient(account);
+
+        List<String> eventNames = TencentEventTypes.instanceEventTypes.stream().map(
+                TencentEventTypes.TencentEventType::externalEventName
+        ).toList();
+
+        List<Event> events = client.describeEvents(eventNames, "cvm", externalId, happenedAfter);
+
+        List<ExternalResourceEvent> result = new ArrayList<>();
+
+        for (Event event : events) {
+            var tencentEventType = TencentEventTypes.fromInstanceEventName(event.getEventName());
+
+            if(tencentEventType.isEmpty())
+                continue;
+
+            ExternalResourceEvent externalResourceEvent = new ExternalResourceEvent(
+                    event.getRequestID(),
+                    tencentEventType.get().eventType(),
+                    StratoEventLevel.INFO,
+                    StratoEventSource.EXTERNAL_ACTION,
+                    getResourceTypeId(),
+                    account.getId(),
+                    externalId,
+                    event.getEventNameCn(),
+                    TencentTimeUtil.fromEpochSeconds(event.getEventTime())
+            );
+            result.add(
+                    externalResourceEvent
+            );
+        }
+
+        return result;
     }
 }

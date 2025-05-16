@@ -11,9 +11,10 @@ import com.stratocloud.provider.tencent.lb.rule.TencentL7Rule;
 import com.stratocloud.provider.tencent.lb.rule.TencentL7RuleId;
 import com.stratocloud.provider.tencent.securitygroup.policy.TencentSecurityGroupPolicyId;
 import com.tencentcloudapi.cam.v20190116.models.GetUserAppIdResponse;
-import com.tencentcloudapi.cbs.v20170312.models.*;
 import com.tencentcloudapi.cbs.v20170312.models.Snapshot;
+import com.tencentcloudapi.cbs.v20170312.models.*;
 import com.tencentcloudapi.clb.v20180317.models.*;
+import com.tencentcloudapi.cloudaudit.v20190319.models.Event;
 import com.tencentcloudapi.cvm.v20170312.models.Image;
 import com.tencentcloudapi.cvm.v20170312.models.ZoneInfo;
 import com.tencentcloudapi.cvm.v20170312.models.*;
@@ -26,6 +27,7 @@ import com.tencentcloudapi.ssl.v20191205.models.DescribeCertificatesRequest;
 import com.tencentcloudapi.tat.v20201028.models.*;
 import com.tencentcloudapi.vpc.v20170312.models.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -294,4 +296,9 @@ public interface TencentCloudClient {
                             String snapshotId,
                             Boolean autoStop,
                             Boolean autoStart);
+
+    List<Event> describeEvents(List<String> eventNames,
+                               String resourceType,
+                               String resourceId,
+                               LocalDateTime startTime);
 }

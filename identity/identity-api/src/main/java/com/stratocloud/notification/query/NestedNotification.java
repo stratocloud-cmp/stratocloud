@@ -8,7 +8,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Getter
 @Setter
@@ -24,7 +23,7 @@ public class NestedNotification extends NestedTenanted {
     private String eventObjectName;
     private String eventSummary;
     private LocalDateTime eventHappenedAt;
-    private Map<String, Object> eventProperties;
+    private String eventProperties;
 
     private int sentCount;
     private LocalDateTime lastSentTime;

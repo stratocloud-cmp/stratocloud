@@ -60,11 +60,11 @@ public class NotificationRepositoryImpl
     public List<Notification> findByPolicyIdAndSentCountLessThan(Long policyId, int sentCount) {
         Specification<Notification> spec = getSpec();
 
-        spec.and(getPolicyIdSpec(policyId));
+        spec = spec.and(getPolicyIdSpec(policyId));
 
-        spec.and(getSentCountLessThanSpec(sentCount));
+        spec = spec.and(getSentCountLessThanSpec(sentCount));
 
-        return jpaRepository.findAll();
+        return jpaRepository.findAll(spec);
     }
 
     private Specification<Notification> getSentCountLessThanSpec(int sentCount) {
@@ -75,7 +75,7 @@ public class NotificationRepositoryImpl
 
     private Specification<Notification> getPolicyIdSpec(Long policyId) {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(
-                root.get("policyId"), policyId
+                root.get("policy").get("id"), policyId
         );
     }
 }
