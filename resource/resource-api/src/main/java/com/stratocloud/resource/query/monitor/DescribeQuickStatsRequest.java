@@ -1,4 +1,4 @@
-package com.stratocloud.resource.query;
+package com.stratocloud.resource.query.monitor;
 
 import com.stratocloud.request.query.QueryRequest;
 import com.stratocloud.utils.Assert;

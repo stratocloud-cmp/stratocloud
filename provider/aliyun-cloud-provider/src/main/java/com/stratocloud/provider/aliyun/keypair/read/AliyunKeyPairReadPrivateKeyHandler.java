@@ -47,7 +47,7 @@ public class AliyunKeyPairReadPrivateKeyHandler implements ResourceReadActionHan
         try {
             return List.of(new ResourceReadActionResult("私钥", privateKey.get(), false));
         }catch (Exception e){
-            log.warn("Failed to retrieve private key of {}.", resource.getName());
+            log.warn("Failed to retrieve private id of {}.", resource.getName());
             return List.of();
         }
 

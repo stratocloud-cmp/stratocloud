@@ -59,6 +59,6 @@ public class TencentKeyPairDestroyHandler implements DestroyResourceActionHandle
         ).toList();
 
         if(Utils.isNotEmpty(instances))
-            throw new StratoException("Detach key pair from all instances first.");
+            throw new StratoException("Detach id pair from all instances first.");
     }
 }

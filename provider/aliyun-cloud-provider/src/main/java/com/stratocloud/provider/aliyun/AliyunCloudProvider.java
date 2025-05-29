@@ -7,21 +7,29 @@ import com.stratocloud.provider.ExternalAccountProperties;
 import com.stratocloud.provider.aliyun.common.AliyunAccountProperties;
 import com.stratocloud.provider.aliyun.common.AliyunClient;
 import com.stratocloud.provider.aliyun.common.AliyunClientImpl;
+import com.stratocloud.provider.aliyun.metric.AliyunMetricsProvider;
+import com.stratocloud.provider.resource.monitor.MetricsProvider;
 import com.stratocloud.repository.ExternalAccountRepository;
 import com.stratocloud.utils.JSON;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class AliyunCloudProvider extends AbstractProvider {
 
     private final CacheService cacheService;
 
+    private final AliyunMetricsProvider metricsProvider;
+
+
     public AliyunCloudProvider(ExternalAccountRepository accountRepository,
-                               CacheService cacheService) {
+                               CacheService cacheService,
+                               AliyunMetricsProvider metricsProvider) {
         super(accountRepository);
         this.cacheService = cacheService;
+        this.metricsProvider = metricsProvider;
     }
 
     @Override
@@ -59,5 +67,10 @@ public class AliyunCloudProvider extends AbstractProvider {
     @Override
     public Float getBalance(ExternalAccount account) {
         return buildClient(account).describeBalance();
+    }
+
+    @Override
+    public Optional<MetricsProvider> getMetricsProvider() {
+        return Optional.of(metricsProvider);
     }
 }

@@ -7,6 +7,10 @@ import com.stratocloud.resource.cmd.relationship.BatchDisconnectResourcesCmd;
 import com.stratocloud.resource.query.*;
 import com.stratocloud.resource.query.inquiry.*;
 import com.stratocloud.resource.query.metadata.*;
+import com.stratocloud.resource.query.monitor.DescribeMetricsRequest;
+import com.stratocloud.resource.query.monitor.DescribeMetricsResponse;
+import com.stratocloud.resource.query.monitor.DescribeQuickStatsRequest;
+import com.stratocloud.resource.query.monitor.DescribeQuickStatsResponse;
 import com.stratocloud.resource.response.*;
 import org.springframework.data.domain.Page;
 
@@ -73,6 +77,8 @@ public interface ResourceService {
     DropResourcesResponse dropResources(BatchDropCmd cmd);
 
     DescribeQuickStatsResponse describeResourceQuickStats(DescribeQuickStatsRequest request);
+
+    DescribeMetricsResponse describeResourceMetrics(DescribeMetricsRequest request);
 
     AssociateTagsResponse associateTags(AssociateTagsCmd cmd);
 

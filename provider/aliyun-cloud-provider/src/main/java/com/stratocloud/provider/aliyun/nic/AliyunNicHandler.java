@@ -1,6 +1,5 @@
 package com.stratocloud.provider.aliyun.nic;
 
-import com.aliyun.ecs20140526.models.DescribeEniMonitorDataRequest;
 import com.aliyun.ecs20140526.models.DescribeNetworkInterfacesRequest;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
@@ -11,26 +10,21 @@ import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.ResourcePropertiesUtil;
 import com.stratocloud.provider.aliyun.AliyunCloudProvider;
 import com.stratocloud.provider.aliyun.common.AliyunClient;
-import com.stratocloud.provider.aliyun.common.AliyunTimeUtil;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.constants.UsageTypes;
-import com.stratocloud.provider.resource.monitor.MonitoredResourceHandler;
 import com.stratocloud.resource.*;
-import com.stratocloud.resource.monitor.ResourceQuickStats;
 import com.stratocloud.tag.Tag;
 import com.stratocloud.tag.TagEntry;
 import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class AliyunNicHandler extends AbstractResourceHandler implements MonitoredResourceHandler {
+public class AliyunNicHandler extends AbstractResourceHandler {
 
     private final AliyunCloudProvider provider;
 
@@ -221,50 +215,5 @@ public class AliyunNicHandler extends AbstractResourceHandler implements Monitor
     @Override
     public Map<String, Object> getPropertiesAtIndex(Map<String, Object> properties, int index) {
         return ResourcePropertiesUtil.getPropertiesAtIndex(properties, index, List.of("ips"));
-    }
-
-    @Override
-    public Optional<ResourceQuickStats> describeQuickStats(Resource resource) {
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        Optional<AliyunNic> aliyunNic = describeNic(account, resource.getExternalId());
-
-        if(aliyunNic.isEmpty())
-            return Optional.empty();
-
-        var nic = aliyunNic.get().detail();
-
-        if(Utils.isBlank(nic.getInstanceId()))
-            return Optional.empty();
-
-        LocalDateTime endTime = LocalDateTime.now();
-        LocalDateTime startTime = endTime.minus(Duration.ofSeconds(180L));
-
-
-
-        DescribeEniMonitorDataRequest request = new DescribeEniMonitorDataRequest();
-        request.setStartTime(AliyunTimeUtil.toAliyunDateTime(startTime));
-        request.setEndTime(AliyunTimeUtil.toAliyunDateTime(endTime));
-        request.setEniId(nic.getNetworkInterfaceId());
-        request.setInstanceId(nic.getInstanceId());
-        request.setPeriod(60);
-
-        var responseBody = provider.buildClient(account).ecs().describeNicMonitorData(request);
-
-        if(Utils.isEmpty(responseBody.getMonitorData().getEniMonitorData()))
-            return Optional.empty();
-
-        var dataPoint = responseBody.getMonitorData().getEniMonitorData().get(0);
-
-        String intranetRx = dataPoint.getIntranetRx();
-        String intranetTx = dataPoint.getIntranetTx();
-
-        ResourceQuickStats.Builder builder = ResourceQuickStats.builder();
-        builder.addItem(
-                "in", "接收速率", Double.parseDouble(intranetRx), "KBps"
-        );
-        builder.addItem(
-                "out", "发送速率", Double.parseDouble(intranetTx), "KBps"
-        );
-        return Optional.of(builder.build());
     }
 }

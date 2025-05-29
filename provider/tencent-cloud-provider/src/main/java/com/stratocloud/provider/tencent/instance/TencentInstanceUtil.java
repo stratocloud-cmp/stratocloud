@@ -4,8 +4,12 @@ import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.resource.RelationshipActionResult;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.ResourceActionResult;
+import com.stratocloud.utils.Utils;
+import com.tencentcloudapi.cvm.v20170312.models.DataDisk;
 import com.tencentcloudapi.cvm.v20170312.models.Instance;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -47,5 +51,20 @@ public class TencentInstanceUtil {
             return ResourceActionResult.inProgress();
 
         return ResourceActionResult.failed(instance.get().getLatestOperationErrorMsg());
+    }
+
+    public static List<String> getInstanceDiskIds(Instance instance){
+        List<String> diskIds = new ArrayList<>();
+
+        if(instance.getSystemDisk() != null)
+            diskIds.add(instance.getSystemDisk().getDiskId());
+
+        if(Utils.isNotEmpty(instance.getDataDisks())){
+            for (DataDisk dataDisk : instance.getDataDisks()) {
+                diskIds.add(dataDisk.getDiskId());
+            }
+        }
+
+        return diskIds;
     }
 }

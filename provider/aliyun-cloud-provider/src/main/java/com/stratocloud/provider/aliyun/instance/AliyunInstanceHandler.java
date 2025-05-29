@@ -13,8 +13,10 @@ import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.RuntimePropertiesUtil;
 import com.stratocloud.provider.aliyun.AliyunCloudProvider;
-import com.stratocloud.provider.aliyun.common.*;
-import com.stratocloud.provider.aliyun.common.services.AliyunCmsService;
+import com.stratocloud.provider.aliyun.common.AliyunClient;
+import com.stratocloud.provider.aliyun.common.AliyunEvent;
+import com.stratocloud.provider.aliyun.common.AliyunEventTypes;
+import com.stratocloud.provider.aliyun.common.AliyunTimeUtil;
 import com.stratocloud.provider.aliyun.disk.AliyunDisk;
 import com.stratocloud.provider.aliyun.instance.command.AliyunPowerShellCommandExecutorFactory;
 import com.stratocloud.provider.aliyun.instance.command.AliyunShellCommandExecutorFactory;
@@ -23,9 +25,7 @@ import com.stratocloud.provider.constants.UsageTypes;
 import com.stratocloud.provider.guest.GuestOsHandler;
 import com.stratocloud.provider.guest.command.ProviderGuestCommandExecutorFactory;
 import com.stratocloud.provider.resource.event.EventAwareResourceHandler;
-import com.stratocloud.provider.resource.monitor.MonitoredResourceHandler;
 import com.stratocloud.resource.*;
-import com.stratocloud.resource.monitor.ResourceQuickStats;
 import com.stratocloud.tag.Tag;
 import com.stratocloud.tag.TagEntry;
 import com.stratocloud.utils.Utils;
@@ -41,7 +41,7 @@ import java.util.Optional;
 
 @Component
 public class AliyunInstanceHandler extends AbstractResourceHandler
-        implements MonitoredResourceHandler, GuestOsHandler, EventAwareResourceHandler {
+        implements GuestOsHandler, EventAwareResourceHandler {
 
     private final AliyunCloudProvider provider;
 
@@ -332,8 +332,8 @@ public class AliyunInstanceHandler extends AbstractResourceHandler
 
         switch (instance.detail().getInstanceChargeType()){
             case "PrePaid" -> {
-                LocalDateTime createdTime = AliyunTimeUtil.toLocalDateTime(instance.detail().getCreationTime());
-                LocalDateTime expiredTime = AliyunTimeUtil.toLocalDateTime(instance.detail().getExpiredTime());
+                LocalDateTime createdTime = AliyunTimeUtil.toLocalDateMinutesTime(instance.detail().getCreationTime());
+                LocalDateTime expiredTime = AliyunTimeUtil.toLocalDateMinutesTime(instance.detail().getExpiredTime());
 
                 int months = (int) ChronoUnit.MONTHS.between(createdTime, expiredTime);
 
@@ -393,47 +393,6 @@ public class AliyunInstanceHandler extends AbstractResourceHandler
     }
 
     @Override
-    public Optional<ResourceQuickStats> describeQuickStats(Resource resource) {
-        if(Utils.isBlank(resource.getExternalId()))
-            return Optional.empty();
-
-        if(resource.getState() == ResourceState.STOPPED)
-            return Optional.empty();
-
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-
-        AliyunCmsService cmsService = provider.buildClient(account).cms();
-
-        ResourceQuickStats.Builder builder = ResourceQuickStats.builder();
-
-        Optional<Float> cpuUsage = getInstanceLatestMetric(
-                cmsService, "CPUUtilization", resource.getExternalId()
-        );
-
-        Optional<Float> memoryUsage = getInstanceLatestMetric(
-                cmsService, "vm.MemoryUtilization", resource.getExternalId()
-        );
-
-        cpuUsage.ifPresent(builder::addCpuPercentage);
-        memoryUsage.ifPresent(builder::addMemoryPercentage);
-
-        return Optional.of(builder.build());
-    }
-
-    private Optional<Float> getInstanceLatestMetric(AliyunCmsService cmsService,
-                                                    String metricName,
-                                                    String instanceId){
-        return AliyunMetricUtil.getLatestMetric(
-                cmsService,
-                "acs_ecs_dashboard",
-                metricName,
-                instanceId,
-                60,
-                AliyunMetricDataPoint::Average
-        );
-    }
-
-    @Override
     public OsType getOsType(Resource resource) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         Optional<AliyunInstance> instance = describeInstance(account, resource.getExternalId());
@@ -466,7 +425,7 @@ public class AliyunInstanceHandler extends AbstractResourceHandler
         ).toList();
 
         List<AliyunEvent> events = client.trail().describeEvents(
-                eventNames, "ACS::ECS::Instance", externalId, happenedAfter
+                eventNames, externalId, happenedAfter
         );
 
         List<ExternalResourceEvent> result = new ArrayList<>();
@@ -486,7 +445,7 @@ public class AliyunInstanceHandler extends AbstractResourceHandler
                     account.getId(),
                     externalId,
                     event.getEventName(),
-                    AliyunTimeUtil.toLocalDateTime(event.getEventTime())
+                    AliyunTimeUtil.toLocalDateSecondsTime(event.getEventTime())
             );
             result.add(
                     externalResourceEvent

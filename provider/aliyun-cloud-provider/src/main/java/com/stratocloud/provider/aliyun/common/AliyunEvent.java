@@ -1,5 +1,6 @@
 package com.stratocloud.provider.aliyun.common;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.util.List;
@@ -36,6 +37,7 @@ import java.util.Map;
  *   "eventName": "DeleteDisk"
  * }
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 public class AliyunEvent {
     private String eventId;

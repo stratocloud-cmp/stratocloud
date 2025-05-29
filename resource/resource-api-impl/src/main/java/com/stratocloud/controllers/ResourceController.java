@@ -11,6 +11,10 @@ import com.stratocloud.resource.cmd.*;
 import com.stratocloud.resource.query.*;
 import com.stratocloud.resource.query.inquiry.*;
 import com.stratocloud.resource.query.metadata.*;
+import com.stratocloud.resource.query.monitor.DescribeMetricsRequest;
+import com.stratocloud.resource.query.monitor.DescribeMetricsResponse;
+import com.stratocloud.resource.query.monitor.DescribeQuickStatsRequest;
+import com.stratocloud.resource.query.monitor.DescribeQuickStatsResponse;
 import com.stratocloud.resource.response.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -152,6 +156,11 @@ public class ResourceController implements ResourceApi {
     @Override
     public DescribeQuickStatsResponse describeResourceQuickStats(@RequestBody DescribeQuickStatsRequest request) {
         return service.describeResourceQuickStats(request);
+    }
+
+    @Override
+    public DescribeMetricsResponse describeResourceMetrics(@RequestBody DescribeMetricsRequest request) {
+        return service.describeResourceMetrics(request);
     }
 
     @Override

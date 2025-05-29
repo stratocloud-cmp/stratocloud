@@ -32,4 +32,6 @@ public interface HuaweiCloudClient {
     HuaweiCocService coc();
 
     HuaweiCesService ces();
+
+    HuaweiCtsService cts();
 }

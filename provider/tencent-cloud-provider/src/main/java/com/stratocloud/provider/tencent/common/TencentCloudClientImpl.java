@@ -45,12 +45,12 @@ import com.tencentcloudapi.cvm.v20170312.models.DescribeRegionsRequest;
 import com.tencentcloudapi.cvm.v20170312.models.DescribeRegionsResponse;
 import com.tencentcloudapi.cvm.v20170312.models.Filter;
 import com.tencentcloudapi.cvm.v20170312.models.Image;
+import com.tencentcloudapi.cvm.v20170312.models.Instance;
 import com.tencentcloudapi.cvm.v20170312.models.Price;
 import com.tencentcloudapi.cvm.v20170312.models.ZoneInfo;
 import com.tencentcloudapi.cvm.v20170312.models.*;
 import com.tencentcloudapi.monitor.v20180724.MonitorClient;
-import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataRequest;
-import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataResponse;
+import com.tencentcloudapi.monitor.v20180724.models.*;
 import com.tencentcloudapi.ssl.v20191205.SslClient;
 import com.tencentcloudapi.ssl.v20191205.models.*;
 import com.tencentcloudapi.tag.v20180813.TagClient;
@@ -227,6 +227,41 @@ public class TencentCloudClientImpl implements TencentCloudClient{
                     result.addAll(Arrays.asList(page));
 
                 offset = offset + limit;
+            }
+
+            return result;
+        }catch (ExternalResourceNotFoundException e){
+            return List.of();
+        }
+    }
+
+    private  <E, R> List<E> queryAllByPage(Invoker<R> invoker,
+                                           Function<R, E[]> listGetter,
+                                           Function<R, Long> totalCountGetter,
+                                           Consumer<Long> pageNumberSetter,
+                                           Consumer<Long> pageSizeSetter){
+        try {
+            List<E> result = new ArrayList<>();
+
+            final long pageSize = 50;
+            pageSizeSetter.accept(pageSize);
+
+            long pageNumber = 1;
+
+            long totalCount = 1;
+
+            while (pageNumber <= (totalCount/pageSize + (totalCount%pageSize==0?0:1))){
+                pageNumberSetter.accept(pageNumber);
+                R response = tryInvoke(invoker);
+                totalCount = totalCountGetter.apply(response);
+                E[] page = listGetter.apply(response);
+
+                if(Utils.isNotEmpty(page)) {
+                    List<E> list = List.of(page);
+                    result.addAll(list);
+                }
+
+                pageNumber++;
             }
 
             return result;
@@ -1099,7 +1134,7 @@ public class TencentCloudClientImpl implements TencentCloudClient{
         request.setKeyIds(keyPairIds.toArray(String[]::new));
         var response = tryInvoke(() -> buildCvmClient().AssociateInstancesKeyPairs(request));
 
-        log.info("Tencent associate key pairs request sent. KeyIds={}. RequestId={}.",
+        log.info("Tencent associate id pairs request sent. KeyIds={}. RequestId={}.",
                 keyPairIds, response.getRequestId());
     }
 
@@ -1111,7 +1146,7 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
         var response = tryInvoke(() -> buildCvmClient().DisassociateInstancesKeyPairs(request));
 
-        log.info("Tencent disassociate key pairs request sent. KeyId={}. RequestId={}.",
+        log.info("Tencent disassociate id pairs request sent. KeyId={}. RequestId={}.",
                 keyPairId, response.getRequestId());
     }
 
@@ -1977,5 +2012,26 @@ public class TencentCloudClientImpl implements TencentCloudClient{
         }
 
         return result;
+    }
+
+
+    @Override
+    public List<AlarmHistory> describeAlarmHistories(String resourceId,
+                                                     LocalDateTime startTime) {
+        DescribeAlarmHistoriesRequest request = new DescribeAlarmHistoriesRequest();
+        request.setModule("monitor");
+        request.setStartTime(startTime.atZone(TimeUtil.BEIJING_ZONE_ID).toInstant().toEpochMilli());
+        request.setEndTime(System.currentTimeMillis());
+        request.setAlarmObject(resourceId);
+
+        return queryAllByPage(
+                () -> buildMonitorClient().DescribeAlarmHistories(request),
+                DescribeAlarmHistoriesResponse::getHistories,
+                DescribeAlarmHistoriesResponse::getTotalCount,
+                request::setPageNumber,
+                request::setPageSize
+        ).stream().filter(
+                h -> Objects.equals(h.getAlarmObject(), resourceId)
+        ).toList();
     }
 }

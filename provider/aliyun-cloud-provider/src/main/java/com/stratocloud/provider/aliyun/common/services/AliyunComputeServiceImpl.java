@@ -931,7 +931,7 @@ public class AliyunComputeServiceImpl extends AliyunAbstractService implements A
 
         AttachKeyPairResponseBody responseBody = tryInvoke(() -> buildClient().attachKeyPair(request)).getBody();
 
-        log.info("Aliyun attach key pair request sent. RequestId={}. InstanceId={}.",
+        log.info("Aliyun attach id pair request sent. RequestId={}. InstanceId={}.",
                 responseBody.getRequestId(), request.getInstanceIds());
     }
 
@@ -941,7 +941,7 @@ public class AliyunComputeServiceImpl extends AliyunAbstractService implements A
 
         DetachKeyPairResponseBody responseBody = tryInvoke(() -> buildClient().detachKeyPair(request)).getBody();
 
-        log.info("Aliyun detach key pair request sent. RequestId={}. InstanceId={}.",
+        log.info("Aliyun detach id pair request sent. RequestId={}. InstanceId={}.",
                 responseBody.getRequestId(), request.getInstanceIds());
     }
 
@@ -961,7 +961,7 @@ public class AliyunComputeServiceImpl extends AliyunAbstractService implements A
                 () -> buildClient().createKeyPair(request)
         ).getBody();
 
-        log.info("Aliyun create key pair request sent. RequestId={}. KeyPairName={}.",
+        log.info("Aliyun create id pair request sent. RequestId={}. KeyPairName={}.",
                 responseBody.getRequestId(), request.getKeyPairName());
 
         return responseBody;
@@ -977,7 +977,7 @@ public class AliyunComputeServiceImpl extends AliyunAbstractService implements A
                 () -> buildClient().deleteKeyPairs(request)
         ).getBody();
 
-        log.info("Aliyun delete key pair request sent. RequestId={}. KeyPairName={}.",
+        log.info("Aliyun delete id pair request sent. RequestId={}. KeyPairName={}.",
                 responseBody.getRequestId(), keyPairName);
     }
 

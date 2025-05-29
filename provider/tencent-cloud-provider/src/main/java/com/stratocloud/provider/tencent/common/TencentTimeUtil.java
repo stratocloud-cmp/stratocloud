@@ -25,8 +25,14 @@ public class TencentTimeUtil {
         if(Utils.isBlank(epochSeconds))
             return LocalDateTime.now();
 
+        long epochSecond = Long.parseLong(epochSeconds);
+
+        return fromEpochSeconds(epochSecond);
+    }
+
+    public static LocalDateTime fromEpochSeconds(long epochSecond) {
         return LocalDateTime.ofEpochSecond(
-                Long.parseLong(epochSeconds),
+                epochSecond,
                 0,
                 TimeUtil.BEIJING_ZONE_ID.getRules().getOffset(LocalDateTime.now())
         );

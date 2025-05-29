@@ -5,6 +5,10 @@ import com.stratocloud.resource.cmd.*;
 import com.stratocloud.resource.query.*;
 import com.stratocloud.resource.query.inquiry.*;
 import com.stratocloud.resource.query.metadata.*;
+import com.stratocloud.resource.query.monitor.DescribeMetricsRequest;
+import com.stratocloud.resource.query.monitor.DescribeMetricsResponse;
+import com.stratocloud.resource.query.monitor.DescribeQuickStatsRequest;
+import com.stratocloud.resource.query.monitor.DescribeQuickStatsResponse;
 import com.stratocloud.resource.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -72,6 +76,9 @@ public interface ResourceApi {
 
     @PostMapping(StratoServices.RESOURCE_SERVICE+"/describe-resource-quick-stats")
     DescribeQuickStatsResponse describeResourceQuickStats(@RequestBody DescribeQuickStatsRequest request);
+
+    @PostMapping(StratoServices.RESOURCE_SERVICE+"/describe-resource-metrics")
+    DescribeMetricsResponse describeResourceMetrics(@RequestBody DescribeMetricsRequest request);
 
     @PostMapping(StratoServices.RESOURCE_SERVICE+"/associate-tags")
     AssociateTagsResponse associateTags(AssociateTagsCmd cmd);

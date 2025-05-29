@@ -50,7 +50,7 @@ public class ResourceActions {
     );
 
     public static final ResourceAction EXECUTE_SCRIPT = new ResourceAction(
-            "READ_GUEST_MGMT_PRIVATE_KEY", "执行脚本", 203
+            "EXECUTE_SCRIPT", "执行脚本", 203
     );
 
     public static final ResourceAction RESET_PASSWORD = new ResourceAction(

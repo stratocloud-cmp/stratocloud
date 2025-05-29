@@ -18,6 +18,7 @@ import com.tencentcloudapi.cloudaudit.v20190319.models.Event;
 import com.tencentcloudapi.cvm.v20170312.models.Image;
 import com.tencentcloudapi.cvm.v20170312.models.ZoneInfo;
 import com.tencentcloudapi.cvm.v20170312.models.*;
+import com.tencentcloudapi.monitor.v20180724.models.AlarmHistory;
 import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataRequest;
 import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataResponse;
 import com.tencentcloudapi.ssl.v20191205.models.ApplyCertificateRequest;
@@ -301,4 +302,7 @@ public interface TencentCloudClient {
                                String resourceType,
                                String resourceId,
                                LocalDateTime startTime);
+
+    List<AlarmHistory> describeAlarmHistories(String resourceId,
+                                              LocalDateTime startTime);
 }

@@ -6,21 +6,15 @@ import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.constants.UsageTypes;
-import com.stratocloud.provider.resource.monitor.MonitoredResourceHandler;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.common.TencentCloudClient;
 import com.stratocloud.provider.tencent.common.TencentTimeUtil;
 import com.stratocloud.provider.tencent.disk.actions.TencentDiskType;
 import com.stratocloud.resource.*;
-import com.stratocloud.resource.monitor.ResourceQuickStats;
 import com.stratocloud.tag.Tag;
 import com.stratocloud.tag.TagEntry;
 import com.stratocloud.utils.Utils;
 import com.tencentcloudapi.cbs.v20170312.models.*;
-import com.tencentcloudapi.monitor.v20180724.models.DataPoint;
-import com.tencentcloudapi.monitor.v20180724.models.Dimension;
-import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataRequest;
-import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataResponse;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -32,7 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class TencentDiskHandler extends AbstractResourceHandler implements MonitoredResourceHandler {
+public class TencentDiskHandler extends AbstractResourceHandler {
     private final TencentCloudProvider provider;
 
     public TencentDiskHandler(TencentCloudProvider provider) {
@@ -213,71 +207,5 @@ public class TencentDiskHandler extends AbstractResourceHandler implements Monit
                 return ResourceCost.ZERO;
             }
         }
-    }
-
-    @Override
-    public Optional<ResourceQuickStats> describeQuickStats(Resource resource) {
-        if(Utils.isBlank(resource.getExternalId()))
-            return Optional.empty();
-
-        if(resource.getState() == ResourceState.IDLE)
-            return Optional.empty();
-
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        TencentCloudClient client = provider.buildClient(account);
-
-        Optional<Float> readTraffic = getDiskLatestMonitorData(
-                client, resource.getExternalId(), "DiskReadTraffic"
-        );
-
-        Optional<Float> writeTraffic = getDiskLatestMonitorData(
-                client, resource.getExternalId(), "DiskWriteTraffic"
-        );
-
-        if(readTraffic.isEmpty() && writeTraffic.isEmpty())
-            return Optional.empty();
-
-        ResourceQuickStats.Builder builder = ResourceQuickStats.builder();
-
-        readTraffic.ifPresent(
-                r -> builder.addItem("r", "读流量", r, "KBps")
-        );
-
-        writeTraffic.ifPresent(
-                r -> builder.addItem("w", "写流量", r, "KBps")
-        );
-
-        return Optional.of(builder.build());
-    }
-
-    private Optional<Float> getDiskLatestMonitorData(TencentCloudClient client,
-                                                     String diskId,
-                                                     String metricName){
-        GetMonitorDataRequest request = new GetMonitorDataRequest();
-        request.setNamespace("QCE/BLOCK_STORAGE");
-        request.setMetricName(metricName);
-
-        var instance = new com.tencentcloudapi.monitor.v20180724.models.Instance();
-        Dimension dimension = new Dimension();
-        dimension.setName("diskId");
-        dimension.setValue(diskId);
-        instance.setDimensions(new Dimension[]{dimension});
-
-        request.setInstances(new com.tencentcloudapi.monitor.v20180724.models.Instance[]{instance});
-        request.setPeriod(10L);
-        request.setSpecifyStatistics(1L); //avg,max,min -> 1,2,4  e.g. avg+max+min=7
-
-        GetMonitorDataResponse response = client.getMonitorData(request);
-        DataPoint[] dataPoints = response.getDataPoints();
-
-        if(Utils.isEmpty(dataPoints))
-            return Optional.empty();
-
-        Float[] avgValues = dataPoints[0].getAvgValues();
-
-        if(Utils.isEmpty(avgValues))
-            return Optional.empty();
-
-        return Optional.of(avgValues[avgValues.length-1]);
     }
 }

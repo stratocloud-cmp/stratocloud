@@ -153,4 +153,9 @@ public class HuaweiCloudClientImpl implements HuaweiCloudClient {
     public HuaweiCesService ces(){
         return new HuaweiCesServiceImpl(cacheService, credential, regionId, credential.getAk());
     }
+
+    @Override
+    public HuaweiCtsService cts(){
+        return new HuaweiCtsServiceImpl(cacheService, credential, regionId, credential.getAk());
+    }
 }

@@ -26,7 +26,8 @@ import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.provider.resource.ResourceReadActionHandler;
-import com.stratocloud.provider.resource.monitor.MonitoredResourceHandler;
+import com.stratocloud.provider.resource.monitor.MetricsProvider;
+import com.stratocloud.provider.resource.monitor.SupportedMetric;
 import com.stratocloud.repository.ExternalAccountRepository;
 import com.stratocloud.repository.RelationshipRepository;
 import com.stratocloud.repository.ResourceRepository;
@@ -38,15 +39,20 @@ import com.stratocloud.resource.cmd.create.NestedResourceTag;
 import com.stratocloud.resource.cmd.ownership.TransferCmd;
 import com.stratocloud.resource.cmd.recycle.RecycleCmd;
 import com.stratocloud.resource.cmd.relationship.*;
-import com.stratocloud.resource.monitor.ResourceQuickStats;
+import com.stratocloud.resource.monitor.*;
 import com.stratocloud.resource.query.*;
 import com.stratocloud.resource.query.inquiry.*;
 import com.stratocloud.resource.query.metadata.*;
+import com.stratocloud.resource.query.monitor.DescribeMetricsRequest;
+import com.stratocloud.resource.query.monitor.DescribeMetricsResponse;
+import com.stratocloud.resource.query.monitor.DescribeQuickStatsRequest;
+import com.stratocloud.resource.query.monitor.DescribeQuickStatsResponse;
 import com.stratocloud.resource.response.*;
 import com.stratocloud.utils.GraphUtil;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
 import com.stratocloud.utils.concurrent.ConcurrentUtil;
+import com.stratocloud.utils.concurrent.RealTimeTaskUtil;
 import com.stratocloud.validate.ValidateRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -54,8 +60,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1092,22 +1100,140 @@ public class ResourceServiceImpl implements ResourceService {
         Resource resource = repository.findResource(request.getResourceId());
 
         ResourceHandler resourceHandler = resource.getResourceHandler();
+        Optional<MetricsProvider> metricsProvider = resourceHandler.getProvider().getMetricsProvider();
 
         DescribeQuickStatsResponse response = new DescribeQuickStatsResponse();
 
-        if(resourceHandler instanceof MonitoredResourceHandler monitoredResourceHandler){
-            if(!ResourceState.getAliveStateSet().contains(resource.getState()))
-                return response;
+        if(metricsProvider.isEmpty())
+            return response;
 
-            ResourceQuickStats quickStats = CacheUtil.queryWithCache(
-                    cacheService,
-                    "QuickStatsOf-%s".formatted(resource.getId()),
-                    5,
-                    () -> monitoredResourceHandler.describeQuickStats(resource).orElse(null),
-                    ResourceQuickStats.builder().build()
+        if(!ResourceState.getAliveStateSet().contains(resource.getState()))
+            return response;
+
+        if(resource.getState() == ResourceState.STOPPED)
+            return response;
+
+        ResourceQuickStats quickStats = CacheUtil.queryWithCache(
+                cacheService,
+                "QuickStatsOf-%s".formatted(resource.getId()),
+                5,
+                () -> metricsProvider.get().describeQuickStats(resource).orElse(null),
+                ResourceQuickStats.builder().build()
+        );
+
+        response.setQuickStats(quickStats);
+
+        return response;
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    @ValidateRequest
+    public DescribeMetricsResponse describeResourceMetrics(DescribeMetricsRequest request) {
+        Resource resource = repository.findResource(request.getResourceId());
+
+        ResourceHandler resourceHandler = resource.getResourceHandler();
+        Optional<MetricsProvider> metricsProvider = resourceHandler.getProvider().getMetricsProvider();
+
+        DescribeMetricsResponse response = new DescribeMetricsResponse();
+
+        if(metricsProvider.isEmpty())
+            return response;
+
+        if(!ResourceState.getAliveStateSet().contains(resource.getState()))
+            return response;
+
+        if(resource.getState() == ResourceState.STOPPED)
+            return response;
+
+        long maxMetricsPullSize = metricsProvider.get().getMaxMetricsPullSize();
+
+        LocalDateTime from = request.getFrom();
+        LocalDateTime to = request.getTo();
+
+        LocalDateTime now = LocalDateTime.now();
+        if(from == null)
+            from = now.minusMinutes(30L);
+
+        if(to == null || to.isAfter(now))
+            to = now;
+
+        Map<MetricGroup, List<Future<MetricData>>> futureMap = new LinkedHashMap<>();
+
+        List<SupportedMetric> supportedMetrics = metricsProvider.get().getSupportedMetrics();
+
+        for (SupportedMetric supportedMetric : supportedMetrics) {
+            if(!supportedMetric.resourceCategory().id().equals(resource.getCategory()))
+                continue;
+
+            Metric metric = supportedMetric.metric();
+
+            Long period = null;
+
+            for (Integer periodSecond : metric.supportedPeriodSeconds()) {
+                if(to.minusSeconds(periodSecond * maxMetricsPullSize).isBefore(from))
+                    period = Long.valueOf(periodSecond);
+            }
+
+            if(period == null)
+                period = metric.supportedPeriodSeconds().get(metric.supportedPeriodSeconds().size()-1).longValue();
+
+            LocalDateTime earliestFrom = to.minusSeconds(period * maxMetricsPullSize);
+            if(from.isBefore(earliestFrom))
+                from = earliestFrom;
+
+            LocalDateTime finalFrom = from;
+            LocalDateTime finalTo = to;
+            int finalPeriod = period.intValue();
+
+            futureMap.computeIfAbsent(
+                    metric.metricGroup(),
+                    k -> new ArrayList<>()
+            ).add(
+                    RealTimeTaskUtil.submit(
+                            () -> {
+                                try {
+                                    return metricsProvider.get().describeMetricData(
+                                            resource,
+                                            supportedMetric,
+                                            finalFrom,
+                                            finalTo,
+                                            finalPeriod
+                                    );
+                                }catch (Exception e){
+                                    log.warn("MetricName: {}.", metric.metricName());
+                                    throw e;
+                                }
+                            }
+                    )
             );
+        }
 
-            response.setQuickStats(quickStats);
+        if(Utils.isNotEmpty(futureMap)){
+            List<MetricGroupData> groups = new ArrayList<>();
+            for (MetricGroup group : futureMap.keySet()) {
+                List<Future<MetricData>> futureList = futureMap.get(group);
+
+                if(Utils.isEmpty(futureList))
+                    continue;
+
+                List<MetricData> metrics = new ArrayList<>();
+
+                for (Future<MetricData> future : futureList) {
+                    try {
+                        metrics.add(future.get());
+                    } catch (Exception e){
+                        log.warn("Failed to get future of metric in group {}.", group.id(), e);
+                    }
+                }
+
+                groups.add(
+                        new MetricGroupData(group, metrics)
+                );
+            }
+
+            response.setMetricGroups(groups);
         }
 
         return response;

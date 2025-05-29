@@ -65,6 +65,8 @@ public class NotificationReceiver extends Auditable {
         inputParameters.put("receiverId", receiverUserId);
         inputParameters.put("receiverName", receiverUserRealName);
         inputParameters.put("domainName", stratoDomainName);
+        inputParameters.put("eventSummary", notification.getEventSummary());
+        inputParameters.put("eventHappenedAt", notification.getEventHappenedAt());
 
         if(Utils.isNotEmpty(notification.getEventProperties()))
             inputParameters.putAll(notification.getEventProperties());

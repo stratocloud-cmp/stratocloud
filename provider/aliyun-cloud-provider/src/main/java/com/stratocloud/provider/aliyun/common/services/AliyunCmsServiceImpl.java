@@ -1,7 +1,10 @@
 package com.stratocloud.provider.aliyun.common.services;
 
 import com.aliyun.cms20190101.Client;
+import com.aliyun.cms20190101.models.DescribeAlertLogListRequest;
+import com.aliyun.cms20190101.models.DescribeAlertLogListResponseBody;
 import com.aliyun.cms20190101.models.DescribeMetricLastRequest;
+import com.aliyun.cms20190101.models.DescribeMetricListRequest;
 import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.stratocloud.cache.CacheService;
@@ -38,5 +41,32 @@ public class AliyunCmsServiceImpl extends AliyunAbstractService implements Aliyu
             return List.of();
 
         return JSON.toJavaList(dataPointsStr, new TypeReference<>(){});
+    }
+
+
+    @Override
+    public List<AliyunMetricDataPoint> describeMetricList(DescribeMetricListRequest request) {
+        request.setRegionId(config.getRegionId());
+        return queryAllByToken(
+                () -> buildClient().describeMetricList(request),
+                resp -> JSON.toJavaList(
+                        resp.getBody().getDatapoints(), new TypeReference<>() {
+                        }
+                ),
+                resp -> resp.getBody().getNextToken(),
+                request::setNextToken
+        );
+    }
+
+    @Override
+    public List<DescribeAlertLogListResponseBody.DescribeAlertLogListResponseBodyAlertLogList> describeAlertHistories(DescribeAlertLogListRequest request){
+        request.setRegionId(config.getRegionId());
+        return queryAll(
+                () -> buildClient().describeAlertLogList(request),
+                resp -> resp.getBody().getAlertLogList(),
+                resp -> 200,
+                request::setPageNumber,
+                request::setPageSize
+        );
     }
 }

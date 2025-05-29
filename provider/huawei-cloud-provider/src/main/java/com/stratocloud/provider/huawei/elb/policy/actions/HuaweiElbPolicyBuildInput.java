@@ -71,7 +71,7 @@ public class HuaweiElbPolicyBuildInput implements ResourceActionInput {
 
     @SelectField(
             label = "要添加的请求头参数",
-            defaultValues = "{\"key\": \"\", \"value\":\"\", \"valueType\":\"USER_DEFINED\"}",
+            defaultValues = "{\"id\": \"\", \"value\":\"\", \"valueType\":\"USER_DEFINED\"}",
             multiSelect = true,
             allowCreate = true,
             conditions = "this.action !== 'REDIRECT_TO_LISTENER'"

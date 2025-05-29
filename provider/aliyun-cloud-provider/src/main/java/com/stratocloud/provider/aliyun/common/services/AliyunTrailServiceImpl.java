@@ -29,27 +29,33 @@ public class AliyunTrailServiceImpl extends AliyunAbstractService implements Ali
 
     @Override
     public List<AliyunEvent> describeEvents(List<String> eventNames,
-                                            String resourceType,
                                             String resourceId,
                                             LocalDateTime startTime){
-        LookupEventsRequest request = new LookupEventsRequest();
+        List<AliyunEvent> result = new ArrayList<>();
 
-        List<LookupEventsRequest.LookupEventsRequestLookupAttribute> attributes = new ArrayList<>();
         if(Utils.isNotEmpty(eventNames)){
             for (String eventName : eventNames) {
-                var attribute = new LookupEventsRequest.LookupEventsRequestLookupAttribute();
-                attribute.setKey("EventName");
-                attribute.setValue(eventName);
-                attributes.add(attribute);
+                List<AliyunEvent> events = describeEventsByName(eventName, resourceId, startTime);
+
+                if(Utils.isNotEmpty(events))
+                    result.addAll(events);
             }
         }
 
-        if(Utils.isNotBlank(resourceType)){
-            var attribute = new LookupEventsRequest.LookupEventsRequestLookupAttribute();
-            attribute.setKey("ResourceType");
-            attribute.setValue(resourceType);
-            attributes.add(attribute);
-        }
+        return result;
+    }
+
+    private List<AliyunEvent> describeEventsByName(String eventName,
+                                                   String resourceId,
+                                                   LocalDateTime startTime) {
+        LookupEventsRequest request = new LookupEventsRequest();
+
+        List<LookupEventsRequest.LookupEventsRequestLookupAttribute> attributes = new ArrayList<>();
+
+        var eventNameAttr = new LookupEventsRequest.LookupEventsRequestLookupAttribute();
+        eventNameAttr.setKey("EventName");
+        eventNameAttr.setValue(eventName);
+        attributes.add(eventNameAttr);
 
         if(Utils.isNotBlank(resourceId)){
             var attribute = new LookupEventsRequest.LookupEventsRequestLookupAttribute();
@@ -57,12 +63,6 @@ public class AliyunTrailServiceImpl extends AliyunAbstractService implements Ali
             attribute.setValue(resourceId);
             attributes.add(attribute);
         }
-
-        var actionTypeAttribute = new LookupEventsRequest.LookupEventsRequestLookupAttribute();
-
-        actionTypeAttribute.setKey("EventRW");
-        actionTypeAttribute.setValue("Write");
-        attributes.add(actionTypeAttribute);
 
         request.setLookupAttribute(attributes);
 

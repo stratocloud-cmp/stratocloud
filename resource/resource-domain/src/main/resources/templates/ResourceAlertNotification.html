@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+<head>
+    <title>
+        ${resourceCategory.name}告警: ${resourceName}}
+    </title>
+</head>
+<body>
+<p>
+    尊敬的用户(账号ID: ${receiverId}, 账号名: ${receiverName})<br>
+    您好, 请注意以下告警信息<br>
+    ${eventSummary}<br>
+    告警发生时间: ${eventHappenedAt}<br>
+    <!--suppress HtmlUnknownTarget -->
+    请前往<a href="http://${domainName}">http://${domainName}</a>查看
+</p>
+</body>
+</html>

@@ -7,7 +7,6 @@ import java.util.List;
 
 public interface AliyunTrailService {
     List<AliyunEvent> describeEvents(List<String> eventNames,
-                                     String resourceType,
                                      String resourceId,
                                      LocalDateTime startTime);
 }

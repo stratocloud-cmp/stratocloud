@@ -1,4 +1,4 @@
-package com.stratocloud.resource.query;
+package com.stratocloud.resource.query.monitor;
 
 import com.stratocloud.request.ApiResponse;
 import com.stratocloud.resource.monitor.ResourceQuickStats;

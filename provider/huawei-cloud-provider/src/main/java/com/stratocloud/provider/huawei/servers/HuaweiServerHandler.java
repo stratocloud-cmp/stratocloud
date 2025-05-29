@@ -1,10 +1,15 @@
 package com.stratocloud.provider.huawei.servers;
 
-import com.huaweicloud.sdk.ces.v1.model.Datapoint;
-import com.huaweicloud.sdk.ces.v1.model.ShowMetricDataRequest;
-import com.huaweicloud.sdk.ecs.v2.model.*;
+import com.huaweicloud.sdk.cts.v3.model.Traces;
+import com.huaweicloud.sdk.ecs.v2.model.ListServersDetailsRequest;
+import com.huaweicloud.sdk.ecs.v2.model.ServerAddress;
+import com.huaweicloud.sdk.ecs.v2.model.ServerDetail;
+import com.huaweicloud.sdk.ecs.v2.model.ServerFlavor;
 import com.huaweicloud.sdk.ims.v2.model.ImageInfo;
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.event.ExternalResourceEvent;
+import com.stratocloud.event.StratoEventLevel;
+import com.stratocloud.event.StratoEventSource;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
@@ -15,23 +20,23 @@ import com.stratocloud.provider.guest.GuestOsHandler;
 import com.stratocloud.provider.guest.command.ProviderGuestCommandExecutorFactory;
 import com.stratocloud.provider.huawei.HuaweiCloudProvider;
 import com.stratocloud.provider.huawei.common.HuaweiCloudClient;
+import com.stratocloud.provider.huawei.common.HuaweiEventTypes;
 import com.stratocloud.provider.huawei.servers.command.HuaweiBatCommandExecutorFactory;
 import com.stratocloud.provider.huawei.servers.command.HuaweiShellCommandExecutorFactory;
-import com.stratocloud.provider.resource.monitor.MonitoredResourceHandler;
+import com.stratocloud.provider.resource.event.EventAwareResourceHandler;
 import com.stratocloud.resource.*;
-import com.stratocloud.resource.monitor.ResourceQuickStats;
+import com.stratocloud.utils.TimeUtil;
 import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Component
 public class HuaweiServerHandler extends AbstractResourceHandler
-        implements GuestOsHandler, MonitoredResourceHandler {
+        implements GuestOsHandler, EventAwareResourceHandler {
 
     private final HuaweiCloudProvider provider;
 
@@ -244,61 +249,6 @@ public class HuaweiServerHandler extends AbstractResourceHandler
     }
 
     @Override
-    public Optional<ResourceQuickStats> describeQuickStats(Resource resource) {
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        HuaweiCloudClient client = provider.buildClient(account);
-
-        Optional<ServerDetail> serverDetail = describeServer(account, resource.getExternalId());
-
-        if(serverDetail.isEmpty())
-            return Optional.empty();
-
-        LocalDateTime to = LocalDateTime.now();
-        LocalDateTime from = to.minusMinutes(30);
-
-        ShowMetricDataRequest cpuRequest = new ShowMetricDataRequest();
-
-        cpuRequest.withNamespace("SYS.ECS")
-                .withMetricName("cpu_util")
-                .withDim0("instance_id,%s".formatted(resource.getExternalId()))
-                .withFilter(ShowMetricDataRequest.FilterEnum.AVERAGE)
-                .withPeriod(1)
-                .withFrom(from.atZone(ZoneId.systemDefault()).toEpochSecond()*1000)
-                .withTo(to.atZone(ZoneId.systemDefault()).toEpochSecond()*1000);
-
-
-        Optional<Datapoint> cpuDatapoint = client.ces().describeMetricData(cpuRequest).stream().findFirst();
-
-        ShowMetricDataRequest memoryRequest = new ShowMetricDataRequest();
-
-        memoryRequest.withNamespace("AGT.ECS")
-                .withMetricName("mem_usedPercent")
-                .withDim0("instance_id,%s".formatted(resource.getExternalId()))
-                .withFilter(ShowMetricDataRequest.FilterEnum.AVERAGE)
-                .withPeriod(1)
-                .withFrom(from.atZone(ZoneId.systemDefault()).toEpochSecond()*1000)
-                .withTo(to.atZone(ZoneId.systemDefault()).toEpochSecond()*1000);
-
-
-        Optional<Datapoint> memoryDatapoint = client.ces().describeMetricData(memoryRequest).stream().findFirst();
-
-        if(cpuDatapoint.isEmpty() && memoryDatapoint.isEmpty())
-            return Optional.empty();
-
-        ResourceQuickStats.Builder builder = ResourceQuickStats.builder();
-
-        cpuDatapoint.ifPresent(
-                datapoint -> builder.addCpuPercentage(datapoint.getAverage())
-        );
-
-        memoryDatapoint.ifPresent(
-                datapoint -> builder.addMemoryPercentage(datapoint.getAverage())
-        );
-
-        return Optional.of(builder.build());
-    }
-
-    @Override
     public ResourceCost getCurrentCost(Resource resource) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         HuaweiCloudClient client = provider.buildClient(account);
@@ -338,5 +288,44 @@ public class HuaweiServerHandler extends AbstractResourceHandler
             );
         else
             return ResourceCost.ZERO;
+    }
+
+    @Override
+    public List<ExternalResourceEvent> describeResourceEvents(ExternalAccount account, String externalId, LocalDateTime happenedAfter) {
+        HuaweiCloudClient client = provider.buildClient(account);
+
+        List<String> eventNames = HuaweiEventTypes.instanceEventTypes.stream().map(
+                HuaweiEventTypes.HuaweiEventType::externalEventName
+        ).toList();
+
+        List<Traces> events = client.cts().describeEvents(
+                eventNames, "ecs", externalId, happenedAfter
+        );
+
+        List<ExternalResourceEvent> result = new ArrayList<>();
+
+        for (Traces event : events) {
+            var aliyunEventType = HuaweiEventTypes.fromInstanceEventName(event.getTraceName());
+
+            if(aliyunEventType.isEmpty())
+                continue;
+
+            ExternalResourceEvent externalResourceEvent = new ExternalResourceEvent(
+                    event.getTraceId(),
+                    aliyunEventType.get().eventType(),
+                    StratoEventLevel.INFO,
+                    StratoEventSource.EXTERNAL_ACTION,
+                    getResourceTypeId(),
+                    account.getId(),
+                    externalId,
+                    event.getOperationId(),
+                    TimeUtil.fromUtcEpochMillis(event.getRecordTime())
+            );
+            result.add(
+                    externalResourceEvent
+            );
+        }
+
+        return result;
     }
 }

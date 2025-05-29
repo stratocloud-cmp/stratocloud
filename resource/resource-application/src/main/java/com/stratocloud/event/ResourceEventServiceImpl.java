@@ -6,19 +6,26 @@ import com.stratocloud.event.query.DescribeResourceEventsRequest;
 import com.stratocloud.event.response.NestedResourceEvent;
 import com.stratocloud.jpa.entities.EntityUtil;
 import com.stratocloud.lock.DistributedLock;
+import com.stratocloud.messaging.Message;
+import com.stratocloud.messaging.MessageBus;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.ProviderRegistry;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.provider.resource.event.EventAwareResourceHandler;
+import com.stratocloud.provider.resource.monitor.MetricsProvider;
 import com.stratocloud.repository.ResourceEventRepository;
 import com.stratocloud.repository.ResourceRepository;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceCategory;
 import com.stratocloud.resource.ResourceFilters;
 import com.stratocloud.resource.event.ResourceEvent;
 import com.stratocloud.utils.Utils;
 import com.stratocloud.validate.ValidateRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -28,23 +35,32 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-public class ResourceEventServiceImpl implements ResourceEventService {
+public class ResourceEventServiceImpl implements ResourceEventService, ApplicationContextAware {
 
     private final ResourceEventRepository repository;
 
     private final ResourceRepository resourceRepository;
 
+    private ApplicationContext applicationContext;
+
+    private final MessageBus messageBus;
+
     public ResourceEventServiceImpl(ResourceEventRepository repository,
-                                    ResourceRepository resourceRepository) {
+                                    ResourceRepository resourceRepository,
+                                    MessageBus messageBus) {
         this.repository = repository;
         this.resourceRepository = resourceRepository;
+        this.messageBus = messageBus;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -107,9 +123,7 @@ public class ResourceEventServiceImpl implements ResourceEventService {
         Resource resource = resourceRepository.findResource(resourceId);
 
         ResourceHandler resourceHandler = resource.getResourceHandler();
-
-        if(!(resourceHandler instanceof EventAwareResourceHandler eventAwareResourceHandler))
-            return;
+        Optional<MetricsProvider> metricsProvider = resourceHandler.getProvider().getMetricsProvider();
 
         ExternalAccount account
                 = resourceHandler.getAccountRepository().findExternalAccount(resource.getAccountId());
@@ -119,16 +133,28 @@ public class ResourceEventServiceImpl implements ResourceEventService {
                 ResourceEvent::getEventHappenedAt
         ).max(
                 Comparator.comparingLong(t -> t.atZone(ZoneId.systemDefault()).toEpochSecond())
-        ).orElse(LocalDateTime.MIN);
+        ).orElse(LocalDateTime.now().minusDays(10L));
 
         maxTime = LocalDateTime.of(maxTime.toLocalDate(), LocalTime.MIDNIGHT);
 
+        List<ExternalResourceEvent> externalEvents = new ArrayList<>();
 
-        List<ExternalResourceEvent> externalEvents = eventAwareResourceHandler.describeResourceEvents(
-                account,
-                resource.getExternalId(),
-                maxTime
-        );
+        if(resourceHandler instanceof EventAwareResourceHandler eventAwareResourceHandler){
+            externalEvents.addAll(
+                    eventAwareResourceHandler.describeResourceEvents(
+                            account,
+                            resource.getExternalId(),
+                            maxTime
+                    )
+            );
+        }
+
+        if(metricsProvider.isPresent()){
+            externalEvents.addAll(
+                    metricsProvider.get().describeAlertEvents(resource, maxTime)
+            );
+        }
+
 
         if(Utils.isEmpty(externalEvents))
             return;
@@ -138,13 +164,52 @@ public class ResourceEventServiceImpl implements ResourceEventService {
                     e -> e.isSameEvent(resource, externalEvent)
             ).findFirst();
 
+            if(externalEvent.happenedAt().isAfter(LocalDateTime.now().minusSeconds(20L)))
+                continue;
+
             if(event.isPresent()) {
                 event.get().updateByExternal(externalEvent);
                 repository.save(event.get());
             } else {
-                repository.save(ResourceEvent.from(account, resource, externalEvent));
+                handleExternalEvent(account, resource, externalEvent);
             }
         }
+    }
+
+    private void handleExternalEvent(ExternalAccount account,
+                                     Resource resource,
+                                     ExternalResourceEvent externalEvent) {
+        ResourceCategory resourceCategory = resource.getResourceHandler().getResourceCategory();
+        ResourceEvent resourceEvent = ResourceEvent.from(account, resource, externalEvent);
+        resourceEvent = repository.save(resourceEvent);
+
+        EventNotificationPayload payload = new EventNotificationPayload(
+                resourceEvent.getInternalEventId(),
+                externalEvent.type(),
+                externalEvent.level(),
+                externalEvent.source(),
+                new StratoEventObject(
+                        resourceCategory.id(),
+                        resourceCategory.name(),
+                        resource.getId(),
+                        resource.getName(),
+                        resource.getOwnerId(),
+                        null
+                ),
+                externalEvent.message(),
+                externalEvent.happenedAt(),
+                Map.of(
+                        "resourceId", resource.getId(),
+                        "resourceName", resource.getName(),
+                        "resourceCategory", resourceCategory
+                )
+        );
+        messageBus.publishWithSystemSession(
+                Message.create(
+                        EventTopics.EVENT_NOTIFICATION_TOPIC,
+                        payload
+                )
+        );
     }
 
     private NestedResourceEvent toNestedResourceEvent(ResourceEvent resourceEvent) {

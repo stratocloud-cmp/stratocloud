@@ -175,7 +175,7 @@ public class AliyunInstanceToFlavorHandler implements ChangeableEssentialHandler
                 request
         ).getPriceInfo().getPrice().getTradePrice();
 
-        LocalDateTime expiredTime = AliyunTimeUtil.toLocalDateTime(instance.detail().getExpiredTime());
+        LocalDateTime expiredTime = AliyunTimeUtil.toLocalDateMinutesTime(instance.detail().getExpiredTime());
         long months = ChronoUnit.MONTHS.between(LocalDateTime.now(), expiredTime);
 
         return new ResourceCost(tradePrice, months, ChronoUnit.MONTHS);

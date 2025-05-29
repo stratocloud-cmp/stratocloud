@@ -140,6 +140,14 @@ public class AliyunNetworkServiceImpl extends AliyunAbstractService implements A
     }
 
     @Override
+    public List<AliyunEip> describeEipsByAssociatedInstanceId(String instanceId) {
+        DescribeEipAddressesRequest request = new DescribeEipAddressesRequest();
+        request.setAssociatedInstanceType("EcsInstance");
+        request.setAssociatedInstanceId(instanceId);
+        return describeEips(request);
+    }
+
+    @Override
     public Optional<AliyunEip> describeEip(String eipId) {
         DescribeEipAddressesRequest request = new DescribeEipAddressesRequest();
         request.setAllocationId(eipId);

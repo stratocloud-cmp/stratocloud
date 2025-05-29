@@ -1,6 +1,8 @@
 package com.stratocloud.provider.aliyun.disk;
 
-import com.aliyun.ecs20140526.models.*;
+import com.aliyun.ecs20140526.models.DescribeDisksRequest;
+import com.aliyun.ecs20140526.models.DescribePriceRequest;
+import com.aliyun.ecs20140526.models.DescribeRenewalPriceRequest;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.provider.AbstractResourceHandler;
@@ -10,16 +12,13 @@ import com.stratocloud.provider.aliyun.common.AliyunClient;
 import com.stratocloud.provider.aliyun.common.AliyunTimeUtil;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.constants.UsageTypes;
-import com.stratocloud.provider.resource.monitor.MonitoredResourceHandler;
 import com.stratocloud.resource.*;
-import com.stratocloud.resource.monitor.ResourceQuickStats;
 import com.stratocloud.tag.Tag;
 import com.stratocloud.tag.TagEntry;
 import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -27,7 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class AliyunDiskHandler extends AbstractResourceHandler implements MonitoredResourceHandler {
+public class AliyunDiskHandler extends AbstractResourceHandler {
     private final AliyunCloudProvider provider;
 
     public AliyunDiskHandler(AliyunCloudProvider provider) {
@@ -196,8 +195,8 @@ public class AliyunDiskHandler extends AbstractResourceHandler implements Monito
 
         switch (disk.detail().getDiskChargeType()){
             case "PrePaid" -> {
-                LocalDateTime createdTime = AliyunTimeUtil.toLocalDateTime(disk.detail().getCreationTime());
-                LocalDateTime expiredTime = AliyunTimeUtil.toLocalDateTime(disk.detail().getExpiredTime());
+                LocalDateTime createdTime = AliyunTimeUtil.toLocalDateMinutesTime(disk.detail().getCreationTime());
+                LocalDateTime expiredTime = AliyunTimeUtil.toLocalDateMinutesTime(disk.detail().getExpiredTime());
 
                 int months = (int) ChronoUnit.MONTHS.between(createdTime, expiredTime);
 
@@ -231,49 +230,5 @@ public class AliyunDiskHandler extends AbstractResourceHandler implements Monito
                 return ResourceCost.ZERO;
             }
         }
-    }
-
-    @Override
-    public Optional<ResourceQuickStats> describeQuickStats(Resource resource) {
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-
-        Optional<AliyunDisk> aliyunDisk = describeDisk(account, resource.getExternalId());
-
-        if(aliyunDisk.isEmpty())
-            return Optional.empty();
-
-        var disk = aliyunDisk.get().detail();
-
-        if(Utils.isBlank(disk.getInstanceId()))
-            return Optional.empty();
-
-        LocalDateTime endTime = LocalDateTime.now();
-        LocalDateTime startTime = endTime.minus(Duration.ofSeconds(180L));
-
-        DescribeDiskMonitorDataRequest request = new DescribeDiskMonitorDataRequest();
-        request.setDiskId(disk.getDiskId());
-        request.setStartTime(AliyunTimeUtil.toAliyunDateTime(startTime));
-        request.setEndTime(AliyunTimeUtil.toAliyunDateTime(endTime));
-        request.setPeriod(60);
-
-        var responseBody = provider.buildClient(account).ecs().describeDiskMonitorData(request);
-
-        if(Utils.isEmpty(responseBody.getMonitorData().getDiskMonitorData()))
-            return Optional.empty();
-
-        var dataPoint = responseBody.getMonitorData().getDiskMonitorData().get(0);
-
-        Integer bpsRead = dataPoint.getBPSRead();
-        Integer bpsWrite = dataPoint.getBPSWrite();
-
-        ResourceQuickStats.Builder builder = ResourceQuickStats.builder();
-        builder.addItem(
-                "r", "读速率", bpsRead/(1024.0*1024.0), "MBps"
-        );
-        builder.addItem(
-                "w", "写速率", bpsWrite/(1024.0*1024.0), "MBps"
-        );
-
-        return Optional.of(builder.build());
     }
 }

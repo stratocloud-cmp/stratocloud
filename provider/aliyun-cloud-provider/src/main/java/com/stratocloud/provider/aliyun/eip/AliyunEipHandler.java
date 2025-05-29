@@ -7,14 +7,9 @@ import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.aliyun.AliyunCloudProvider;
 import com.stratocloud.provider.aliyun.common.AliyunClient;
-import com.stratocloud.provider.aliyun.common.AliyunMetricDataPoint;
-import com.stratocloud.provider.aliyun.common.AliyunMetricUtil;
-import com.stratocloud.provider.aliyun.common.services.AliyunCmsService;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.constants.UsageTypes;
-import com.stratocloud.provider.resource.monitor.MonitoredResourceHandler;
 import com.stratocloud.resource.*;
-import com.stratocloud.resource.monitor.ResourceQuickStats;
 import com.stratocloud.tag.Tag;
 import com.stratocloud.tag.TagEntry;
 import com.stratocloud.utils.Utils;
@@ -26,7 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class AliyunEipHandler extends AbstractResourceHandler implements MonitoredResourceHandler {
+public class AliyunEipHandler extends AbstractResourceHandler {
 
     private final AliyunCloudProvider provider;
 
@@ -152,52 +147,5 @@ public class AliyunEipHandler extends AbstractResourceHandler implements Monitor
     @Override
     public List<ResourceUsageType> getUsagesTypes() {
         return List.of(UsageTypes.ELASTIC_IP);
-    }
-
-    @Override
-    public Optional<ResourceQuickStats> describeQuickStats(Resource resource) {
-        if(Utils.isBlank(resource.getExternalId()))
-            return Optional.empty();
-
-        if(resource.getState() == ResourceState.IDLE)
-            return Optional.empty();
-
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-
-        AliyunCmsService cmsService = provider.buildClient(account).cms();
-
-        ResourceQuickStats.Builder builder = ResourceQuickStats.builder();
-
-        Optional<Float> inboundRate = AliyunMetricUtil.getLatestMetric(
-                cmsService,
-                "acs_vpc_eip",
-                "net_rx.rate",
-                resource.getExternalId(),
-                60,
-                AliyunMetricDataPoint::Value
-        );
-
-        Optional<Float> outboundRate = AliyunMetricUtil.getLatestMetric(
-                cmsService,
-                "acs_vpc_eip",
-                "net_tx.rate",
-                resource.getExternalId(),
-                60,
-                AliyunMetricDataPoint::Value
-        );
-
-
-        inboundRate.ifPresent(
-                r -> builder.addItem(
-                        "in", "流入带宽", r/(1024.0*1024.0), "mbps"
-                )
-        );
-        outboundRate.ifPresent(
-                r -> builder.addItem(
-                        "out", "流出带宽", r/(1024.0*1024.0), "mbps"
-                )
-        );
-
-        return Optional.of(builder.build());
     }
 }

@@ -6,18 +6,12 @@ import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.constants.UsageTypes;
-import com.stratocloud.provider.resource.monitor.MonitoredResourceHandler;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.common.TencentCloudClient;
 import com.stratocloud.resource.*;
-import com.stratocloud.resource.monitor.ResourceQuickStats;
 import com.stratocloud.tag.Tag;
 import com.stratocloud.tag.TagEntry;
 import com.stratocloud.utils.Utils;
-import com.tencentcloudapi.monitor.v20180724.models.DataPoint;
-import com.tencentcloudapi.monitor.v20180724.models.Dimension;
-import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataRequest;
-import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataResponse;
 import com.tencentcloudapi.vpc.v20170312.models.Address;
 import com.tencentcloudapi.vpc.v20170312.models.DescribeAddressesRequest;
 import org.springframework.stereotype.Component;
@@ -29,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class TencentEipHandler extends AbstractResourceHandler implements MonitoredResourceHandler {
+public class TencentEipHandler extends AbstractResourceHandler {
 
     private final TencentCloudProvider provider;
 
@@ -154,86 +148,5 @@ public class TencentEipHandler extends AbstractResourceHandler implements Monito
     @Override
     public List<ResourceUsageType> getUsagesTypes() {
         return List.of(UsageTypes.ELASTIC_IP);
-    }
-
-    @Override
-    public Optional<ResourceQuickStats> describeQuickStats(Resource resource) {
-        if(Utils.isBlank(resource.getExternalId()))
-            return Optional.empty();
-
-        if(resource.getState() == ResourceState.IDLE)
-            return Optional.empty();
-
-
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        TencentCloudClient client = provider.buildClient(account);
-
-        Optional<Address> address = describeEip(account, resource.getExternalId());
-
-        if(address.isEmpty())
-            return Optional.empty();
-
-        String eip = address.get().getAddressIp();
-
-        String appId = client.getUserAppId().getAppId().toString();
-
-        Optional<Float> inTraffic = getEipLatestMonitorData(
-                client, eip, "VipIntraffic", appId
-        );
-
-        Optional<Float> outTraffic = getEipLatestMonitorData(
-                client, eip, "VipOuttraffic", appId
-        );
-
-        if(inTraffic.isEmpty() && outTraffic.isEmpty())
-            return Optional.empty();
-
-        ResourceQuickStats.Builder builder = ResourceQuickStats.builder();
-
-        inTraffic.ifPresent(
-                r -> builder.addItem("in", "入带宽", r, "Mbps")
-        );
-
-        outTraffic.ifPresent(
-                r -> builder.addItem("out", "出带宽", r, "Mbps")
-        );
-
-        return Optional.of(builder.build());
-    }
-
-    private Optional<Float> getEipLatestMonitorData(TencentCloudClient client,
-                                                    String eip,
-                                                    String metricName,
-                                                    String appId){
-        GetMonitorDataRequest request = new GetMonitorDataRequest();
-        request.setNamespace("QCE/LB");
-        request.setMetricName(metricName);
-
-
-        var instance = new com.tencentcloudapi.monitor.v20180724.models.Instance();
-        Dimension dimension = new Dimension();
-        dimension.setName("eip");
-        dimension.setValue(eip);
-        Dimension dimension2 = new Dimension();
-        dimension2.setName("appId");
-        dimension2.setValue(appId);
-        instance.setDimensions(new Dimension[]{dimension, dimension2});
-
-        request.setInstances(new com.tencentcloudapi.monitor.v20180724.models.Instance[]{instance});
-        request.setPeriod(10L);
-        request.setSpecifyStatistics(1L); //avg,max,min -> 1,2,4  e.g. avg+max+min=7
-
-        GetMonitorDataResponse response = client.getMonitorData(request);
-        DataPoint[] dataPoints = response.getDataPoints();
-
-        if(Utils.isEmpty(dataPoints))
-            return Optional.empty();
-
-        Float[] avgValues = dataPoints[0].getAvgValues();
-
-        if(Utils.isEmpty(avgValues))
-            return Optional.empty();
-
-        return Optional.of(avgValues[avgValues.length-1]);
     }
 }

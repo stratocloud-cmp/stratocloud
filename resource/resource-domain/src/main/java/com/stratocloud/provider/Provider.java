@@ -4,6 +4,7 @@ package com.stratocloud.provider;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.provider.dynamic.DynamicResourceHandlerLoader;
 import com.stratocloud.provider.resource.ResourceHandler;
+import com.stratocloud.provider.resource.monitor.MetricsProvider;
 import com.stratocloud.repository.ExternalAccountRepository;
 
 import java.util.List;
@@ -43,5 +44,10 @@ public interface Provider {
 
     default Float getBalance(ExternalAccount account){
         return 0.0f;
+    }
+
+
+    default Optional<MetricsProvider> getMetricsProvider(){
+        return Optional.empty();
     }
 }

@@ -28,6 +28,8 @@ public interface AliyunNetworkService {
 
     List<AliyunEip> describeEips(DescribeEipAddressesRequest request);
 
+    List<AliyunEip> describeEipsByAssociatedInstanceId(String instanceId);
+
     Optional<AliyunEip> describeEip(String eipId);
 
     Optional<AliyunBandwidthPackage> describeBandwidthPackage(String bwpId);
