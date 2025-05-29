@@ -9,6 +9,7 @@ import com.stratocloud.provider.aliyun.common.AliyunMetricDataPoint;
 import java.util.List;
 
 public interface AliyunCmsService {
+    @SuppressWarnings("unused")
     List<AliyunMetricDataPoint> describeLatestMetrics(DescribeMetricLastRequest request);
 
     List<AliyunMetricDataPoint> describeMetricList(DescribeMetricListRequest request);

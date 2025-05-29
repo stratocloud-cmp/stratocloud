@@ -23,9 +23,6 @@ import com.stratocloud.utils.Utils;
 import com.stratocloud.validate.ValidateRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopContext;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -40,13 +37,11 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-public class ResourceEventServiceImpl implements ResourceEventService, ApplicationContextAware {
+public class ResourceEventServiceImpl implements ResourceEventService {
 
     private final ResourceEventRepository repository;
 
     private final ResourceRepository resourceRepository;
-
-    private ApplicationContext applicationContext;
 
     private final MessageBus messageBus;
 
@@ -56,11 +51,6 @@ public class ResourceEventServiceImpl implements ResourceEventService, Applicati
         this.repository = repository;
         this.resourceRepository = resourceRepository;
         this.messageBus = messageBus;
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 
     @Override
