@@ -18,16 +18,16 @@ import com.stratocloud.provider.tencent.lb.rule.TencentL7RuleId;
 import com.stratocloud.provider.tencent.securitygroup.policy.TencentSecurityGroupPolicyId;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.TimeUtil;
-import com.stratocloud.utils.concurrent.SleepUtil;
 import com.stratocloud.utils.Utils;
+import com.stratocloud.utils.concurrent.SleepUtil;
 import com.tencentcloudapi.billing.v20180709.BillingClient;
 import com.tencentcloudapi.billing.v20180709.models.DescribeAccountBalanceRequest;
 import com.tencentcloudapi.cam.v20190116.CamClient;
 import com.tencentcloudapi.cam.v20190116.models.GetUserAppIdRequest;
 import com.tencentcloudapi.cam.v20190116.models.GetUserAppIdResponse;
 import com.tencentcloudapi.cbs.v20170312.CbsClient;
-import com.tencentcloudapi.cbs.v20170312.models.*;
 import com.tencentcloudapi.cbs.v20170312.models.Snapshot;
+import com.tencentcloudapi.cbs.v20170312.models.*;
 import com.tencentcloudapi.clb.v20180317.ClbClient;
 import com.tencentcloudapi.clb.v20180317.models.*;
 import com.tencentcloudapi.cloudaudit.v20190319.CloudauditClient;
@@ -2020,8 +2020,8 @@ public class TencentCloudClientImpl implements TencentCloudClient{
                                                      LocalDateTime startTime) {
         DescribeAlarmHistoriesRequest request = new DescribeAlarmHistoriesRequest();
         request.setModule("monitor");
-        request.setStartTime(startTime.atZone(TimeUtil.BEIJING_ZONE_ID).toInstant().toEpochMilli());
-        request.setEndTime(System.currentTimeMillis());
+        request.setStartTime(startTime.atZone(TimeUtil.BEIJING_ZONE_ID).toEpochSecond());
+        request.setEndTime(LocalDateTime.now().atZone(TimeUtil.BEIJING_ZONE_ID).toEpochSecond());
         request.setAlarmObject(resourceId);
 
         return queryAllByPage(
@@ -2030,8 +2030,6 @@ public class TencentCloudClientImpl implements TencentCloudClient{
                 DescribeAlarmHistoriesResponse::getTotalCount,
                 request::setPageNumber,
                 request::setPageSize
-        ).stream().filter(
-                h -> Objects.equals(h.getAlarmObject(), resourceId)
-        ).toList();
+        );
     }
 }

@@ -18,6 +18,7 @@ import com.stratocloud.repository.ResourceRepository;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.ResourceCategory;
 import com.stratocloud.resource.ResourceFilters;
+import com.stratocloud.resource.ResourceState;
 import com.stratocloud.resource.event.ResourceEvent;
 import com.stratocloud.utils.Utils;
 import com.stratocloud.validate.ValidateRequest;
@@ -111,6 +112,9 @@ public class ResourceEventServiceImpl implements ResourceEventService {
     @Transactional
     public void collectExternalEventsByResourceId(Long resourceId) {
         Resource resource = resourceRepository.findResource(resourceId);
+
+        if(!ResourceState.getAliveStateSet().contains(resource.getState()))
+            return;
 
         ResourceHandler resourceHandler = resource.getResourceHandler();
         Optional<MetricsProvider> metricsProvider = resourceHandler.getProvider().getMetricsProvider();

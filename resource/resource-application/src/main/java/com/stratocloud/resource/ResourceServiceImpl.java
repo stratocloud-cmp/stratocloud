@@ -1172,8 +1172,10 @@ public class ResourceServiceImpl implements ResourceService {
             Long period = null;
 
             for (Integer periodSecond : metric.supportedPeriodSeconds()) {
-                if(to.minusSeconds(periodSecond * maxMetricsPullSize).isBefore(from))
+                if(to.minusSeconds(periodSecond * maxMetricsPullSize).isBefore(from)) {
                     period = Long.valueOf(periodSecond);
+                    break;
+                }
             }
 
             if(period == null)

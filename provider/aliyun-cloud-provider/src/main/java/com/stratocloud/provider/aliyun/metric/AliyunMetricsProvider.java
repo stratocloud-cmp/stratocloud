@@ -3,7 +3,6 @@ package com.stratocloud.provider.aliyun.metric;
 import com.aliyun.cms20190101.models.DescribeAlertLogListRequest;
 import com.aliyun.cms20190101.models.DescribeAlertLogListResponseBody;
 import com.aliyun.cms20190101.models.DescribeMetricListRequest;
-import com.aliyun.ecs20140526.models.DescribeDisksRequest;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.event.StratoEventLevel;
 import com.stratocloud.provider.ResourceEventTypes;
@@ -69,15 +68,13 @@ public class AliyunMetricsProvider implements MetricsProvider {
             return List.of();
 
         String instanceId = disk.get().detail().getInstanceId();
-        String device = disk.get().detail().getDevice();
-        if(Utils.isBlank(instanceId) || Utils.isBlank(device))
+        if(Utils.isBlank(instanceId))
             return List.of();
 
         return List.of(
                 new MetricObject(
                         List.of(
-                                new MetricDimension("instanceId", instanceId),
-                                new MetricDimension("device", device)
+                                new MetricDimension("instanceId", instanceId)
                         )
                 )
         );
@@ -87,26 +84,13 @@ public class AliyunMetricsProvider implements MetricsProvider {
         if(Utils.isBlank(resource.getExternalId()))
             return List.of();
 
-        DescribeDisksRequest request = new DescribeDisksRequest();
-        request.setInstanceId(resource.getExternalId());
-        List<AliyunDisk> disks = getClient(resource).ecs().describeDisks(request);
-        List<MetricObject> result = new ArrayList<>();
-
-        for (AliyunDisk disk : disks) {
-            String device = disk.detail().getDevice();
-            if(Utils.isBlank(device))
-                continue;
-
-            result.add(
-                    new MetricObject(
-                            List.of(
-                                    new MetricDimension("instanceId", resource.getExternalId()),
-                                    new MetricDimension("device", device)
-                            )
-                    )
-            );
-        }
-        return result;
+        return List.of(
+                new MetricObject(
+                        List.of(
+                                new MetricDimension("instanceId", resource.getExternalId())
+                        )
+                )
+        );
     }
 
     private static List<MetricObject> getEipMetricObjects(Resource resource) {
@@ -164,11 +148,10 @@ public class AliyunMetricsProvider implements MetricsProvider {
             if(Utils.isEmpty(metricObject.dimensions()))
                 continue;
 
-            Map<String, String> dimension = new HashMap<>();
             for (MetricDimension metricDimension : metricObject.dimensions()) {
-                dimension.put(metricDimension.name(), metricDimension.value());
+                dimensions.add(Map.of(metricDimension.name(), metricDimension.value()));
             }
-            dimensions.add(dimension);
+
         }
 
         request.setLength("1440");
@@ -181,10 +164,10 @@ public class AliyunMetricsProvider implements MetricsProvider {
 
         if(Utils.isNotEmpty(dataPoints)) {
             Map<String, List<AliyunMetricDataPoint>> sequencesMap
-                    = dataPoints.stream().collect(Collectors.groupingBy(AliyunMetricDataPoint::instanceId));
+                    = dataPoints.stream().collect(Collectors.groupingBy(AliyunMetricsProvider::getSequenceName));
 
-            for (String instanceId : sequencesMap.keySet()) {
-                List<AliyunMetricDataPoint> sequencePoints = sequencesMap.get(instanceId);
+            for (String sequenceName : sequencesMap.keySet()) {
+                List<AliyunMetricDataPoint> sequencePoints = sequencesMap.get(sequenceName);
 
                 if (Utils.isEmpty(sequencePoints))
                     continue;
@@ -210,7 +193,7 @@ public class AliyunMetricsProvider implements MetricsProvider {
                 }
 
                 MetricSequence.of(
-                        instanceId,
+                        sequenceName,
                         null,
                         points
                 ).ifPresent(sequences::add);
@@ -218,6 +201,22 @@ public class AliyunMetricsProvider implements MetricsProvider {
         }
 
         return new MetricData(metric, sequences);
+    }
+
+    private static String getSequenceName(AliyunMetricDataPoint p) {
+        return Utils.isNotBlank(p.device()) ? p.device() : p.instanceId();
+    }
+
+    @Override
+    public Map<Metric, String> getShortMetricNames() {
+        return Map.of(
+                AliyunMetrics.CPU_UTIL, "cpu",
+                AliyunMetrics.MEMORY_UTIL, "mem",
+                AliyunMetrics.EIP_IN_RATE, "in",
+                AliyunMetrics.EIP_OUT_RATE, "out",
+                AliyunMetrics.PER_DISK_READ_BPS, "r",
+                AliyunMetrics.PER_DISK_WRITE_BPS, "w"
+        );
     }
 
     private Float getMetricValue(Metric metric, AliyunMetricDataPoint sequencePoint) {
@@ -410,8 +409,8 @@ public class AliyunMetricsProvider implements MetricsProvider {
             AliyunMetricsProvider::getInstanceDiskMetricsObjects,
             Optional.empty(),
             Optional.empty(),
-            true,
-            ResourceCategories.DISK
+            false,
+            ResourceCategories.COMPUTE_INSTANCE
     );
 
     public static final SupportedMetric INSTANCE_PER_DISK_WRITE_BPS = new SupportedMetric(
@@ -420,8 +419,8 @@ public class AliyunMetricsProvider implements MetricsProvider {
             AliyunMetricsProvider::getInstanceDiskMetricsObjects,
             Optional.empty(),
             Optional.empty(),
-            true,
-            ResourceCategories.DISK
+            false,
+            ResourceCategories.COMPUTE_INSTANCE
     );
 
     public static final SupportedMetric INSTANCE_PER_DISK_UTIL = new SupportedMetric(
@@ -431,7 +430,7 @@ public class AliyunMetricsProvider implements MetricsProvider {
             Optional.empty(),
             Optional.empty(),
             false,
-            ResourceCategories.DISK
+            ResourceCategories.COMPUTE_INSTANCE
     );
 
 

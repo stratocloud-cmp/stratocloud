@@ -186,6 +186,18 @@ public class TencentMetricsProvider implements MetricsProvider {
         return new MetricData(supportedMetric.metric(), sequences);
     }
 
+    @Override
+    public Map<Metric, String> getShortMetricNames() {
+        return Map.of(
+                TencentMetrics.CPU_USAGE, "cpu",
+                TencentMetrics.MEM_USAGE, "mem",
+                TencentMetrics.DISK_READ_TRAFFIC, "r",
+                TencentMetrics.DISK_WRITE_TRAFFIC, "w",
+                TencentMetrics.VIP_IN_TRAFFIC, "in",
+                TencentMetrics.VIP_OUT_TRAFFIC, "out"
+        );
+    }
+
     private static Optional<String> getDimensionValue(Dimension[] dimensions, String dimensionName){
         if(Utils.isEmpty(dimensions))
             return Optional.empty();
@@ -234,21 +246,28 @@ public class TencentMetricsProvider implements MetricsProvider {
                         h.getAlarmId(),
                         convertLevel(h.getAlarmLevel()),
                         convertStatus(h.getAlarmStatus()),
-                        h.getMetricName(),
+                        getMetricName(h.getMetricsInfo(), h.getMetricName()),
                         resource.getAccountId(),
                         resource.getCategory(),
                         resource.getExternalId(),
                         h.getContent(),
                         ZonedDateTime.ofInstant(
-                                Instant.ofEpochMilli(h.getFirstOccurTime()),
+                                Instant.ofEpochSecond(h.getFirstOccurTime()),
                                 TimeUtil.BEIJING_ZONE_ID
                         ).toLocalDateTime(),
                         ZonedDateTime.ofInstant(
-                                Instant.ofEpochMilli(h.getLastOccurTime()),
+                                Instant.ofEpochSecond(h.getLastOccurTime()),
                                 TimeUtil.BEIJING_ZONE_ID
                         ).toLocalDateTime()
                 )
         ).toList();
+    }
+
+    private String getMetricName(AlarmHistoryMetric[] metricsInfo, String defaultName) {
+        if(Utils.isEmpty(metricsInfo))
+            return defaultName;
+
+        return metricsInfo[0].getMetricName();
     }
 
     private AlertStatus convertStatus(String alarmStatus) {
@@ -362,13 +381,15 @@ public class TencentMetricsProvider implements MetricsProvider {
             false,
             ResourceCategories.COMPUTE_INSTANCE
     );
+
+
     public static final SupportedMetric DISK_READ_TRAFFIC_FOR_DISK = new SupportedMetric(
             TencentMetrics.DISK_READ_TRAFFIC,
             "diskId",
             TencentMetricsProvider::getDiskMetricObjects,
             Optional.empty(),
             Optional.empty(),
-            false,
+            true,
             ResourceCategories.DISK
     );
 
@@ -380,7 +401,7 @@ public class TencentMetricsProvider implements MetricsProvider {
             TencentMetricsProvider::getDiskMetricObjects,
             Optional.empty(),
             Optional.empty(),
-            false,
+            true,
             ResourceCategories.DISK
     );
     public static final SupportedMetric DISK_READ_IOPS = new SupportedMetric(

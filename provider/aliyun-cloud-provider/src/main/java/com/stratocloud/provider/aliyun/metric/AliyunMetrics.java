@@ -98,7 +98,7 @@ public class AliyunMetrics {
     public static final Metric MEMORY_USED = new Metric(
             "acs_ecs_dashboard",
             "memory_usedspace",
-            "内存使用率",
+            "内存使用量",
             "B",
             MetricType.TIME_SERIES,
             MetricGroup.MEMORY_METRICS,
@@ -110,7 +110,7 @@ public class AliyunMetrics {
     public static final Metric PER_DISK_READ_BPS = new Metric(
             "acs_ecs_dashboard",
             "disk_readbytes",
-            "各磁盘读取BPS",
+            "磁盘读取BPS",
             "B/s",
             MetricType.TIME_SERIES,
             MetricGroup.STORAGE_METRICS,
@@ -122,7 +122,7 @@ public class AliyunMetrics {
     public static final Metric PER_DISK_WRITE_BPS = new Metric(
             "acs_ecs_dashboard",
             "disk_writebytes",
-            "各磁盘写入BPS",
+            "磁盘写入BPS",
             "B/s",
             MetricType.TIME_SERIES,
             MetricGroup.STORAGE_METRICS,
@@ -135,7 +135,7 @@ public class AliyunMetrics {
             "acs_ecs_dashboard",
             "diskusage_utilization",
             "磁盘使用率",
-            "B/s",
+            "%",
             MetricType.TIME_SERIES,
             MetricGroup.STORAGE_METRICS,
             MetricValueType.AVG,

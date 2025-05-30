@@ -23,10 +23,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 
 @Component
@@ -43,7 +40,15 @@ public class HuaweiMetricsProvider implements MetricsProvider {
     }
 
     private static List<MetricObject> getInstanceMetricObjects(Resource resource) {
-        return null;
+        if(Utils.isBlank(resource.getExternalId()))
+            return List.of();
+        return List.of(
+                new MetricObject(
+                        List.of(
+                                new MetricDimension("instance_id", resource.getExternalId())
+                        )
+                )
+        );
     }
 
     @Override
@@ -201,6 +206,14 @@ public class HuaweiMetricsProvider implements MetricsProvider {
         }
 
         return result;
+    }
+
+    @Override
+    public Map<Metric, String> getShortMetricNames() {
+        return Map.of(
+                HuaweiMetrics.CPU_UTIL, "cpu",
+                HuaweiMetrics.MEM_UTIL, "mem"
+        );
     }
 
     private AlertStatus convertStatus(AlarmHistoryItemV2.StatusEnum status) {

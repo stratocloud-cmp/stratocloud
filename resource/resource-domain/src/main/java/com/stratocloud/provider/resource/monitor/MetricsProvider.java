@@ -6,6 +6,7 @@ import com.stratocloud.event.StratoEventSource;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.alert.AlertStatus;
 import com.stratocloud.resource.alert.ExternalAlertHistory;
+import com.stratocloud.resource.monitor.Metric;
 import com.stratocloud.resource.monitor.MetricData;
 import com.stratocloud.resource.monitor.ResourceQuickStats;
 import com.stratocloud.utils.Utils;
@@ -13,6 +14,7 @@ import com.stratocloud.utils.Utils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface MetricsProvider {
@@ -46,6 +48,8 @@ public interface MetricsProvider {
 
         ResourceQuickStats.Builder builder = ResourceQuickStats.builder();
 
+        Map<Metric, String> shortMetricNames = getShortMetricNames();
+
         for (SupportedMetric quickStatsMetric : quickStatsMetrics) {
             LocalDateTime to = LocalDateTime.now();
             LocalDateTime from = to.minusMinutes(10);
@@ -58,11 +62,14 @@ public interface MetricsProvider {
             );
             if(Utils.isNotEmpty(metricData.sequences())){
                 double latestValue = metricData.sequences().get(0).latestValue();
+                String shortName = shortMetricNames.get(quickStatsMetric.metric());
+
                 builder.addItem(
-                        quickStatsMetric.metric().metricName(),
+                        Utils.isNotBlank(shortName) ? shortName : quickStatsMetric.metric().metricName(),
                         quickStatsMetric.metric().metricLabel(),
                         latestValue,
-                        quickStatsMetric.metric().metricUnit()
+                        quickStatsMetric.metric().metricUnit(),
+                        quickStatsMetric.metric().isPercentage()
                 );
             }
         }
@@ -120,5 +127,9 @@ public interface MetricsProvider {
         }
 
         return result;
+    }
+
+    default Map<Metric, String> getShortMetricNames(){
+        return Map.of();
     }
 }

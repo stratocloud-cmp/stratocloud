@@ -26,7 +26,7 @@ public record ResourceQuickStats(List<Item> items) {
     public static class Builder {
         private final List<Item> items = new ArrayList<>();
 
-        private Builder addItem(String name, String label, double value, String unit, boolean isPercentage){
+        public Builder addItem(String name, String label, double value, String unit, boolean isPercentage){
             items.add(new Item(name, label, value,  unit, isPercentage));
             return this;
         }

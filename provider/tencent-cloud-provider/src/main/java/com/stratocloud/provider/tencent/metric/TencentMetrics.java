@@ -291,7 +291,7 @@ public class TencentMetrics {
             MetricGroup.NETWORK_METRICS,
             MetricValueType.AVG,
             false,
-            List.of(5, 10, 60, 300, 3600, 86400)
+            List.of(10, 60, 300, 3600, 86400)
     );
 
     public static final Metric VIP_OUT_TRAFFIC = new Metric(
@@ -303,6 +303,6 @@ public class TencentMetrics {
             MetricGroup.NETWORK_METRICS,
             MetricValueType.AVG,
             false,
-            List.of(5, 10, 60, 300, 3600, 86400)
+            List.of(10, 60, 300, 3600, 86400)
     );
 }
