@@ -22,6 +22,7 @@
         <module>script-handlers</module>
         <module>huawei-cloud-provider</module>
         <module>built-in-software</module>
+        <module>kubernetes-provider</module>
     </modules>
 
     <properties>

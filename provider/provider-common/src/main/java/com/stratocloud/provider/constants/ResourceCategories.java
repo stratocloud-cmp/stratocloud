@@ -256,14 +256,6 @@ public class ResourceCategories {
             999
     );
 
-    public static final ResourceCategory CONTAINER = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_RELATED,
-            "CONTAINER",
-            "容器",
-            "container",
-            61
-    );
-
     public static final ResourceCategory CLOUD_DATABASE = new ResourceCategory(
             ResourceCategoryGroups.CLOUD_DB_RELATED,
             "CLOUD_DATABASE",
@@ -293,4 +285,47 @@ public class ResourceCategories {
             "disk-snapshot",
             107
     );
+
+
+    public static final ResourceCategory CONTAINER = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "CONTAINER",
+            "Container",
+            "container",
+            61
+    );
+
+    public static final ResourceCategory DEPLOYMENT = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "DEPLOYMENT",
+            "Deployment",
+            "deployment",
+            62
+    );
+
+    public static final ResourceCategory SERVICE = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "SERVICE",
+            "Service",
+            "service",
+            63
+    );
+
+    public static final ResourceCategory NODE = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "NODE",
+            "Node",
+            "node",
+            64
+    );
+    public static final ResourceCategory NAMESPACE = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "NAMESPACE",
+            "Namespace",
+            "namespace",
+            65
+    );
+
+
+
 }
