@@ -287,11 +287,11 @@ public class ResourceCategories {
     );
 
 
-    public static final ResourceCategory CONTAINER = new ResourceCategory(
+    public static final ResourceCategory POD = new ResourceCategory(
             ResourceCategoryGroups.CONTAINER_RELATED,
-            "CONTAINER",
-            "Container",
-            "container",
+            "POD",
+            "Pod",
+            "pod",
             61
     );
 
@@ -303,12 +303,85 @@ public class ResourceCategories {
             62
     );
 
+    public static final ResourceCategory STATEFUL_SET = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "STATEFUL_SET",
+            "StatefulSet",
+            "stateful-set",
+            63
+    );
+
+    public static final ResourceCategory DAEMON_SET = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "DAEMON_SET",
+            "DaemonSet",
+            "daemon-set",
+            64
+    );
+
+    public static final ResourceCategory CONTAINER_JOB = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "CONTAINER_JOB",
+            "ContainerJob",
+            "container-job",
+            65
+    );
+
+    public static final ResourceCategory CONTAINER_CRON_JOB = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "CONTAINER_CRON_JOB",
+            "ContainerCronJob",
+            "container-cron-job",
+            66
+    );
+
     public static final ResourceCategory SERVICE = new ResourceCategory(
             ResourceCategoryGroups.CONTAINER_RELATED,
             "SERVICE",
             "Service",
             "service",
-            63
+            71
+    );
+
+    public static final ResourceCategory ENDPOINT_SLICE = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "ENDPOINT_SLICE",
+            "EndpointSlice",
+            "endpoint-slice",
+            72
+    );
+
+    public static final ResourceCategory INGRESS = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "INGRESS",
+            "Ingress",
+            "ingress",
+            73
+    );
+    public static final ResourceCategory INGRESS_CLASS = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "INGRESS_CLASS",
+            "IngressClass",
+            "ingress-class",
+            74
+    );
+
+    public static final ResourceCategory NETWORK_POLICY = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "NETWORK_POLICY",
+            "NetworkPolicy",
+            "network-policy",
+            75
+    );
+
+
+
+    public static final ResourceCategory NAMESPACE = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "NAMESPACE",
+            "Namespace",
+            "namespace",
+            81
     );
 
     public static final ResourceCategory NODE = new ResourceCategory(
@@ -316,14 +389,15 @@ public class ResourceCategories {
             "NODE",
             "Node",
             "node",
-            64
+            82
     );
-    public static final ResourceCategory NAMESPACE = new ResourceCategory(
+
+    public static final ResourceCategory RUNTIME_CLASS = new ResourceCategory(
             ResourceCategoryGroups.CONTAINER_RELATED,
-            "NAMESPACE",
-            "Namespace",
-            "namespace",
-            65
+            "RUNTIME_CLASS",
+            "RuntimeClass",
+            "runtime-class",
+            83
     );
 
 
