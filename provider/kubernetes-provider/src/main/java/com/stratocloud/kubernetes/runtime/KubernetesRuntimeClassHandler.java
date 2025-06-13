@@ -52,12 +52,12 @@ public class KubernetesRuntimeClassHandler extends AbstractResourceHandler {
 
     @Override
     public Optional<ExternalResource> describeExternalResource(ExternalAccount account, String externalId) {
-        return describeIngressClass(account, externalId).map(
+        return describeRuntimeClass(account, externalId).map(
                 r -> toExternalResource(account, r)
         );
     }
 
-    public Optional<V1RuntimeClass> describeIngressClass(ExternalAccount account, String externalId){
+    public Optional<V1RuntimeClass> describeRuntimeClass(ExternalAccount account, String externalId){
         if(Utils.isBlank(externalId))
             return Optional.empty();
 
