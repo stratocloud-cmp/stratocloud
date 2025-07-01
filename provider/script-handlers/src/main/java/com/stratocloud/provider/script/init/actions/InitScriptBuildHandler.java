@@ -49,7 +49,7 @@ public class InitScriptBuildHandler implements BuildResourceActionHandler {
     }
 
     @Override
-    public Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData() {
+    public Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData(Resource resource) {
         return scriptHandler.getDefinition().getRemoteScriptDef().getCustomForm().map(CustomForm::toDynamicFormMetaData);
     }
 

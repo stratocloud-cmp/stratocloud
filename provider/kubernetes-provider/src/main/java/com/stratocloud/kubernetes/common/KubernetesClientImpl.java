@@ -4,6 +4,8 @@ import com.stratocloud.exceptions.ExternalAccountInvalidException;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.exceptions.ProviderConnectionException;
 import com.stratocloud.exceptions.StratoException;
+import com.stratocloud.kubernetes.volume.PodVolume;
+import com.stratocloud.kubernetes.volume.PodVolumeId;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
 import com.stratocloud.utils.concurrent.SleepUtil;
@@ -14,11 +16,13 @@ import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.Config;
 import io.kubernetes.client.util.KubeConfig;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.internal.http2.StreamResetException;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -71,6 +75,10 @@ public class KubernetesClientImpl implements KubernetesClient {
         return new BatchV1Api(buildClient());
     }
 
+    private StorageV1Api buildStorageV1Api(){
+        return new StorageV1Api(buildClient());
+    }
+
     private interface Invoker<R> {
         R invoke() throws ApiException;
     }
@@ -95,7 +103,7 @@ public class KubernetesClientImpl implements KubernetesClient {
                 throw new ExternalAccountInvalidException(e.getMessage(), e);
             } else if(e.getCode() == 404) {
                 throw new ExternalResourceNotFoundException(e.getMessage(), e);
-            } else if(e.getCode() == 429) {
+            } else if(e.getCode() == 429 || isCausedByStreamReset(e)) {
                 log.warn("Retrying later: {}", e.getMessage());
                 SleepUtil.sleepRandomlyByMilliSeconds(500, 3000);
                 return doTryInvoke(invoker, triedTimes + 1);
@@ -103,8 +111,18 @@ public class KubernetesClientImpl implements KubernetesClient {
                 throw new StratoException(e.getMessage(), e);
             }
         }catch (Exception e){
+            if(isCausedByStreamReset(e)){
+                log.warn("Stream was reset, retrying later: {}", e.getCause().getMessage());
+                SleepUtil.sleepRandomlyByMilliSeconds(500, 3000);
+                return doTryInvoke(invoker, triedTimes + 1);
+            }
+
             throw new ProviderConnectionException(e.getMessage(), e);
         }
+    }
+
+    private static boolean isCausedByStreamReset(Exception e) {
+        return e.getCause() != null && e.getCause() instanceof StreamResetException;
     }
 
     private  <E, R> List<E> queryAllByToken(Invoker<R> invoker,
@@ -194,6 +212,15 @@ public class KubernetesClientImpl implements KubernetesClient {
             return;
         }
         log.info("Kubernetes {} deleted. Name={}. UID={}.",
+                objectKind, metadata.getName(), metadata.getUid());
+    }
+
+    private void handleObjectReplaced(V1ObjectMeta metadata, String objectKind) {
+        if(metadata == null){
+            log.warn("Replaced object's metadata is null.");
+            return;
+        }
+        log.info("Kubernetes {} replaced. Name={}. UID={}.",
                 objectKind, metadata.getName(), metadata.getUid());
     }
 
@@ -573,6 +600,19 @@ public class KubernetesClientImpl implements KubernetesClient {
     }
 
     @Override
+    public List<V1Pod> describePodsByNamespace(String namespace) {
+        var request = buildCoreV1Api().listNamespacedPod(namespace);
+
+        return queryAllByToken(
+                request::execute,
+                request::limit,
+                V1PodList::getItems,
+                resp -> getContinueToken(resp.getMetadata()),
+                request::_continue
+        );
+    }
+
+    @Override
     public Optional<V1Pod> describePod(NamespacedRef ref){
         return queryOne(
                 () -> buildCoreV1Api().readNamespacedPod(ref.name(), ref.namespace()).execute()
@@ -602,6 +642,29 @@ public class KubernetesClientImpl implements KubernetesClient {
 
         handleObjectDeleted(pod.getMetadata(), "Pod");
     }
+
+    @Override
+    public List<V1ReplicaSet> describeReplicaSets(){
+        var request = buildAppsV1Api().listReplicaSetForAllNamespaces();
+
+        return queryAllByToken(
+                request::execute,
+                request::limit,
+                V1ReplicaSetList::getItems,
+                resp -> getContinueToken(resp.getMetadata()),
+                request::_continue
+        );
+    }
+
+    @Override
+    public Optional<V1ReplicaSet> describeReplicaSet(NamespacedRef ref){
+        return queryOne(
+                () -> buildAppsV1Api().readNamespacedReplicaSet(
+                        ref.name(), ref.namespace()
+                ).execute()
+        );
+    }
+
 
     @Override
     public List<V1Deployment> describeDeployments(){
@@ -636,6 +699,23 @@ public class KubernetesClientImpl implements KubernetesClient {
         );
 
         handleObjectCreated(result.getMetadata(), "Deployment");
+        return result;
+    }
+
+    @Override
+    public V1Deployment updateDeployment(String namespace, V1Deployment deployment, boolean dryRun){
+        V1Deployment result = tryInvoke(
+                () -> buildAppsV1Api().replaceNamespacedDeployment(
+                        KubeUtil.getObjectName(deployment.getMetadata()),
+                        namespace,
+                        deployment
+                ).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "Deployment");
+
         return result;
     }
 
@@ -689,6 +769,23 @@ public class KubernetesClientImpl implements KubernetesClient {
     }
 
     @Override
+    public V1StatefulSet updateStatefulSet(String namespace, V1StatefulSet statefulSet, boolean dryRun){
+        V1StatefulSet result = tryInvoke(
+                () -> buildAppsV1Api().replaceNamespacedStatefulSet(
+                        KubeUtil.getObjectName(statefulSet.getMetadata()),
+                        namespace,
+                        statefulSet
+                ).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "StatefulSet");
+
+        return result;
+    }
+
+    @Override
     public void deleteStatefulSet(NamespacedRef ref, boolean dryRun){
         V1Status status = tryInvoke(
                 () -> buildAppsV1Api().deleteNamespacedStatefulSet(
@@ -734,6 +831,23 @@ public class KubernetesClientImpl implements KubernetesClient {
         );
 
         handleObjectCreated(result.getMetadata(), "DaemonSet");
+
+        return result;
+    }
+
+    @Override
+    public V1DaemonSet updateDaemonSet(String namespace, V1DaemonSet daemonSet, boolean dryRun){
+        V1DaemonSet result = tryInvoke(
+                () -> buildAppsV1Api().replaceNamespacedDaemonSet(
+                        KubeUtil.getObjectName(daemonSet.getMetadata()),
+                        namespace,
+                        daemonSet
+                ).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "DaemonSet");
 
         return result;
     }
@@ -849,5 +963,297 @@ public class KubernetesClientImpl implements KubernetesClient {
         );
 
         handleResultStatus(status, "DeleteJob");
+    }
+
+
+    @Override
+    public List<V1PersistentVolume> describePersistentVolumes(){
+        var request = buildCoreV1Api().listPersistentVolume();
+
+        return queryAllByToken(
+                request::execute,
+                request::limit,
+                V1PersistentVolumeList::getItems,
+                resp -> getContinueToken(resp.getMetadata()),
+                request::_continue
+        );
+    }
+
+    @Override
+    public Optional<V1PersistentVolume> describePersistentVolume(String name){
+        return queryOne(
+                () -> buildCoreV1Api().readPersistentVolume(name).execute()
+        );
+    }
+
+    @Override
+    public V1PersistentVolume createPersistentVolume(V1PersistentVolume persistentVolume, boolean dryRun){
+        V1PersistentVolume result = tryInvoke(
+                () -> buildCoreV1Api().createPersistentVolume(
+                        persistentVolume
+                ).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleObjectCreated(result.getMetadata(), "PersistentVolume");
+
+        return result;
+    }
+
+    @Override
+    public void deletePersistentVolume(String name, boolean dryRun){
+        V1PersistentVolume volume = tryInvoke(
+                () -> buildCoreV1Api().deletePersistentVolume(name).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleObjectDeleted(volume.getMetadata(), "PersistentVolume");
+    }
+
+
+
+    @Override
+    public List<V1PersistentVolumeClaim> describePersistentVolumeClaims(){
+        var request = buildCoreV1Api().listPersistentVolumeClaimForAllNamespaces();
+
+        return queryAllByToken(
+                request::execute,
+                request::limit,
+                V1PersistentVolumeClaimList::getItems,
+                resp -> getContinueToken(resp.getMetadata()),
+                request::_continue
+        );
+    }
+
+    @Override
+    public Optional<V1PersistentVolumeClaim> describePersistentVolumeClaim(NamespacedRef ref){
+        return queryOne(
+                () -> buildCoreV1Api().readNamespacedPersistentVolumeClaim(
+                        ref.name(), ref.namespace()
+                ).execute()
+        );
+    }
+
+    @Override
+    public V1PersistentVolumeClaim createPersistentVolumeClaim(String namespace,
+                                                               V1PersistentVolumeClaim persistentVolumeClaim,
+                                                               boolean dryRun){
+        V1PersistentVolumeClaim result = tryInvoke(
+                () -> buildCoreV1Api().createNamespacedPersistentVolumeClaim(
+                        namespace,
+                        persistentVolumeClaim
+                ).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleObjectCreated(result.getMetadata(), "PersistentVolumeClaim");
+
+        return result;
+    }
+
+    @Override
+    public void deletePersistentVolumeClaim(NamespacedRef ref, boolean dryRun){
+        V1PersistentVolumeClaim volumeClaim = tryInvoke(
+                () -> buildCoreV1Api().deleteNamespacedPersistentVolumeClaim(
+                        ref.name(), ref.namespace()
+                ).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleObjectDeleted(volumeClaim.getMetadata(), "PersistentVolumeClaim");
+    }
+
+
+    @Override
+    public List<V1StorageClass> describeStorageClasses(){
+        StorageV1Api.APIlistStorageClassRequest request = buildStorageV1Api().listStorageClass();
+        return queryAllByToken(
+                request::execute,
+                request::limit,
+                V1StorageClassList::getItems,
+                resp -> getContinueToken(resp.getMetadata()),
+                request::_continue
+        );
+    }
+
+    @Override
+    public Optional<V1StorageClass> describeStorageClass(String name){
+        return queryOne(
+                () -> buildStorageV1Api().readStorageClass(name).execute()
+        );
+    }
+
+    @Override
+    public V1StorageClass createStorageClass(V1StorageClass storageClass, boolean dryRun){
+        V1StorageClass result = tryInvoke(
+                () -> buildStorageV1Api().createStorageClass(
+                        storageClass
+                ).dryRun(getDryRunOption(dryRun)).execute()
+        );
+
+        handleObjectCreated(result.getMetadata(), "StorageClass");
+
+        return result;
+    }
+
+    @Override
+    public void deleteStorageClass(String name, boolean dryRun){
+        V1StorageClass result = tryInvoke(
+                () -> buildStorageV1Api().deleteStorageClass(name).execute()
+        );
+
+        handleObjectDeleted(result.getMetadata(), "StorageClass");
+    }
+
+
+    @Override
+    public List<V1ConfigMap> describeConfigMaps(){
+        var request = buildCoreV1Api().listConfigMapForAllNamespaces();
+
+        return queryAllByToken(
+                request::execute,
+                request::limit,
+                V1ConfigMapList::getItems,
+                resp -> getContinueToken(resp.getMetadata()),
+                request::_continue
+        );
+    }
+
+    @Override
+    public Optional<V1ConfigMap> describeConfigMap(NamespacedRef ref){
+        return queryOne(
+                () -> buildCoreV1Api().readNamespacedConfigMap(
+                        ref.name(), ref.namespace()
+                ).execute()
+        );
+    }
+
+    @Override
+    public V1ConfigMap createConfigMap(String namespace, V1ConfigMap configMap, boolean dryRun){
+        V1ConfigMap result = tryInvoke(
+                () -> buildCoreV1Api().createNamespacedConfigMap(
+                        namespace, configMap
+                ).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleObjectCreated(result.getMetadata(), "ConfigMap");
+        return result;
+    }
+
+    @Override
+    public void deleteConfigMap(NamespacedRef ref, boolean dryRun){
+        V1Status result = tryInvoke(
+                () -> buildCoreV1Api().deleteNamespacedConfigMap(
+                        ref.name(), ref.namespace()
+                ).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleResultStatus(result, "DeleteConfigMap");
+    }
+
+    @Override
+    public List<V1Secret> describeSecrets(){
+        var request = buildCoreV1Api().listSecretForAllNamespaces();
+        return queryAllByToken(
+                request::execute,
+                request::limit,
+                V1SecretList::getItems,
+                resp -> getContinueToken(resp.getMetadata()),
+                request::_continue
+        );
+    }
+
+    @Override
+    public Optional<V1Secret> describeSecret(NamespacedRef ref){
+        return queryOne(
+                () -> buildCoreV1Api().readNamespacedSecret(
+                        ref.name(), ref.namespace()
+                ).execute()
+        );
+    }
+
+    @Override
+    public V1Secret createSecret(String namespace, V1Secret secret, boolean dryRun){
+        V1Secret result = tryInvoke(
+                () -> buildCoreV1Api().createNamespacedSecret(
+                        namespace, secret
+                ).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleObjectCreated(result.getMetadata(), "Secret");
+
+        return result;
+    }
+
+    @Override
+    public void deleteSecret(NamespacedRef ref, boolean dryRun){
+        V1Status status = tryInvoke(
+                () -> buildCoreV1Api().deleteNamespacedSecret(
+                        ref.name(), ref.namespace()
+                ).dryRun(
+                        getDryRunOption(dryRun)
+                ).execute()
+        );
+
+        handleResultStatus(status, "DeleteSecret");
+    }
+
+
+    @Override
+    public List<PodVolume> describePodVolumes(){
+        List<V1Pod> pods = describePods();
+        List<PodVolume> result = new ArrayList<>();
+
+        for (V1Pod pod : pods) {
+            if(pod.getSpec() == null)
+                continue;
+            if(Utils.isEmpty(pod.getSpec().getVolumes()))
+                continue;
+            NamespacedRef podRef = KubeUtil.getNamespacedRef(pod.getMetadata());
+
+            result.addAll(
+                    pod.getSpec().getVolumes().stream().map(
+                            v -> new PodVolume(
+                                    new PodVolumeId(
+                                            podRef,
+                                            v.getName()
+                                    ),
+                                    v
+                            )
+                    ).toList()
+            );
+        }
+
+        return result;
+    }
+
+    @Override
+    public Optional<PodVolume> describePodVolume(PodVolumeId podVolumeId){
+        Optional<V1Pod> pod = describePod(podVolumeId.podRef());
+        if(pod.isEmpty())
+            return Optional.empty();
+
+        V1PodSpec spec = pod.get().getSpec();
+        if(spec == null)
+            return Optional.empty();
+        List<V1Volume> volumes = spec.getVolumes();
+        if(Utils.isEmpty(volumes))
+            return Optional.empty();
+
+        return volumes.stream().filter(
+                v -> Objects.equals(v.getName(), podVolumeId.volumeName())
+        ).map(
+                v -> new PodVolume(podVolumeId, v)
+        ).findAny();
     }
 }

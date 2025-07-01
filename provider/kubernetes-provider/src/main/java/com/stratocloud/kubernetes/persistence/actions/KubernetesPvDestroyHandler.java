@@ -1,36 +1,36 @@
-package com.stratocloud.kubernetes.pod.actions;
+package com.stratocloud.kubernetes.persistence.actions;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
-import com.stratocloud.kubernetes.pod.KubernetesPodHandler;
+import com.stratocloud.kubernetes.persistence.KubernetesPvHandler;
 import com.stratocloud.provider.resource.DestroyResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.Resource;
-import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class KubernetesPodDestroyHandler implements DestroyResourceActionHandler {
+public class KubernetesPvDestroyHandler implements DestroyResourceActionHandler {
 
-    private final KubernetesPodHandler podHandler;
+    private final KubernetesPvHandler pvHandler;
 
-    public KubernetesPodDestroyHandler(KubernetesPodHandler podHandler) {
-        this.podHandler = podHandler;
+    public KubernetesPvDestroyHandler(KubernetesPvHandler pvHandler) {
+        this.pvHandler = pvHandler;
     }
 
     @Override
     public ResourceHandler getResourceHandler() {
-        return podHandler;
+        return pvHandler;
     }
 
     @Override
     public String getTaskName() {
-        return "删除Pod";
+        return "删除PersistentVolume";
     }
 
     @Override
@@ -40,23 +40,25 @@ public class KubernetesPodDestroyHandler implements DestroyResourceActionHandler
 
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        deletePod(resource, false);
+        deletePv(resource, false);
     }
 
-    private void deletePod(Resource resource, boolean dryRun) {
-        KubernetesProvider provider = (KubernetesProvider) podHandler.getProvider();
+    private void deletePv(Resource resource, boolean dryRun) {
+        KubernetesProvider provider = (KubernetesProvider) pvHandler.getProvider();
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
 
-        Optional<V1Pod> pod = podHandler.describePod(account, resource.getExternalId());
+        Optional<V1PersistentVolume> pv = pvHandler.describePersistentVolume(account, resource.getExternalId());
 
-        if(pod.isEmpty())
+        if(pv.isEmpty())
             return;
 
-        provider.buildClient(account).deletePod(KubeUtil.getNamespacedRef(pod.get().getMetadata()), dryRun);
+        provider.buildClient(account).deletePersistentVolume(
+                KubeUtil.getObjectName(pv.get().getMetadata()), dryRun
+        );
     }
 
     @Override
     public void validatePrecondition(Resource resource, Map<String, Object> parameters) {
-        deletePod(resource, true);
+        deletePv(resource, true);
     }
 }

@@ -7,16 +7,28 @@ public class ResourceCategoryGroups {
             "COMPUTE_INSTANCE_RELATED", "云主机相关"
     );
 
-    public static final ResourceCategoryGroup CONTAINER_RELATED = new ResourceCategoryGroup(
-            "CONTAINER_RELATED", "容器相关"
-    );
-
     public static final ResourceCategoryGroup STORAGE_RELATED = new ResourceCategoryGroup(
             "STORAGE_RELATED", "存储"
     );
 
     public static final ResourceCategoryGroup NETWORK_RELATED = new ResourceCategoryGroup(
             "NETWORK_RELATED", "网络"
+    );
+
+    public static final ResourceCategoryGroup CONTAINER_WORKLOAD = new ResourceCategoryGroup(
+            "CONTAINER_WORKLOAD", "容器工作负载"
+    );
+
+    public static final ResourceCategoryGroup CONTAINER_STORAGE = new ResourceCategoryGroup(
+            "CONTAINER_STORAGE", "容器存储"
+    );
+
+    public static final ResourceCategoryGroup CONTAINER_NETWORK = new ResourceCategoryGroup(
+            "CONTAINER_NETWORK", "容器网络"
+    );
+
+    public static final ResourceCategoryGroup CONTAINER_CLUSTER = new ResourceCategoryGroup(
+            "CONTAINER_CLUSTER", "容器集群"
     );
 
     public static final ResourceCategoryGroup LOAD_BALANCER_RELATED = new ResourceCategoryGroup(

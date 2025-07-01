@@ -95,7 +95,7 @@ public class SoftwareActionHandler implements ResourceActionHandler {
     }
 
     @Override
-    public Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData() {
+    public Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData(Resource resource) {
         return softwareAction.getRemoteScriptDef().getCustomForm().map(CustomForm::toDynamicFormMetaData);
     }
 

@@ -28,5 +28,6 @@ public class NestedRelationshipSpec {
     private Set<ResourceState> allowedTargetStates;
 
     private Boolean visibleInTarget;
+    private Boolean visibleInForm;
     private Boolean isolatedTargetContext;
 }

@@ -247,6 +247,7 @@ public class ResourceAssembler {
         nestedRelationshipSpec.setAllowedTargetStates(relationshipHandler.getAllowedTargetStates());
 
         nestedRelationshipSpec.setVisibleInTarget(relationshipHandler.visibleInTarget());
+        nestedRelationshipSpec.setVisibleInForm(relationshipHandler.visibleInForm());
         nestedRelationshipSpec.setIsolatedTargetContext(relationshipHandler.isolatedTargetContext());
 
         return nestedRelationshipSpec;

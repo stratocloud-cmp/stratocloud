@@ -25,7 +25,7 @@ public interface ResourceActionHandler extends DynamicPermissionRequired {
 
     Class<? extends ResourceActionInput> getInputClass();
 
-    default Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData(){
+    default Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData(Resource resource){
         return Optional.empty();
     }
 

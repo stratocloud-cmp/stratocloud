@@ -1,0 +1,60 @@
+package com.stratocloud.kubernetes.daemon.actions;
+
+import com.stratocloud.form.CodeBlockField;
+import com.stratocloud.provider.resource.ResourceActionInput;
+import lombok.Data;
+
+@Data
+public class KubernetesDaemonSetBuildInput implements ResourceActionInput {
+
+    @CodeBlockField(label = "对象定义", language = "yaml", defaultValue = NODE_YAML_EXAMPLE)
+    private String yamlContent;
+
+
+    public static final String NODE_YAML_EXAMPLE = """
+            apiVersion: apps/v1
+            kind: DaemonSet
+            metadata:
+              name: fluentd-elasticsearch
+              namespace: kube-system
+              labels:
+                k8s-app: fluentd-logging
+            spec:
+              selector:
+                matchLabels:
+                  name: fluentd-elasticsearch
+              template:
+                metadata:
+                  labels:
+                    name: fluentd-elasticsearch
+                spec:
+                  tolerations:
+                  # 这些容忍度设置是为了让该守护进程集在控制平面节点上运行
+                  # 如果你不希望自己的控制平面节点运行 Pod，可以删除它们
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+                    effect: NoSchedule
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
+                    effect: NoSchedule
+                  containers:
+                  - name: fluentd-elasticsearch
+                    image: quay.io/fluentd_elasticsearch/fluentd:v2.5.2
+                    resources:
+                      limits:
+                        memory: 200Mi
+                      requests:
+                        cpu: 100m
+                        memory: 200Mi
+                    volumeMounts:
+                    - name: varlog
+                      mountPath: /var/log
+                  # 可能需要设置较高的优先级类以确保 DaemonSet Pod 可以抢占正在运行的 Pod
+                  # priorityClassName: important
+                  terminationGracePeriodSeconds: 30
+                  volumes:
+                  - name: varlog
+                    hostPath:
+                      path: /var/log
+            """;
+}

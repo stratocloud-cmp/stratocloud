@@ -467,9 +467,10 @@ public class ResourceServiceImpl implements ResourceService {
         String actionId = request.getActionId();
 
         Long networkResourceId = null;
+        Resource resource = null;
 
         if(resourceId != null) {
-            Resource resource = repository.findResource(resourceId);
+            resource = repository.findResource(resourceId);
             resourceTypeId = resource.getType();
 
             Optional<Resource> networkResource = resource.getRequirements().stream().filter(
@@ -490,7 +491,9 @@ public class ResourceServiceImpl implements ResourceService {
                     "Unsupported action %s for resource type %s.".formatted(actionId, resourceTypeId)
             );
 
-        var directInputClassDynamicFormMetaData = actionHandler.get().getDirectInputClassDynamicFormMetaData();
+        var directInputClassDynamicFormMetaData = actionHandler.get().getDirectInputClassDynamicFormMetaData(
+                resource
+        );
 
         if(directInputClassDynamicFormMetaData.isPresent()){
             return new DescribeResourceActionFormResponse(

@@ -1,5 +1,7 @@
 package com.stratocloud.kubernetes.common;
 
+import com.stratocloud.kubernetes.volume.PodVolume;
+import com.stratocloud.kubernetes.volume.PodVolumeId;
 import io.kubernetes.client.openapi.models.*;
 
 import java.util.List;
@@ -76,17 +78,25 @@ public interface KubernetesClient {
 
     List<V1Pod> describePods();
 
+    List<V1Pod> describePodsByNamespace(String namespace);
+
     Optional<V1Pod> describePod(NamespacedRef ref);
 
     V1Pod createPod(String namespace, V1Pod pod, boolean dryRun);
 
     void deletePod(NamespacedRef ref, boolean dryRun);
 
+    List<V1ReplicaSet> describeReplicaSets();
+
+    Optional<V1ReplicaSet> describeReplicaSet(NamespacedRef ref);
+
     List<V1Deployment> describeDeployments();
 
     Optional<V1Deployment> describeDeployment(NamespacedRef ref);
 
     V1Deployment createDeployment(String namespace, V1Deployment deployment, boolean dryRun);
+
+    V1Deployment updateDeployment(String namespace, V1Deployment deployment, boolean dryRun);
 
     void deleteDeployment(NamespacedRef ref, boolean dryRun);
 
@@ -96,6 +106,8 @@ public interface KubernetesClient {
 
     V1StatefulSet createStatefulSet(String namespace, V1StatefulSet statefulSet, boolean dryRun);
 
+    V1StatefulSet updateStatefulSet(String namespace, V1StatefulSet statefulSet, boolean dryRun);
+
     void deleteStatefulSet(NamespacedRef ref, boolean dryRun);
 
     List<V1DaemonSet> describeDaemonSets();
@@ -103,6 +115,8 @@ public interface KubernetesClient {
     Optional<V1DaemonSet> describeDaemonSet(NamespacedRef ref);
 
     V1DaemonSet createDaemonSet(String namespace, V1DaemonSet daemonSet, boolean dryRun);
+
+    V1DaemonSet updateDaemonSet(String namespace, V1DaemonSet daemonSet, boolean dryRun);
 
     void deleteDaemonSet(NamespacedRef ref, boolean dryRun);
 
@@ -121,4 +135,51 @@ public interface KubernetesClient {
     V1Job createJob(String namespace, V1Job job, boolean dryRun);
 
     void deleteJob(NamespacedRef ref, boolean dryRun);
+
+    List<V1PersistentVolume> describePersistentVolumes();
+
+    List<V1PersistentVolumeClaim> describePersistentVolumeClaims();
+
+    Optional<V1PersistentVolume> describePersistentVolume(String name);
+
+    Optional<V1PersistentVolumeClaim> describePersistentVolumeClaim(NamespacedRef ref);
+
+    V1PersistentVolume createPersistentVolume(V1PersistentVolume persistentVolume, boolean dryRun);
+
+    V1PersistentVolumeClaim createPersistentVolumeClaim(String namespace,
+                                                        V1PersistentVolumeClaim persistentVolumeClaim,
+                                                        boolean dryRun);
+
+    void deletePersistentVolume(String name, boolean dryRun);
+
+    void deletePersistentVolumeClaim(NamespacedRef ref, boolean dryRun);
+
+    List<V1StorageClass> describeStorageClasses();
+
+    Optional<V1StorageClass> describeStorageClass(String name);
+
+    V1StorageClass createStorageClass(V1StorageClass storageClass, boolean dryRun);
+
+    void deleteStorageClass(String name, boolean dryRun);
+
+    List<V1ConfigMap> describeConfigMaps();
+
+    Optional<V1ConfigMap> describeConfigMap(NamespacedRef ref);
+
+    V1ConfigMap createConfigMap(String namespace, V1ConfigMap configMap, boolean dryRun);
+
+    void deleteConfigMap(NamespacedRef ref, boolean dryRun);
+
+    List<V1Secret> describeSecrets();
+
+    Optional<V1Secret> describeSecret(NamespacedRef ref);
+
+    V1Secret createSecret(String namespace, V1Secret secret, boolean dryRun);
+
+    void deleteSecret(NamespacedRef ref, boolean dryRun);
+
+
+    List<PodVolume> describePodVolumes();
+
+    Optional<PodVolume> describePodVolume(PodVolumeId podVolumeId);
 }

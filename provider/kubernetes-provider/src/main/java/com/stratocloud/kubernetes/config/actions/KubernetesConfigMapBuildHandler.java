@@ -1,10 +1,10 @@
-package com.stratocloud.kubernetes.pod.actions;
+package com.stratocloud.kubernetes.config.actions;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
-import com.stratocloud.kubernetes.pod.KubernetesPodHandler;
+import com.stratocloud.kubernetes.config.KubernetesConfigMapHandler;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.resource.BuildResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
@@ -12,52 +12,54 @@ import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.ResourceUsage;
 import com.stratocloud.utils.JSON;
-import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
 @Component
-public class KubernetesPodBuildHandler implements BuildResourceActionHandler {
+public class KubernetesConfigMapBuildHandler implements BuildResourceActionHandler {
 
-    private final KubernetesPodHandler podHandler;
+    private final KubernetesConfigMapHandler configMapHandler;
 
-    public KubernetesPodBuildHandler(KubernetesPodHandler podHandler) {
-        this.podHandler = podHandler;
+    public KubernetesConfigMapBuildHandler(KubernetesConfigMapHandler configMapHandler) {
+        this.configMapHandler = configMapHandler;
     }
 
     @Override
     public ResourceHandler getResourceHandler() {
-        return podHandler;
+        return configMapHandler;
     }
 
     @Override
     public String getTaskName() {
-        return "创建Pod";
+        return "创建ConfigMap";
     }
 
     @Override
     public Class<? extends ResourceActionInput> getInputClass() {
-        return KubernetesPodBuildInput.class;
+        return KubernetesConfigMapBuildInput.class;
     }
 
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        createPod(resource, parameters, false);
+        createConfigMap(resource, parameters, false);
     }
 
-    private void createPod(Resource resource, Map<String, Object> parameters, boolean dryRun) {
-        KubernetesProvider provider = (KubernetesProvider) podHandler.getProvider();
+    private void createConfigMap(Resource resource, Map<String, Object> parameters, boolean dryRun) {
+        KubernetesProvider provider = (KubernetesProvider) configMapHandler.getProvider();
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        var input = JSON.convert(parameters, KubernetesPodBuildInput.class);
+        var input = JSON.convert(parameters, KubernetesConfigMapBuildInput.class);
 
         Resource namespace = resource.getEssentialTarget(ResourceCategories.NAMESPACE).orElseThrow(
-                () -> new StratoException("Namespace not found when creating pod")
+                () -> new StratoException("Namespace not found when creating config map")
         );
 
-        V1Pod pod = KubeUtil.fromYaml(input.getYamlContent(), V1Pod.class);
-        V1Pod result = provider.buildClient(account).createPod(namespace.getExternalId(), pod, dryRun);
+        V1ConfigMap configMap = KubeUtil.fromYaml(input.getYamlContent(), V1ConfigMap.class);
+        V1ConfigMap result = provider.buildClient(account).createConfigMap(
+                namespace.getExternalId(), configMap, dryRun
+        );
 
         resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
     }
@@ -69,6 +71,6 @@ public class KubernetesPodBuildHandler implements BuildResourceActionHandler {
 
     @Override
     public void validatePrecondition(Resource resource, Map<String, Object> parameters) {
-        createPod(resource, parameters, true);
+        createConfigMap(resource, parameters, true);
     }
 }

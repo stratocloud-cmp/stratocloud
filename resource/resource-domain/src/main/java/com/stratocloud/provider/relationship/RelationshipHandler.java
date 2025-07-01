@@ -136,6 +136,8 @@ public interface RelationshipHandler {
         return true;
     }
 
+    default boolean visibleInForm(){return true;}
+
     default boolean disconnectOnLost(){
         return false;
     }

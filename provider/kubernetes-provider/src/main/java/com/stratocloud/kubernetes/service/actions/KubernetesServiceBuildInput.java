@@ -1,11 +1,11 @@
-package com.stratocloud.kubernetes.pod.actions;
+package com.stratocloud.kubernetes.service.actions;
 
 import com.stratocloud.form.CodeBlockField;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import lombok.Data;
 
 @Data
-public class KubernetesPodBuildInput implements ResourceActionInput {
+public class KubernetesServiceBuildInput implements ResourceActionInput {
 
     @CodeBlockField(label = "对象定义", language = "yaml", defaultValue = NODE_YAML_EXAMPLE)
     private String yamlContent;
@@ -13,16 +13,15 @@ public class KubernetesPodBuildInput implements ResourceActionInput {
 
     public static final String NODE_YAML_EXAMPLE = """
             apiVersion: v1
-            kind: Pod
+            kind: Service
             metadata:
-              name: myapp-pod
-              labels:
-                app: myapp
+              name: my-service
             spec:
-              containers:
-              - name: myapp-container
-                image: nginx
-                ports:
-                - containerPort: 80
+              selector:
+                app.kubernetes.io/name: MyApp
+              ports:
+                - protocol: TCP
+                  port: 80
+                  targetPort: 9376
             """;
 }
