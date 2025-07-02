@@ -103,6 +103,7 @@ public class KubernetesDeploymentUpdateHandler implements ResourceActionHandler 
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        deploymentHandler.managePodsAndVolumes(resource);
         return ResourceActionResult.finished();
     }
 

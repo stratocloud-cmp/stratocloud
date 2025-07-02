@@ -62,7 +62,7 @@ public class KubernetesPodVolumeHandler extends AbstractResourceHandler {
         return provider.buildClient(account).describePodVolume(PodVolumeId.fromString(externalId));
     }
 
-    private ExternalResource toExternalResource(ExternalAccount account,
+    public ExternalResource toExternalResource(ExternalAccount account,
                                                 PodVolume podVolume) {
         return new ExternalResource(
                 provider.getId(),

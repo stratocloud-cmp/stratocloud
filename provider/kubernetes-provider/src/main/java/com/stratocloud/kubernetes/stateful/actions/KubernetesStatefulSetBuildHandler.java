@@ -2,6 +2,7 @@ package com.stratocloud.kubernetes.stateful.actions;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
+import com.stratocloud.job.TaskState;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.stateful.KubernetesStatefulSetHandler;
@@ -10,6 +11,7 @@ import com.stratocloud.provider.resource.BuildResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceActionResult;
 import com.stratocloud.resource.ResourceUsage;
 import com.stratocloud.utils.JSON;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
@@ -67,6 +69,16 @@ public class KubernetesStatefulSetBuildHandler implements BuildResourceActionHan
     @Override
     public List<ResourceUsage> predictUsageChangeAfterAction(Resource resource, Map<String, Object> parameters) {
         return List.of();
+    }
+
+    @Override
+    public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        ResourceActionResult result = BuildResourceActionHandler.super.checkActionResult(resource, parameters);
+
+        if(result.taskState() == TaskState.FINISHED || result.taskState() == TaskState.FAILED)
+            statefulSetHandler.managePodsAndVolumes(resource);
+
+        return result;
     }
 
     @Override

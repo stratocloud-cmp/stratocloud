@@ -108,6 +108,7 @@ public class KubernetesStatefulSetUpdateHandler implements ResourceActionHandler
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        statefulSetHandler.managePodsAndVolumes(resource);
         return ResourceActionResult.finished();
     }
 

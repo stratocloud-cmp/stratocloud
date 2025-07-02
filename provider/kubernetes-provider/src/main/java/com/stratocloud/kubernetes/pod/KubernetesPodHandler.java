@@ -10,6 +10,7 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -73,8 +74,28 @@ public class KubernetesPodHandler extends AbstractResourceHandler {
                 getResourceTypeId(),
                 KubeUtil.getNamespacedRef(pod.getMetadata()).toString(),
                 KubeUtil.getObjectName(pod.getMetadata()),
-                ResourceState.AVAILABLE
+                convertState(pod)
         );
+    }
+
+    private ResourceState convertState(V1Pod pod) {
+        V1PodStatus status = pod.getStatus();
+
+        if(status == null)
+            return ResourceState.UNKNOWN;
+
+        String phase = status.getPhase();
+
+        if(phase == null)
+            return ResourceState.UNKNOWN;
+
+        return switch (phase){
+            case "Pending" -> ResourceState.BUILDING;
+            case "Running" -> ResourceState.STARTED;
+            case "Succeeded" -> ResourceState.STOPPED;
+            case "Failed" -> ResourceState.ERROR;
+            default -> ResourceState.UNKNOWN;
+        };
     }
 
     @Override

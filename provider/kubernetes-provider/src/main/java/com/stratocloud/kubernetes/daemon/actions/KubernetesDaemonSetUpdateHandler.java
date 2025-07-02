@@ -104,6 +104,7 @@ public class KubernetesDaemonSetUpdateHandler implements ResourceActionHandler {
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        daemonSetHandler.managePodsAndVolumes(resource);
         return ResourceActionResult.finished();
     }
 

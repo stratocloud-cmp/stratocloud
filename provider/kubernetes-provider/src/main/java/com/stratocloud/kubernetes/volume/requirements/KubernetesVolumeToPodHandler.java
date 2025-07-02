@@ -70,6 +70,11 @@ public class KubernetesVolumeToPodHandler implements EssentialRequirementHandler
     }
 
     @Override
+    public boolean visibleInForm() {
+        return false;
+    }
+
+    @Override
     public List<ExternalRequirement> describeExternalRequirements(ExternalAccount account, ExternalResource source) {
         Optional<PodVolume> podVolume = volumeHandler.describePodVolume(account, source.externalId());
 

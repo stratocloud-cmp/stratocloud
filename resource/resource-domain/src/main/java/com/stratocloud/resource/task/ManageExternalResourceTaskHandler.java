@@ -1,15 +1,12 @@
 package com.stratocloud.resource.task;
 
-import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.identity.BuiltInIds;
 import com.stratocloud.job.Task;
 import com.stratocloud.job.TaskHandler;
 import com.stratocloud.job.TaskInputs;
 import com.stratocloud.job.TaskType;
-import com.stratocloud.repository.ExternalAccountRepository;
 import com.stratocloud.repository.ResourceRepository;
 import com.stratocloud.resource.*;
-import com.stratocloud.resource.license.LicensedResourcesLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -23,23 +20,14 @@ public class ManageExternalResourceTaskHandler implements TaskHandler {
 
     public static final TaskType TASK_TYPE = new TaskType("MANAGE_EXTERNAL_RESOURCE", "纳管资源");
 
-    private final ExternalAccountRepository accountRepository;
-
     private final ResourceRepository resourceRepository;
 
+    private final ResourceManagementService managementService;
 
-    private final ResourceSynchronizer synchronizer;
-
-    private final LicensedResourcesLimiter licensedResourcesLimiter;
-
-    public ManageExternalResourceTaskHandler(ExternalAccountRepository accountRepository,
-                                             ResourceRepository resourceRepository,
-                                             ResourceSynchronizer synchronizer,
-                                             LicensedResourcesLimiter licensedResourcesLimiter) {
-        this.accountRepository = accountRepository;
+    public ManageExternalResourceTaskHandler(ResourceRepository resourceRepository,
+                                             ResourceManagementService managementService) {
         this.resourceRepository = resourceRepository;
-        this.synchronizer = synchronizer;
-        this.licensedResourcesLimiter = licensedResourcesLimiter;
+        this.managementService = managementService;
     }
 
     @Override
@@ -58,34 +46,7 @@ public class ManageExternalResourceTaskHandler implements TaskHandler {
         var taskInputs = (ManageExternalResourceTaskInputs) task.getTaskInputs();
         ExternalResource externalResource = taskInputs.externalResource();
 
-        manageExternalResource(externalResource);
-    }
-
-    private void manageExternalResource(ExternalResource externalResource) {
-        log.info("Managing external resource {}.", externalResource.name());
-
-        ExternalAccount account = accountRepository.findExternalAccount(externalResource.accountId());
-
-        Resource resource;
-        Optional<Resource> optionalResource = resourceRepository.findByExternalResource(externalResource);
-
-        if(optionalResource.isPresent()){
-            log.info("Resource {} is already managed.", externalResource.name());
-            resource = optionalResource.get();
-        }else {
-            log.info("Resource {} is never managed.", externalResource.name());
-            resource = Resource.createFromExternalResource(
-                    account.getTenantId(), BuiltInIds.SYSTEM_USER_ID, externalResource
-            );
-
-            licensedResourcesLimiter.validateLimitForCategory(resource.getCategory());
-        }
-
-        resource = resourceRepository.saveWithSystemSession(resource);
-
-        synchronizer.synchronize(resource.getId());
-
-        log.info("Resource {} has been managed successfully.", resource.getName());
+        managementService.manageExternalResource(BuiltInIds.SYSTEM_USER_ID, externalResource);
     }
 
     @Override

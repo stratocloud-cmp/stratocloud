@@ -3,6 +3,7 @@ package com.stratocloud.kubernetes.deployment;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
+import com.stratocloud.kubernetes.common.KubernetesManagementService;
 import com.stratocloud.kubernetes.common.NamespacedRef;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
@@ -10,6 +11,8 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1DeploymentStatus;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -21,8 +24,12 @@ public class KubernetesDeploymentHandler extends AbstractResourceHandler {
 
     private final KubernetesProvider provider;
 
-    public KubernetesDeploymentHandler(KubernetesProvider provider) {
+    private final KubernetesManagementService managementService;
+
+    public KubernetesDeploymentHandler(KubernetesProvider provider,
+                                       KubernetesManagementService managementService) {
         this.provider = provider;
+        this.managementService = managementService;
     }
 
     @Override
@@ -73,8 +80,29 @@ public class KubernetesDeploymentHandler extends AbstractResourceHandler {
                 getResourceTypeId(),
                 KubeUtil.getNamespacedRef(deployment.getMetadata()).toString(),
                 KubeUtil.getObjectName(deployment.getMetadata()),
-                ResourceState.AVAILABLE
+                convertState(deployment)
         );
+    }
+
+    private ResourceState convertState(V1Deployment deployment) {
+        V1DeploymentStatus status = deployment.getStatus();
+
+        if(status == null)
+            return ResourceState.UNKNOWN;
+
+        Integer replicas = status.getReplicas();
+        Integer availableReplicas = status.getAvailableReplicas();
+
+        if(replicas == null || availableReplicas == null)
+            return ResourceState.UNKNOWN;
+
+        if(replicas > availableReplicas)
+            return ResourceState.BUILDING;
+
+        if(replicas == 0)
+            return ResourceState.STOPPED;
+
+        return ResourceState.STARTED;
     }
 
     @Override
@@ -94,5 +122,30 @@ public class KubernetesDeploymentHandler extends AbstractResourceHandler {
     @Override
     public List<ResourceUsageType> getUsagesTypes() {
         return List.of();
+    }
+
+
+    public void managePodsAndVolumes(Resource resource){
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+
+        Optional<V1Deployment> deployment = describeDeployment(
+                account, resource.getExternalId()
+        );
+
+        if(deployment.isEmpty())
+            return;
+
+        V1ObjectMeta metadata = deployment.get().getMetadata();
+
+        if(metadata == null)
+            return;
+
+        managementService.managePodsAndVolumes(
+                provider,
+                account,
+                deployment.get().getKind(),
+                metadata,
+                resource.getOwnerId()
+        );
     }
 }

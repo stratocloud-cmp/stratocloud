@@ -3,6 +3,7 @@ package com.stratocloud.kubernetes.daemon;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
+import com.stratocloud.kubernetes.common.KubernetesManagementService;
 import com.stratocloud.kubernetes.common.NamespacedRef;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
@@ -10,6 +11,7 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -21,8 +23,12 @@ public class KubernetesDaemonSetHandler extends AbstractResourceHandler {
 
     private final KubernetesProvider provider;
 
-    public KubernetesDaemonSetHandler(KubernetesProvider provider) {
+    private final KubernetesManagementService managementService;
+
+    public KubernetesDaemonSetHandler(KubernetesProvider provider,
+                                      KubernetesManagementService managementService) {
         this.provider = provider;
+        this.managementService = managementService;
     }
 
     @Override
@@ -94,5 +100,29 @@ public class KubernetesDaemonSetHandler extends AbstractResourceHandler {
     @Override
     public List<ResourceUsageType> getUsagesTypes() {
         return List.of();
+    }
+
+    public void managePodsAndVolumes(Resource resource){
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+
+        Optional<V1DaemonSet> daemonSet = describeDaemonSet(
+                account, resource.getExternalId()
+        );
+
+        if(daemonSet.isEmpty())
+            return;
+
+        V1ObjectMeta metadata = daemonSet.get().getMetadata();
+
+        if(metadata == null)
+            return;
+
+        managementService.managePodsAndVolumes(
+                provider,
+                account,
+                daemonSet.get().getKind(),
+                metadata,
+                resource.getOwnerId()
+        );
     }
 }
