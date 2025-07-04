@@ -2,6 +2,7 @@ package com.stratocloud.kubernetes.job.actions;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
+import com.stratocloud.job.TaskState;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.job.KubernetesCronJobHandler;
@@ -10,6 +11,7 @@ import com.stratocloud.provider.resource.BuildResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceActionResult;
 import com.stratocloud.resource.ResourceUsage;
 import com.stratocloud.utils.JSON;
 import io.kubernetes.client.openapi.models.V1CronJob;
@@ -70,5 +72,17 @@ public class KubernetesCronJobBuildHandler implements BuildResourceActionHandler
     @Override
     public void validatePrecondition(Resource resource, Map<String, Object> parameters) {
         createCronJob(resource, parameters, true);
+    }
+
+    @Override
+    public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        ResourceActionResult result = BuildResourceActionHandler.super.checkActionResult(
+                resource, parameters
+        );
+
+        if(result.taskState() == TaskState.FINISHED || result.taskState() == TaskState.FAILED)
+            cronJobHandler.managePodsAndVolumes(resource);
+
+        return result;
     }
 }

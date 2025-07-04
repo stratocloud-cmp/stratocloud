@@ -59,4 +59,9 @@ public class ResourceActions {
     public static final ResourceAction ROLLBACK_TO_SNAPSHOT = new ResourceAction(
             "ROLLBACK_TO_SNAPSHOT", "恢复快照", 302
     );
+
+
+    public static final ResourceAction READ_YAML = new ResourceAction(
+            "READ_YAML", "查看YAML", 401
+    );
 }

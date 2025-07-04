@@ -82,11 +82,6 @@ public interface KubernetesClient {
 
     Optional<V1Pod> describePod(NamespacedRef ref);
 
-    V1Pod createPod(String namespace, V1Pod pod, boolean dryRun);
-
-    void deletePod(NamespacedRef ref, boolean dryRun);
-
-    List<V1ReplicaSet> describeReplicaSets();
 
     Optional<V1ReplicaSet> describeReplicaSet(NamespacedRef ref);
 
@@ -125,6 +120,8 @@ public interface KubernetesClient {
     Optional<V1CronJob> describeCronJob(NamespacedRef ref);
 
     V1CronJob createCronJob(String namespace, V1CronJob cronJob, boolean dryRun);
+
+    V1CronJob updateCronJob(String namespace, V1CronJob cronJob, boolean dryRun);
 
     void deleteCronJob(NamespacedRef ref, boolean dryRun);
 

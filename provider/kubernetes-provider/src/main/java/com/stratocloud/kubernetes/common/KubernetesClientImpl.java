@@ -620,43 +620,6 @@ public class KubernetesClientImpl implements KubernetesClient {
     }
 
     @Override
-    public V1Pod createPod(String namespace, V1Pod pod, boolean dryRun){
-        V1Pod result = tryInvoke(
-                () -> buildCoreV1Api().createNamespacedPod(namespace, pod).dryRun(
-                        getDryRunOption(dryRun)
-                ).execute()
-        );
-        handleObjectCreated(result.getMetadata(), "Pod");
-        return result;
-    }
-
-    @Override
-    public void deletePod(NamespacedRef ref, boolean dryRun){
-        V1Pod pod = tryInvoke(
-                () -> buildCoreV1Api().deleteNamespacedPod(
-                        ref.name(), ref.namespace()
-                ).dryRun(
-                        getDryRunOption(dryRun)
-                ).execute()
-        );
-
-        handleObjectDeleted(pod.getMetadata(), "Pod");
-    }
-
-    @Override
-    public List<V1ReplicaSet> describeReplicaSets(){
-        var request = buildAppsV1Api().listReplicaSetForAllNamespaces();
-
-        return queryAllByToken(
-                request::execute,
-                request::limit,
-                V1ReplicaSetList::getItems,
-                resp -> getContinueToken(resp.getMetadata()),
-                request::_continue
-        );
-    }
-
-    @Override
     public Optional<V1ReplicaSet> describeReplicaSet(NamespacedRef ref){
         return queryOne(
                 () -> buildAppsV1Api().readNamespacedReplicaSet(
@@ -898,6 +861,21 @@ public class KubernetesClientImpl implements KubernetesClient {
         );
 
         handleObjectCreated(result.getMetadata(), "CronJob");
+
+        return result;
+    }
+
+    @Override
+    public V1CronJob updateCronJob(String namespace, V1CronJob cronJob, boolean dryRun){
+        V1CronJob result = tryInvoke(
+                () -> buildBatchV1Api().replaceNamespacedCronJob(
+                        KubeUtil.getObjectName(cronJob.getMetadata()),
+                        namespace,
+                        cronJob
+                ).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "CronJob");
 
         return result;
     }
