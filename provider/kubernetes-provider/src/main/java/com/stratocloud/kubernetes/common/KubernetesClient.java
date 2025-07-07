@@ -2,6 +2,8 @@ package com.stratocloud.kubernetes.common;
 
 import com.stratocloud.kubernetes.volume.PodVolume;
 import com.stratocloud.kubernetes.volume.PodVolumeId;
+import io.kubernetes.client.custom.NodeMetrics;
+import io.kubernetes.client.custom.PodMetrics;
 import io.kubernetes.client.openapi.models.*;
 
 import java.util.List;
@@ -179,4 +181,8 @@ public interface KubernetesClient {
     List<PodVolume> describePodVolumes();
 
     Optional<PodVolume> describePodVolume(PodVolumeId podVolumeId);
+
+    Optional<NodeMetrics> describeNodeMetrics(String nodeName);
+
+    Optional<PodMetrics> describePodMetrics(NamespacedRef podRef);
 }

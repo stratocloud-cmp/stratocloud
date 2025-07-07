@@ -5,6 +5,7 @@ import com.stratocloud.form.info.CodeBlockFieldDetail;
 import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.form.info.FieldInfo;
 import com.stratocloud.utils.Assert;
+import com.stratocloud.utils.TimeUtil;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -12,6 +13,9 @@ import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.util.Yaml;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -87,5 +91,16 @@ public class KubeUtil {
                 formMetaData.formClass(),
                 fieldInfoList
         );
+    }
+
+    public static LocalDateTime toLocalDateTime(String kubernetesTime) {
+        if(Utils.isBlank(kubernetesTime))
+            return LocalDateTime.now();
+
+        return LocalDateTime.parse(kubernetesTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")).atZone(
+                TimeUtil.UTC_ZONE_ID
+        ).withZoneSameInstant(
+                ZoneId.systemDefault()
+        ).toLocalDateTime();
     }
 }

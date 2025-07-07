@@ -1,5 +1,7 @@
 package com.stratocloud.kubernetes.common;
 
+import com.stratocloud.cache.CacheService;
+import com.stratocloud.cache.CacheUtil;
 import com.stratocloud.exceptions.ExternalAccountInvalidException;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.exceptions.ProviderConnectionException;
@@ -9,6 +11,11 @@ import com.stratocloud.kubernetes.volume.PodVolumeId;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
 import com.stratocloud.utils.concurrent.SleepUtil;
+import io.kubernetes.client.Metrics;
+import io.kubernetes.client.custom.NodeMetrics;
+import io.kubernetes.client.custom.NodeMetricsList;
+import io.kubernetes.client.custom.PodMetrics;
+import io.kubernetes.client.custom.PodMetricsList;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.*;
@@ -32,10 +39,13 @@ public class KubernetesClientImpl implements KubernetesClient {
 
     private final KubeConfig kubeConfig;
 
-    public KubernetesClientImpl(String kubeConfigYaml){
+    private final CacheService cacheService;
+
+    public KubernetesClientImpl(String kubeConfigYaml, CacheService cacheService){
         this.kubeConfig = KubeConfig.loadKubeConfig(
                 new StringReader(kubeConfigYaml)
         );
+        this.cacheService = cacheService;
     }
 
     private ApiClient buildClient() {
@@ -77,6 +87,10 @@ public class KubernetesClientImpl implements KubernetesClient {
 
     private StorageV1Api buildStorageV1Api(){
         return new StorageV1Api(buildClient());
+    }
+
+    private Metrics buildMetricsApi(){
+        return new Metrics(buildClient());
     }
 
     private interface Invoker<R> {
@@ -1232,6 +1246,77 @@ public class KubernetesClientImpl implements KubernetesClient {
                 v -> Objects.equals(v.getName(), podVolumeId.volumeName())
         ).map(
                 v -> new PodVolume(podVolumeId, v)
+        ).findAny();
+    }
+
+
+    public Optional<NodeMetricsList> describeNodeMetricsList(){
+        try {
+            NodeMetricsList result = CacheUtil.queryWithCache(
+                    cacheService,
+                    "K8s-NodeMetricsList-" + kubeConfig.getServer(),
+                    15L,
+                    () -> tryInvoke(
+                            () -> buildMetricsApi().getNodeMetrics()
+                    ),
+                    new NodeMetricsList()
+            );
+            return Optional.ofNullable(result);
+        }catch (Exception e){
+            log.warn("Failed to describe node metrics.", e);
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<NodeMetrics> describeNodeMetrics(String nodeName){
+        Optional<NodeMetricsList> metricsList = describeNodeMetricsList();
+
+        if(metricsList.isEmpty())
+            return Optional.empty();
+
+        List<NodeMetrics> items = metricsList.get().getItems();
+
+        if(Utils.isEmpty(items))
+            return Optional.empty();
+
+        return items.stream().filter(
+                m -> m.getMetadata() != null && Objects.equals(nodeName, m.getMetadata().getName())
+        ).findAny();
+    }
+
+    public Optional<PodMetricsList> describePodMetricsList(String namespace){
+        try {
+            PodMetricsList result = CacheUtil.queryWithCache(
+                    cacheService,
+                    "K8s-PodMetricsList-" + kubeConfig.getServer(),
+                    15L,
+                    () -> tryInvoke(
+                            () -> buildMetricsApi().getPodMetrics(namespace)
+                    ),
+                    new PodMetricsList()
+            );
+            return Optional.ofNullable(result);
+        }catch (Exception e){
+            log.warn("Failed to describe pod metrics.", e);
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<PodMetrics> describePodMetrics(NamespacedRef podRef){
+        Optional<PodMetricsList> metricsList = describePodMetricsList(podRef.namespace());
+
+        if(metricsList.isEmpty())
+            return Optional.empty();
+
+        List<PodMetrics> items = metricsList.get().getItems();
+
+        if(Utils.isEmpty(items))
+            return Optional.empty();
+
+        return items.stream().filter(
+                m -> m.getMetadata() != null && Objects.equals(m.getMetadata().getName(), podRef.name())
         ).findAny();
     }
 }
