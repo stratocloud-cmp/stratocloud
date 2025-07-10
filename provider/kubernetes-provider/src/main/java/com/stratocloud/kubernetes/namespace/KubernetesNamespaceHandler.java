@@ -1,6 +1,7 @@
 package com.stratocloud.kubernetes.namespace;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.provider.AbstractResourceHandler;
@@ -90,8 +91,10 @@ public class KubernetesNamespaceHandler extends AbstractResourceHandler {
     @Override
     public void synchronize(Resource resource) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        Optional<ExternalResource> externalResource = describeExternalResource(account, resource.getExternalId());
-        externalResource.ifPresent(resource::updateByExternal);
+        ExternalResource externalResource = describeExternalResource(account, resource.getExternalId()).orElseThrow(
+                () -> new ExternalResourceNotFoundException("Job not found")
+        );
+        resource.updateByExternal(externalResource);
     }
 
     @Override

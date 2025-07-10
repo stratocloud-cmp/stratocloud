@@ -1,6 +1,7 @@
 package com.stratocloud.kubernetes.node;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.provider.AbstractResourceHandler;
@@ -8,9 +9,14 @@ import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Node;
+import io.kubernetes.client.openapi.models.V1NodeAddress;
+import io.kubernetes.client.openapi.models.V1NodeStatus;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,8 +92,83 @@ public class KubernetesNodeHandler extends AbstractResourceHandler {
     @Override
     public void synchronize(Resource resource) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        Optional<ExternalResource> externalResource = describeExternalResource(account, resource.getExternalId());
-        externalResource.ifPresent(resource::updateByExternal);
+        V1Node node = describeNode(account, resource.getExternalId()).orElseThrow(
+                () -> new ExternalResourceNotFoundException("Node not found")
+        );
+
+        resource.updateByExternal(toExternalResource(account, node));
+
+        V1NodeStatus status = node.getStatus();
+        if(status != null){
+            Map<String, Quantity> capacity = status.getCapacity();
+
+            if(Utils.isNotEmpty(capacity)){
+                Quantity cpuQuantity = capacity.get("cpu");
+                if(cpuQuantity != null){
+                    String cpuCapacity = cpuQuantity.getNumber().setScale(
+                            2, RoundingMode.FLOOR
+                    ).toPlainString();
+
+                    RuntimeProperty cpuProperty = RuntimeProperty.ofDisplayInList(
+                            "cpuCapacity",
+                            "CPU容量(核)",
+                            cpuCapacity,
+                            cpuCapacity
+                    );
+                    resource.addOrUpdateRuntimeProperty(cpuProperty);
+                }
+
+                Quantity memoryQuantity = capacity.get("memory");
+                if(memoryQuantity != null){
+                    String memoryCapacity = memoryQuantity.getNumber().divide(
+                            BigDecimal.valueOf(2L).pow(20), RoundingMode.FLOOR
+                    ).setScale(
+                            2, RoundingMode.FLOOR
+                    ).toPlainString();
+
+                    RuntimeProperty memoryProperty = RuntimeProperty.ofDisplayInList(
+                            "memoryCapacity",
+                            "内存容量(MiB)",
+                            memoryCapacity,
+                            memoryCapacity
+                    );
+                    resource.addOrUpdateRuntimeProperty(memoryProperty);
+                }
+
+                Quantity storageQuantity = capacity.get("ephemeral-storage");
+                if(storageQuantity != null){
+                    String storageCapacity = storageQuantity.getNumber().divide(
+                            BigDecimal.valueOf(2L).pow(30), RoundingMode.FLOOR
+                    ).setScale(2, RoundingMode.FLOOR).toPlainString();
+
+                    RuntimeProperty storageProperty = RuntimeProperty.ofDisplayInList(
+                            "storageCapacity",
+                            "存储容量(GiB)",
+                            storageCapacity,
+                            storageCapacity
+                    );
+                    resource.addOrUpdateRuntimeProperty(storageProperty);
+                }
+            }
+
+            List<V1NodeAddress> addresses = status.getAddresses();
+
+            if(Utils.isNotEmpty(addresses)){
+                String addressStr = String.join(
+                        ",",
+                        addresses.stream().map(V1NodeAddress::getAddress).toList()
+                );
+
+                RuntimeProperty addressProperty = RuntimeProperty.ofDisplayInList(
+                        "addresses",
+                        "节点地址",
+                        addressStr,
+                        addressStr
+                );
+
+                resource.addOrUpdateRuntimeProperty(addressProperty);
+            }
+        }
     }
 
     @Override

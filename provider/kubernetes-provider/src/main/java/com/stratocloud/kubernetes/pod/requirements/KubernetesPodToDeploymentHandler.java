@@ -91,6 +91,11 @@ public class KubernetesPodToDeploymentHandler implements ExclusiveRequirementHan
     }
 
     @Override
+    public RelationshipActionResult checkDisconnectResult(ExternalAccount account, Relationship relationship) {
+        return RelationshipActionResult.finished();
+    }
+
+    @Override
     public boolean visibleInForm() {
         return false;
     }

@@ -1,6 +1,7 @@
 package com.stratocloud.kubernetes.deployment;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.common.KubernetesManagementService;
@@ -93,14 +94,17 @@ public class KubernetesDeploymentHandler extends AbstractResourceHandler {
         Integer replicas = status.getReplicas();
         Integer availableReplicas = status.getAvailableReplicas();
 
-        if(replicas == null || availableReplicas == null)
+        if(replicas == null)
             return ResourceState.UNKNOWN;
-
-        if(replicas > availableReplicas)
-            return ResourceState.BUILDING;
 
         if(replicas == 0)
             return ResourceState.STOPPED;
+
+        if(availableReplicas == null)
+            return ResourceState.BUILDING;
+
+        if(replicas > availableReplicas)
+            return ResourceState.BUILDING;
 
         return ResourceState.STARTED;
     }
@@ -115,8 +119,10 @@ public class KubernetesDeploymentHandler extends AbstractResourceHandler {
     @Override
     public void synchronize(Resource resource) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        Optional<ExternalResource> externalResource = describeExternalResource(account, resource.getExternalId());
-        externalResource.ifPresent(resource::updateByExternal);
+        ExternalResource externalResource = describeExternalResource(account, resource.getExternalId()).orElseThrow(
+                () -> new ExternalResourceNotFoundException("Deployment not found")
+        );
+        resource.updateByExternal(externalResource);
     }
 
     @Override

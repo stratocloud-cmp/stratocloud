@@ -1,6 +1,7 @@
 package com.stratocloud.kubernetes.service;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.common.NamespacedRef;
@@ -10,6 +11,7 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -87,8 +89,49 @@ public class KubernetesServiceHandler extends AbstractResourceHandler {
     @Override
     public void synchronize(Resource resource) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        Optional<ExternalResource> externalResource = describeExternalResource(account, resource.getExternalId());
-        externalResource.ifPresent(resource::updateByExternal);
+        V1Service service = describeService(account, resource.getExternalId()).orElseThrow(
+                () -> new ExternalResourceNotFoundException("Service not found")
+        );
+        resource.updateByExternal(toExternalResource(account, service));
+
+        V1ServiceSpec spec = service.getSpec();
+
+        if(spec != null){
+            String type = spec.getType();
+
+            if(Utils.isNotBlank(type)){
+                RuntimeProperty serviceTypeProperty = RuntimeProperty.ofDisplayInList(
+                        "serviceType",
+                        "Service类型",
+                        type,
+                        type
+                );
+
+                resource.addOrUpdateRuntimeProperty(serviceTypeProperty);
+            }
+
+            if(Utils.isNotBlank(spec.getClusterIP())){
+                RuntimeProperty clusterIpProperty = RuntimeProperty.ofDisplayInList(
+                        "clusterIp",
+                        "ClusterIP",
+                        spec.getClusterIP(),
+                        spec.getClusterIP()
+                );
+
+                resource.addOrUpdateRuntimeProperty(clusterIpProperty);
+            }
+
+            if(Utils.isNotBlank(spec.getExternalName())){
+                RuntimeProperty externalNameProperty = RuntimeProperty.ofDisplayInList(
+                        "externalName",
+                        "ExternalName",
+                        spec.getExternalName(),
+                        spec.getExternalName()
+                );
+
+                resource.addOrUpdateRuntimeProperty(externalNameProperty);
+            }
+        }
     }
 
     @Override

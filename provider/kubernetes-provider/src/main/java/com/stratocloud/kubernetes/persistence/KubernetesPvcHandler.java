@@ -1,6 +1,7 @@
 package com.stratocloud.kubernetes.persistence;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.common.NamespacedRef;
@@ -9,9 +10,13 @@ import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimStatus;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -87,8 +92,37 @@ public class KubernetesPvcHandler extends AbstractResourceHandler {
     @Override
     public void synchronize(Resource resource) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        Optional<ExternalResource> externalResource = describeExternalResource(account, resource.getExternalId());
-        externalResource.ifPresent(resource::updateByExternal);
+        V1PersistentVolumeClaim pvc = describePersistentVolumeClaim(account, resource.getExternalId()).orElseThrow(
+                () -> new ExternalResourceNotFoundException("PVC not found")
+        );
+        resource.updateByExternal(toExternalResource(account, pvc));
+
+        V1PersistentVolumeClaimStatus status = pvc.getStatus();
+
+        if(status != null){
+            Map<String, Quantity> capacity = status.getCapacity();
+
+            if(capacity != null){
+                Quantity quantity = capacity.get("storage");
+
+                if(quantity != null){
+                    String storageSize = quantity.getNumber().divide(
+                            BigDecimal.valueOf(2L).pow(30), RoundingMode.FLOOR
+                    ).setScale(
+                            2, RoundingMode.FLOOR
+                    ).toPlainString();
+
+                    RuntimeProperty storageSizeProperty = RuntimeProperty.ofDisplayInList(
+                            "storageSize",
+                            "存储容量(GiB)",
+                            storageSize,
+                            storageSize
+                    );
+
+                    resource.addOrUpdateRuntimeProperty(storageSizeProperty);
+                }
+            }
+        }
     }
 
     @Override

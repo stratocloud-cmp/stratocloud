@@ -1263,7 +1263,7 @@ public class KubernetesClientImpl implements KubernetesClient {
             );
             return Optional.ofNullable(result);
         }catch (Exception e){
-            log.warn("Failed to describe node metrics.", e);
+            log.warn("Failed to describe node metrics: {}", e.toString());
             return Optional.empty();
         }
     }
@@ -1298,7 +1298,7 @@ public class KubernetesClientImpl implements KubernetesClient {
             );
             return Optional.ofNullable(result);
         }catch (Exception e){
-            log.warn("Failed to describe pod metrics.", e);
+            log.warn("Failed to describe pod metrics: {}", e.toString());
             return Optional.empty();
         }
     }

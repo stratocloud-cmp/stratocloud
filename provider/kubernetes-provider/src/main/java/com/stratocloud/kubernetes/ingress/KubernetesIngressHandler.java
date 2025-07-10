@@ -1,6 +1,7 @@
 package com.stratocloud.kubernetes.ingress;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.common.NamespacedRef;
@@ -10,6 +11,8 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.openapi.models.V1Ingress;
+import io.kubernetes.client.openapi.models.V1IngressLoadBalancerIngress;
+import io.kubernetes.client.openapi.models.V1IngressStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -87,8 +90,32 @@ public class KubernetesIngressHandler extends AbstractResourceHandler {
     @Override
     public void synchronize(Resource resource) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        Optional<ExternalResource> externalResource = describeExternalResource(account, resource.getExternalId());
-        externalResource.ifPresent(resource::updateByExternal);
+        V1Ingress ingress = describeIngress(account, resource.getExternalId()).orElseThrow(
+                () -> new ExternalResourceNotFoundException("Ingress not found")
+        );
+        resource.updateByExternal(toExternalResource(account, ingress));
+
+        V1IngressStatus status = ingress.getStatus();
+        if(status != null){
+            if(status.getLoadBalancer() != null && Utils.isNotEmpty(status.getLoadBalancer().getIngress())){
+                List<String> ips = status.getLoadBalancer().getIngress().stream().map(
+                        V1IngressLoadBalancerIngress::getIp
+                ).filter(Utils::isNotBlank).toList();
+
+                if(Utils.isNotEmpty(ips)){
+                    String ipStr = String.join(",", ips);
+
+                    RuntimeProperty ipsProperty = RuntimeProperty.ofDisplayInList(
+                            "ips",
+                            "IP地址",
+                            ipStr,
+                            ipStr
+                    );
+
+                    resource.addOrUpdateRuntimeProperty(ipsProperty);
+                }
+            }
+        }
     }
 
     @Override

@@ -88,6 +88,11 @@ public class KubernetesPodToJobHandler implements ExclusiveRequirementHandler {
     }
 
     @Override
+    public RelationshipActionResult checkDisconnectResult(ExternalAccount account, Relationship relationship) {
+        return RelationshipActionResult.finished();
+    }
+
+    @Override
     public boolean visibleInForm() {
         return false;
     }

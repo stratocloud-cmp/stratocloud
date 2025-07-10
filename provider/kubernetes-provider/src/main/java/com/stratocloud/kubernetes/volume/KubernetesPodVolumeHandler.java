@@ -1,6 +1,7 @@
 package com.stratocloud.kubernetes.volume;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
@@ -86,8 +87,10 @@ public class KubernetesPodVolumeHandler extends AbstractResourceHandler {
     @Override
     public void synchronize(Resource resource) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        Optional<ExternalResource> externalResource = describeExternalResource(account, resource.getExternalId());
-        externalResource.ifPresent(resource::updateByExternal);
+        ExternalResource externalResource = describeExternalResource(account, resource.getExternalId()).orElseThrow(
+                () -> new ExternalResourceNotFoundException("Volume not found")
+        );
+        resource.updateByExternal(externalResource);
     }
 
     @Override

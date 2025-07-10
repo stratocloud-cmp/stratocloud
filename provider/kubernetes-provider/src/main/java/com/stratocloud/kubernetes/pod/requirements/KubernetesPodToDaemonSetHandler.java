@@ -88,6 +88,11 @@ public class KubernetesPodToDaemonSetHandler implements ExclusiveRequirementHand
     }
 
     @Override
+    public RelationshipActionResult checkDisconnectResult(ExternalAccount account, Relationship relationship) {
+        return RelationshipActionResult.finished();
+    }
+
+    @Override
     public boolean visibleInForm() {
         return false;
     }
