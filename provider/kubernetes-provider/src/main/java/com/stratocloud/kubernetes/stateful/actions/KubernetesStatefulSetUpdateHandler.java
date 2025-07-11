@@ -13,7 +13,9 @@ import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.JSON;
+import com.stratocloud.utils.concurrent.SleepUtil;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+@Slf4j
 @Component
 public class KubernetesStatefulSetUpdateHandler implements ResourceActionHandler {
 
@@ -108,6 +111,17 @@ public class KubernetesStatefulSetUpdateHandler implements ResourceActionHandler
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+
+        Optional<ExternalResource> statefulSet = statefulSetHandler.describeExternalResource(
+                account, resource.getExternalId()
+        );
+
+        if(statefulSet.isPresent() && statefulSet.get().state() == ResourceState.STARTING){
+            log.warn("StatefulSet {} is not started yet.", statefulSet.get().name());
+            SleepUtil.sleep(30);
+        }
+
         statefulSetHandler.managePodsAndVolumes(resource);
         return ResourceActionResult.finished();
     }

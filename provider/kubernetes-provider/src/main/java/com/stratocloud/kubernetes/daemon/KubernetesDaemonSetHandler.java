@@ -12,6 +12,7 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
+import io.kubernetes.client.openapi.models.V1DaemonSetStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.springframework.stereotype.Component;
 
@@ -80,8 +81,20 @@ public class KubernetesDaemonSetHandler extends AbstractResourceHandler {
                 getResourceTypeId(),
                 KubeUtil.getNamespacedRef(daemonSet.getMetadata()).toString(),
                 KubeUtil.getObjectName(daemonSet.getMetadata()),
-                ResourceState.AVAILABLE
+                convertState(daemonSet)
         );
+    }
+
+    private ResourceState convertState(V1DaemonSet daemonSet) {
+        V1DaemonSetStatus status = daemonSet.getStatus();
+
+        if(status == null)
+            return ResourceState.UNKNOWN;
+
+        int desiredNumberScheduled = status.getDesiredNumberScheduled();
+        int currentNumberScheduled = status.getCurrentNumberScheduled();
+
+        return desiredNumberScheduled == currentNumberScheduled ? ResourceState.STARTED : ResourceState.STARTING;
     }
 
     @Override
@@ -123,7 +136,7 @@ public class KubernetesDaemonSetHandler extends AbstractResourceHandler {
         managementService.managePodsAndVolumes(
                 provider,
                 account,
-                daemonSet.get().getKind(),
+                "DaemonSet",
                 metadata,
                 resource.getOwnerId()
         );

@@ -2,7 +2,6 @@ package com.stratocloud.kubernetes.stateful.actions;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
-import com.stratocloud.job.TaskState;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.stateful.KubernetesStatefulSetHandler;
@@ -10,16 +9,18 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.resource.BuildResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
-import com.stratocloud.resource.Resource;
-import com.stratocloud.resource.ResourceActionResult;
-import com.stratocloud.resource.ResourceUsage;
+import com.stratocloud.resource.*;
 import com.stratocloud.utils.JSON;
+import com.stratocloud.utils.concurrent.SleepUtil;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+@Slf4j
 @Component
 public class KubernetesStatefulSetBuildHandler implements BuildResourceActionHandler {
 
@@ -63,7 +64,7 @@ public class KubernetesStatefulSetBuildHandler implements BuildResourceActionHan
                 namespace.getExternalId(), statefulSet, dryRun
         );
 
-        resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
+        resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
     }
 
     @Override
@@ -73,12 +74,18 @@ public class KubernetesStatefulSetBuildHandler implements BuildResourceActionHan
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
-        ResourceActionResult result = BuildResourceActionHandler.super.checkActionResult(resource, parameters);
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
 
-        if(result.taskState() == TaskState.FINISHED || result.taskState() == TaskState.FAILED)
-            statefulSetHandler.managePodsAndVolumes(resource);
+        Optional<ExternalResource> statefulSet = statefulSetHandler.describeExternalResource(
+                account, resource.getExternalId()
+        );
 
-        return result;
+        if(statefulSet.isPresent() && statefulSet.get().state() == ResourceState.STARTING){
+            log.warn("StatefulSet {} is not started yet.", statefulSet.get().name());
+            SleepUtil.sleep(30);
+        }
+        statefulSetHandler.managePodsAndVolumes(resource);
+        return ResourceActionResult.finished();
     }
 
     @Override

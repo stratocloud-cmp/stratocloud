@@ -642,6 +642,19 @@ public class KubernetesClientImpl implements KubernetesClient {
         );
     }
 
+    @Override
+    public List<V1ReplicaSet> describeReplicaSetsByNamespace(String namespace){
+        var request = buildAppsV1Api().listNamespacedReplicaSet(namespace);
+
+        return queryAllByToken(
+                request::execute,
+                request::limit,
+                V1ReplicaSetList::getItems,
+                resp -> getContinueToken(resp.getMetadata()),
+                request::_continue
+        );
+    }
+
 
     @Override
     public List<V1Deployment> describeDeployments(){

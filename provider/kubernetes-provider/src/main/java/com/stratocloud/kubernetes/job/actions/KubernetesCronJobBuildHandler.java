@@ -61,7 +61,7 @@ public class KubernetesCronJobBuildHandler implements BuildResourceActionHandler
         V1CronJob cronJob = KubeUtil.fromYaml(input.getYamlContent(), V1CronJob.class);
         V1CronJob result = provider.buildClient(account).createCronJob(namespace.getExternalId(), cronJob, dryRun);
 
-        resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
+        resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
     }
 
     @Override

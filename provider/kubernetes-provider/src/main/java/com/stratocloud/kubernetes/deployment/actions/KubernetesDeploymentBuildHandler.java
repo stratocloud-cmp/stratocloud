@@ -2,7 +2,6 @@ package com.stratocloud.kubernetes.deployment.actions;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
-import com.stratocloud.job.TaskState;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.deployment.KubernetesDeploymentHandler;
@@ -12,14 +11,17 @@ import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.ResourceActionResult;
+import com.stratocloud.resource.ResourceState;
 import com.stratocloud.resource.ResourceUsage;
 import com.stratocloud.utils.JSON;
 import io.kubernetes.client.openapi.models.V1Deployment;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Component
 public class KubernetesDeploymentBuildHandler implements BuildResourceActionHandler {
 
@@ -63,20 +65,28 @@ public class KubernetesDeploymentBuildHandler implements BuildResourceActionHand
                 namespace.getExternalId(), deployment, dryRun
         );
 
-        resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
+        resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
     }
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
-        ResourceActionResult result = BuildResourceActionHandler.super.checkActionResult(
-                resource, parameters
-        );
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
 
-        if(result.taskState() == TaskState.FINISHED || result.taskState() == TaskState.FAILED){
+        var deployment = deploymentHandler.describeExternalResource(account, resource.getExternalId());
+
+        if(deployment.isEmpty())
+            return ResourceActionResult.failed("Deployment not found");
+
+        ResourceState state = deployment.get().state();
+        if(state == ResourceState.STARTING){
+            log.warn("Deployment not started yet: {}", resource.getName());
+            return ResourceActionResult.inProgress();
+        }else if(state == ResourceState.ERROR){
+            return ResourceActionResult.failed("Deployment is in error state");
+        }else {
             deploymentHandler.managePodsAndVolumes(resource);
+            return ResourceActionResult.finished();
         }
-
-        return result;
     }
 
     @Override

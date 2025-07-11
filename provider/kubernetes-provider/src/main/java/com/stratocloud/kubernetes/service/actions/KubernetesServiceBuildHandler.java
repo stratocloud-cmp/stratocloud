@@ -59,7 +59,7 @@ public class KubernetesServiceBuildHandler implements BuildResourceActionHandler
         V1Service service = KubeUtil.fromYaml(input.getYamlContent(), V1Service.class);
         V1Service result = provider.buildClient(account).createService(namespace.getExternalId(), service, dryRun);
 
-        resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
+        resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
     }
 
     @Override

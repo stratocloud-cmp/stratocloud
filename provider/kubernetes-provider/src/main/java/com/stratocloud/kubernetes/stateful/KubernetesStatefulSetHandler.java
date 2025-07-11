@@ -13,6 +13,7 @@ import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
+import io.kubernetes.client.openapi.models.V1StatefulSetStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -80,8 +81,23 @@ public class KubernetesStatefulSetHandler extends AbstractResourceHandler {
                 getResourceTypeId(),
                 KubeUtil.getNamespacedRef(statefulSet.getMetadata()).toString(),
                 KubeUtil.getObjectName(statefulSet.getMetadata()),
-                ResourceState.AVAILABLE
+                convertState(statefulSet)
         );
+    }
+
+    private ResourceState convertState(V1StatefulSet statefulSet) {
+        V1StatefulSetStatus status = statefulSet.getStatus();
+
+        if(status == null)
+            return ResourceState.UNKNOWN;
+
+        int replicas = status.getReplicas();
+        int readyReplicas = status.getReadyReplicas() != null ? status.getReadyReplicas() : 0;
+
+        if(replicas == 0)
+            return ResourceState.STOPPED;
+
+        return replicas > readyReplicas ? ResourceState.STARTING : ResourceState.STARTED;
     }
 
     @Override
@@ -123,7 +139,7 @@ public class KubernetesStatefulSetHandler extends AbstractResourceHandler {
         managementService.managePodsAndVolumes(
                 provider,
                 account,
-                statefulSet.get().getKind(),
+                "StatefulSet",
                 metadata,
                 resource.getOwnerId()
         );

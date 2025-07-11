@@ -61,7 +61,7 @@ public class KubernetesJobBuildHandler implements BuildResourceActionHandler {
         V1Job job = KubeUtil.fromYaml(input.getYamlContent(), V1Job.class);
         V1Job result = provider.buildClient(account).createJob(namespace.getExternalId(), job, dryRun);
 
-        resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
+        resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
     }
 
     @Override

@@ -61,7 +61,7 @@ public class KubernetesNetworkPolicyBuildHandler implements BuildResourceActionH
                 namespace.getExternalId(), networkPolicy, dryRun
         );
 
-        resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
+        resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
     }
 
     @Override

@@ -61,7 +61,7 @@ public class KubernetesSecretBuildHandler implements BuildResourceActionHandler 
                 namespace.getExternalId(), secret, dryRun
         );
 
-        resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
+        resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
     }
 
     @Override

@@ -14,10 +14,15 @@ import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.JSON;
 import io.kubernetes.client.openapi.models.V1Deployment;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
+@Slf4j
 @Component
 public class KubernetesDeploymentUpdateHandler implements ResourceActionHandler {
 
@@ -103,6 +108,15 @@ public class KubernetesDeploymentUpdateHandler implements ResourceActionHandler 
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+
+        var deployment = deploymentHandler.describeExternalResource(account, resource.getExternalId());
+
+        if(deployment.isPresent() && deployment.get().state() == ResourceState.STARTING){
+            log.warn("Deployment not started yet: {}", resource.getName());
+            return ResourceActionResult.inProgress();
+        }
+
         deploymentHandler.managePodsAndVolumes(resource);
         return ResourceActionResult.finished();
     }

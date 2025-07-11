@@ -11,15 +11,16 @@ import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
-import io.kubernetes.client.openapi.models.V1Deployment;
-import io.kubernetes.client.openapi.models.V1DeploymentStatus;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
+@Slf4j
 @Component
 public class KubernetesDeploymentHandler extends AbstractResourceHandler {
 
@@ -91,22 +92,38 @@ public class KubernetesDeploymentHandler extends AbstractResourceHandler {
         if(status == null)
             return ResourceState.UNKNOWN;
 
-        Integer replicas = status.getReplicas();
-        Integer availableReplicas = status.getAvailableReplicas();
+        List<V1DeploymentCondition> conditions = status.getConditions();
 
-        if(replicas == null)
+        if(Utils.isEmpty(conditions))
             return ResourceState.UNKNOWN;
 
-        if(replicas == 0)
-            return ResourceState.STOPPED;
+        Optional<V1DeploymentCondition> availableCondition = conditions.stream().filter(
+                c -> "Available".equals(c.getType())
+        ).findFirst();
 
-        if(availableReplicas == null)
-            return ResourceState.BUILDING;
+        if(availableCondition.isPresent() && "True".equals(availableCondition.get().getStatus())) {
+            int replicas = status.getReplicas() != null ? status.getReplicas() : 0;
 
-        if(replicas > availableReplicas)
-            return ResourceState.BUILDING;
+            return replicas > 0 ? ResourceState.STARTED : ResourceState.STOPPED;
+        }
 
-        return ResourceState.STARTED;
+        Optional<V1DeploymentCondition> progressingCondition = conditions.stream().filter(
+                c -> "Progressing".equals(c.getType())
+        ).findFirst();
+
+        if(progressingCondition.isPresent()){
+            if("True".equals(progressingCondition.get().getStatus())) {
+                return ResourceState.STARTING;
+            }else{
+                log.warn("Deployment's progressing condition failure reason: {}. Deployment={}.",
+                        progressingCondition.get().getReason(), KubeUtil.getObjectName(deployment.getMetadata()));
+                return ResourceState.ERROR;
+            }
+        } else {
+            log.warn("Deployment's progressing condition not found. Deployment={}.",
+                    KubeUtil.getObjectName(deployment.getMetadata()));
+            return ResourceState.ERROR;
+        }
     }
 
     @Override
@@ -130,6 +147,10 @@ public class KubernetesDeploymentHandler extends AbstractResourceHandler {
         return List.of();
     }
 
+    @Override
+    public boolean supportCascadedDestruction() {
+        return true;
+    }
 
     public void managePodsAndVolumes(Resource resource){
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
@@ -146,12 +167,32 @@ public class KubernetesDeploymentHandler extends AbstractResourceHandler {
         if(metadata == null)
             return;
 
-        managementService.managePodsAndVolumes(
-                provider,
-                account,
-                deployment.get().getKind(),
-                metadata,
-                resource.getOwnerId()
-        );
+        List<V1ReplicaSet> replicaSets = provider.buildClient(account).describeReplicaSetsByNamespace(
+                metadata.getNamespace()
+        ).stream().filter(
+                rs -> KubeUtil.getOwnerReference(
+                        rs.getMetadata(), "Deployment"
+                ).filter(
+                        ref -> Objects.equals(ref.getName(), metadata.getName())
+                ).isPresent()
+        ).toList();
+
+        if(Utils.isEmpty(replicaSets))
+            return;
+
+        for (V1ReplicaSet replicaSet : replicaSets) {
+            if(replicaSet.getMetadata() == null)
+                continue;
+
+            managementService.managePodsAndVolumes(
+                    provider,
+                    account,
+                    "ReplicaSet",
+                    replicaSet.getMetadata(),
+                    resource.getOwnerId()
+            );
+        }
+
+
     }
 }

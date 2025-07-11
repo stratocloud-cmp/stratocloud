@@ -61,7 +61,7 @@ public class KubernetesPvcBuildHandler implements BuildResourceActionHandler {
                 namespace.getExternalId(), pvc, dryRun
         );
 
-        resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
+        resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
     }
 
     @Override

@@ -12,6 +12,7 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.springframework.stereotype.Component;
 
@@ -80,8 +81,26 @@ public class KubernetesJobHandler extends AbstractResourceHandler {
                 getResourceTypeId(),
                 KubeUtil.getNamespacedRef(job.getMetadata()).toString(),
                 KubeUtil.getObjectName(job.getMetadata()),
-                ResourceState.AVAILABLE
+                convertState(job)
         );
+    }
+
+    private ResourceState convertState(V1Job job) {
+        V1JobStatus status = job.getStatus();
+
+        if(status == null)
+            return ResourceState.UNKNOWN;
+
+        int active = status.getActive() != null ? status.getActive() : 0;
+        int failed = status.getFailed() != null ? status.getFailed() : 0;
+
+        if(active > 0)
+            return ResourceState.STARTED;
+
+        if(failed > 0)
+            return ResourceState.ERROR;
+
+        return ResourceState.STOPPED;
     }
 
     @Override
@@ -123,7 +142,7 @@ public class KubernetesJobHandler extends AbstractResourceHandler {
         managementService.managePodsAndVolumes(
                 provider,
                 account,
-                job.get().getKind(),
+                "Job",
                 metadata,
                 resource.getOwnerId()
         );

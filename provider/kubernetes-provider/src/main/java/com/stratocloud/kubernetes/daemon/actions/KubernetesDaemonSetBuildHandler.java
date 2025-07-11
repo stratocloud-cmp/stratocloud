@@ -2,7 +2,6 @@ package com.stratocloud.kubernetes.daemon.actions;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
-import com.stratocloud.job.TaskState;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.daemon.KubernetesDaemonSetHandler;
@@ -10,16 +9,18 @@ import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.resource.BuildResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
-import com.stratocloud.resource.Resource;
-import com.stratocloud.resource.ResourceActionResult;
-import com.stratocloud.resource.ResourceUsage;
+import com.stratocloud.resource.*;
 import com.stratocloud.utils.JSON;
+import com.stratocloud.utils.concurrent.SleepUtil;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+@Slf4j
 @Component
 public class KubernetesDaemonSetBuildHandler implements BuildResourceActionHandler {
 
@@ -63,7 +64,7 @@ public class KubernetesDaemonSetBuildHandler implements BuildResourceActionHandl
                 namespace.getExternalId(), daemonSet, dryRun
         );
 
-        resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
+        resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
     }
 
     @Override
@@ -73,12 +74,19 @@ public class KubernetesDaemonSetBuildHandler implements BuildResourceActionHandl
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
-        ResourceActionResult result = BuildResourceActionHandler.super.checkActionResult(resource, parameters);
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
 
-        if(result.taskState() == TaskState.FINISHED || result.taskState() == TaskState.FAILED)
-            daemonSetHandler.managePodsAndVolumes(resource);
+        Optional<ExternalResource> daemonSet = daemonSetHandler.describeExternalResource(
+                account, resource.getExternalId()
+        );
 
-        return result;
+        if(daemonSet.isPresent() && daemonSet.get().state() == ResourceState.STARTING){
+            log.warn("DaemonSet {} is not totally started yet.", daemonSet.get().name());
+            SleepUtil.sleep(30);
+        }
+
+        daemonSetHandler.managePodsAndVolumes(resource);
+        return ResourceActionResult.finished();
     }
 
     @Override

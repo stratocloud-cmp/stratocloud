@@ -61,7 +61,7 @@ public class KubernetesConfigMapBuildHandler implements BuildResourceActionHandl
                 namespace.getExternalId(), configMap, dryRun
         );
 
-        resource.setExternalId(KubeUtil.getObjectName(result.getMetadata()));
+        resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
     }
 
     @Override

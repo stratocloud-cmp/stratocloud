@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -86,25 +87,22 @@ public class KubernetesMetricsProvider implements MetricsProvider {
             Quantity totalQuantity = node.get().getStatus().getCapacity().get(quantityKey);
 
             double percentage = currentQuantity.getNumber().divide(
-                    totalQuantity.getNumber(), RoundingMode.FLOOR
+                    totalQuantity.getNumber(), 5, RoundingMode.HALF_UP
+            ).multiply(
+                    BigDecimal.valueOf(100L)
             ).setScale(
-                    2, RoundingMode.FLOOR
+                    2, RoundingMode.HALF_UP
             ).doubleValue();
 
             LocalDateTime time = KubeUtil.toLocalDateTime(nodeMetrics.get().getTimestamp());
 
-            MetricSequence sequence = new MetricSequence(
+            MetricSequence.of(
                     resource.getName(),
                     null,
-                    percentage,
-                    percentage,
-                    percentage,
-                    percentage,
                     List.of(
                             new MetricDataPoint(percentage, time)
                     )
-            );
-            sequences.add(sequence);
+            ).ifPresent(sequences::add);
         }else if(POD_METRICS.contains(supportedMetric.metric())){
             NamespacedRef podRef = NamespacedRef.fromString(resource.getExternalId());
             Optional<PodMetrics> podMetrics = client.describePodMetrics(podRef);
@@ -142,32 +140,36 @@ public class KubernetesMetricsProvider implements MetricsProvider {
                 if(container.isEmpty() || container.get().getResources() == null)
                     continue;
 
-                Map<String, Quantity> containerLimits = container.get().getResources().getLimits();
+                Map<String, Quantity> containerLimits;
+                if(Utils.isNotEmpty(container.get().getResources().getLimits()))
+                    containerLimits = container.get().getResources().getLimits();
+                else if(Utils.isNotEmpty(container.get().getResources().getRequests()))
+                    containerLimits = container.get().getResources().getRequests();
+                else
+                    containerLimits = new HashMap<>();
+
                 if(Utils.isEmpty(containerLimits) || !containerLimits.containsKey(quantityKey))
                     continue;
 
                 Quantity totalQuantity = containerLimits.get(quantityKey);
 
                 double percentage = currentQuantity.getNumber().divide(
-                        totalQuantity.getNumber(), RoundingMode.FLOOR
+                        totalQuantity.getNumber(), 5, RoundingMode.HALF_UP
+                ).multiply(
+                        BigDecimal.valueOf(100L)
                 ).setScale(
-                        2, RoundingMode.FLOOR
+                        2, RoundingMode.HALF_UP
                 ).doubleValue();
 
                 LocalDateTime time = KubeUtil.toLocalDateTime(podMetrics.get().getTimestamp());
 
-                MetricSequence sequence = new MetricSequence(
+                MetricSequence.of(
                         containerMetrics.getName(),
                         null,
-                        percentage,
-                        percentage,
-                        percentage,
-                        percentage,
                         List.of(
                                 new MetricDataPoint(percentage, time)
                         )
-                );
-                sequences.add(sequence);
+                ).ifPresent(sequences::add);
             }
         }else throw new StratoException("Unexpected metric: " + supportedMetric.metric());
 

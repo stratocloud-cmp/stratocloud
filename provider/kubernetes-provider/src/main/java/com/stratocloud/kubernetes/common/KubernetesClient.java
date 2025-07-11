@@ -87,6 +87,8 @@ public interface KubernetesClient {
 
     Optional<V1ReplicaSet> describeReplicaSet(NamespacedRef ref);
 
+    List<V1ReplicaSet> describeReplicaSetsByNamespace(String namespace);
+
     List<V1Deployment> describeDeployments();
 
     Optional<V1Deployment> describeDeployment(NamespacedRef ref);

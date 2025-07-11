@@ -80,7 +80,7 @@ public class KubernetesCronJobHandler extends AbstractResourceHandler {
                 getResourceTypeId(),
                 KubeUtil.getNamespacedRef(cronJob.getMetadata()).toString(),
                 KubeUtil.getObjectName(cronJob.getMetadata()),
-                ResourceState.AVAILABLE
+                ResourceState.STARTED
         );
     }
 
@@ -123,7 +123,7 @@ public class KubernetesCronJobHandler extends AbstractResourceHandler {
         managementService.managePodsAndVolumes(
                 provider,
                 account,
-                cronJob.get().getKind(),
+                "CronJob",
                 metadata,
                 resource.getOwnerId()
         );
