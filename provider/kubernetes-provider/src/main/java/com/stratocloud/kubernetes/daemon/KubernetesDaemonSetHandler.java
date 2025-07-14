@@ -93,6 +93,10 @@ public class KubernetesDaemonSetHandler extends AbstractResourceHandler {
 
         int desiredNumberScheduled = status.getDesiredNumberScheduled();
         int currentNumberScheduled = status.getCurrentNumberScheduled();
+        Integer numberUnavailable = status.getNumberUnavailable();
+
+        if(numberUnavailable != null && numberUnavailable > 0)
+            return ResourceState.ERROR;
 
         return desiredNumberScheduled == currentNumberScheduled ? ResourceState.STARTED : ResourceState.STARTING;
     }

@@ -34,7 +34,7 @@ public class KubernetesPodReadYamlHandler implements ResourceReadActionHandler {
 
     @Override
     public Set<ResourceState> getAllowedStates() {
-        return ResourceState.getAliveStateSet();
+        return Set.of(ResourceState.values());
     }
 
     @Override

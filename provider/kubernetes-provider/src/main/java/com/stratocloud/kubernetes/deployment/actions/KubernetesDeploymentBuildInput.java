@@ -30,7 +30,7 @@ public class KubernetesDeploymentBuildInput implements ResourceActionInput {
                 spec:
                   containers:
                   - name: nginx
-                    image: nginx:1.14.2
+                    image: registry.cn-hangzhou.aliyuncs.com/acs/nginx
                     ports:
                     - containerPort: 80
             """;

@@ -355,6 +355,21 @@ public class KubernetesClientImpl implements KubernetesClient {
     }
 
     @Override
+    public V1Service updateService(String namespace, V1Service service, boolean dryRun){
+        V1Service result = tryInvoke(
+                () -> buildCoreV1Api().replaceNamespacedService(
+                        KubeUtil.getObjectName(service.getMetadata()),
+                        namespace,
+                        service
+                ).dryRun(getDryRunOption(dryRun)).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "Service");
+
+        return result;
+    }
+
+    @Override
     public void deleteService(NamespacedRef ref, boolean dryRun){
         V1Service service = tryInvoke(
                 () -> buildCoreV1Api().deleteNamespacedService(
@@ -448,6 +463,21 @@ public class KubernetesClientImpl implements KubernetesClient {
         return result;
     }
 
+    @Override
+    public V1Ingress updateIngress(String namespace, V1Ingress ingress, boolean dryRun){
+        V1Ingress result = tryInvoke(
+                () -> buildNetworkingV1Api().replaceNamespacedIngress(
+                        KubeUtil.getObjectName(ingress.getMetadata()),
+                        namespace,
+                        ingress
+                ).dryRun(getDryRunOption(dryRun)).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "Ingress");
+
+        return result;
+    }
+
 
     @Override
     public void deleteIngress(NamespacedRef ref, boolean dryRun){
@@ -498,6 +528,19 @@ public class KubernetesClientImpl implements KubernetesClient {
     }
 
     @Override
+    public V1IngressClass updateIngressClass(V1IngressClass ingressClass, boolean dryRun){
+        V1IngressClass result = tryInvoke(
+                () -> buildNetworkingV1Api().replaceIngressClass(
+                        KubeUtil.getObjectName(ingressClass.getMetadata()),
+                        ingressClass
+                ).dryRun(getDryRunOption(dryRun)).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "IngressClass");
+        return result;
+    }
+
+    @Override
     public void deleteIngressClass(String name, boolean dryRun){
         V1Status status = tryInvoke(
                 () -> buildNetworkingV1Api().deleteIngressClass(name).dryRun(
@@ -540,6 +583,23 @@ public class KubernetesClientImpl implements KubernetesClient {
         );
 
         handleObjectCreated(result.getMetadata(), "NetworkPolicy");
+
+        return result;
+    }
+
+    @Override
+    public V1NetworkPolicy updateNetworkPolicy(String namespace,
+                                               V1NetworkPolicy networkPolicy,
+                                               boolean dryRun){
+        V1NetworkPolicy result = tryInvoke(
+                () -> buildNetworkingV1Api().replaceNamespacedNetworkPolicy(
+                        KubeUtil.getObjectName(networkPolicy.getMetadata()),
+                        namespace,
+                        networkPolicy
+                ).dryRun(getDryRunOption(dryRun)).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "NetworkPolicy");
 
         return result;
     }
@@ -1007,6 +1067,20 @@ public class KubernetesClientImpl implements KubernetesClient {
     }
 
     @Override
+    public V1PersistentVolume updatePersistentVolume(V1PersistentVolume persistentVolume, boolean dryRun){
+        V1PersistentVolume result = tryInvoke(
+                () -> buildCoreV1Api().replacePersistentVolume(
+                        KubeUtil.getObjectName(persistentVolume.getMetadata()),
+                        persistentVolume
+                ).dryRun(getDryRunOption(dryRun)).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "PersistentVolume");
+
+        return result;
+    }
+
+    @Override
     public void deletePersistentVolume(String name, boolean dryRun){
         V1PersistentVolume volume = tryInvoke(
                 () -> buildCoreV1Api().deletePersistentVolume(name).dryRun(
@@ -1060,6 +1134,23 @@ public class KubernetesClientImpl implements KubernetesClient {
     }
 
     @Override
+    public V1PersistentVolumeClaim updatePersistentVolumeClaim(String namespace,
+                                                               V1PersistentVolumeClaim pvc,
+                                                               boolean dryRun){
+        V1PersistentVolumeClaim result = tryInvoke(
+                () -> buildCoreV1Api().replaceNamespacedPersistentVolumeClaim(
+                        KubeUtil.getObjectName(pvc.getMetadata()),
+                        namespace,
+                        pvc
+                ).dryRun(getDryRunOption(dryRun)).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "PersistentVolumeClaim");
+
+        return result;
+    }
+
+    @Override
     public void deletePersistentVolumeClaim(NamespacedRef ref, boolean dryRun){
         V1PersistentVolumeClaim volumeClaim = tryInvoke(
                 () -> buildCoreV1Api().deleteNamespacedPersistentVolumeClaim(
@@ -1101,6 +1192,20 @@ public class KubernetesClientImpl implements KubernetesClient {
         );
 
         handleObjectCreated(result.getMetadata(), "StorageClass");
+
+        return result;
+    }
+
+    @Override
+    public V1StorageClass updateStorageClass(V1StorageClass storageClass, boolean dryRun){
+        V1StorageClass result = tryInvoke(
+                () -> buildStorageV1Api().replaceStorageClass(
+                        KubeUtil.getObjectName(storageClass.getMetadata()),
+                        storageClass
+                ).dryRun(getDryRunOption(dryRun)).execute()
+        );
+
+        handleObjectReplaced(result.getMetadata(), "StorageClass");
 
         return result;
     }

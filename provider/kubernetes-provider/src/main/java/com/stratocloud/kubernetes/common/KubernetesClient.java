@@ -34,6 +34,8 @@ public interface KubernetesClient {
 
     V1Service createService(String namespace, V1Service service, boolean dryRun);
 
+    V1Service updateService(String namespace, V1Service service, boolean dryRun);
+
     void deleteService(NamespacedRef ref, boolean dryRun);
 
     List<V1EndpointSlice> describeEndpointSlices();
@@ -50,6 +52,8 @@ public interface KubernetesClient {
 
     V1Ingress createIngress(String namespace, V1Ingress ingress, boolean dryRun);
 
+    V1Ingress updateIngress(String namespace, V1Ingress ingress, boolean dryRun);
+
     void deleteIngress(NamespacedRef ref, boolean dryRun);
 
     List<V1IngressClass> describeIngressClasses();
@@ -58,6 +62,8 @@ public interface KubernetesClient {
 
     V1IngressClass createIngressClass(V1IngressClass ingressClass, boolean dryRun);
 
+    V1IngressClass updateIngressClass(V1IngressClass ingressClass, boolean dryRun);
+
     void deleteIngressClass(String name, boolean dryRun);
 
     List<V1NetworkPolicy> describeNetworkPolicies();
@@ -65,6 +71,10 @@ public interface KubernetesClient {
     Optional<V1NetworkPolicy> describeNetworkPolicy(NamespacedRef ref);
 
     V1NetworkPolicy createNetworkPolicy(String namespace,
+                                        V1NetworkPolicy networkPolicy,
+                                        boolean dryRun);
+
+    V1NetworkPolicy updateNetworkPolicy(String namespace,
                                         V1NetworkPolicy networkPolicy,
                                         boolean dryRun);
 
@@ -151,7 +161,13 @@ public interface KubernetesClient {
                                                         V1PersistentVolumeClaim persistentVolumeClaim,
                                                         boolean dryRun);
 
+    V1PersistentVolume updatePersistentVolume(V1PersistentVolume persistentVolume, boolean dryRun);
+
     void deletePersistentVolume(String name, boolean dryRun);
+
+    V1PersistentVolumeClaim updatePersistentVolumeClaim(String namespace,
+                                                        V1PersistentVolumeClaim pvc,
+                                                        boolean dryRun);
 
     void deletePersistentVolumeClaim(NamespacedRef ref, boolean dryRun);
 
@@ -160,6 +176,8 @@ public interface KubernetesClient {
     Optional<V1StorageClass> describeStorageClass(String name);
 
     V1StorageClass createStorageClass(V1StorageClass storageClass, boolean dryRun);
+
+    V1StorageClass updateStorageClass(V1StorageClass storageClass, boolean dryRun);
 
     void deleteStorageClass(String name, boolean dryRun);
 

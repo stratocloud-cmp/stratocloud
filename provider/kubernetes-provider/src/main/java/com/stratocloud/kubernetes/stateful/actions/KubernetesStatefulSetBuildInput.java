@@ -31,7 +31,7 @@ public class KubernetesStatefulSetBuildInput implements ResourceActionInput {
                   terminationGracePeriodSeconds: 10
                   containers:
                   - name: nginx
-                    image: registry.k8s.io/nginx-slim:0.24
+                    image: registry.cn-hangzhou.aliyuncs.com/acs/nginx
                     ports:
                     - containerPort: 80
                       name: web
