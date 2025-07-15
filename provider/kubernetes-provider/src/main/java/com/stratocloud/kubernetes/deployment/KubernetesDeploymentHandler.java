@@ -1,6 +1,7 @@
 package com.stratocloud.kubernetes.deployment;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.event.ExternalResourceEvent;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
@@ -9,12 +10,14 @@ import com.stratocloud.kubernetes.common.NamespacedRef;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.constants.ResourceCategories;
+import com.stratocloud.provider.resource.event.EventAwareResourceHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.openapi.models.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,7 +25,7 @@ import java.util.Optional;
 
 @Slf4j
 @Component
-public class KubernetesDeploymentHandler extends AbstractResourceHandler {
+public class KubernetesDeploymentHandler extends AbstractResourceHandler implements EventAwareResourceHandler {
 
     private final KubernetesProvider provider;
 
@@ -194,5 +197,20 @@ public class KubernetesDeploymentHandler extends AbstractResourceHandler {
         }
 
 
+    }
+
+    @Override
+    public List<ExternalResourceEvent> describeResourceEvents(ExternalAccount account,
+                                                              String externalId,
+                                                              LocalDateTime happenedAfter) {
+        return KubeUtil.describeResourceEvents(
+                provider,
+                account,
+                "Deployment",
+                getResourceTypeId(),
+                externalId,
+                happenedAfter,
+                true
+        );
     }
 }

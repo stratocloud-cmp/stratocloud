@@ -2,14 +2,17 @@ package com.stratocloud.kubernetes.service.actions;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
+import com.stratocloud.job.TaskState;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
+import com.stratocloud.kubernetes.common.KubernetesManagementService;
 import com.stratocloud.kubernetes.service.KubernetesServiceHandler;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.resource.BuildResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceActionResult;
 import com.stratocloud.resource.ResourceUsage;
 import com.stratocloud.utils.JSON;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -23,8 +26,12 @@ public class KubernetesServiceBuildHandler implements BuildResourceActionHandler
 
     private final KubernetesServiceHandler serviceHandler;
 
-    public KubernetesServiceBuildHandler(KubernetesServiceHandler serviceHandler) {
+    private final KubernetesManagementService managementService;
+
+    public KubernetesServiceBuildHandler(KubernetesServiceHandler serviceHandler,
+                                         KubernetesManagementService managementService) {
         this.serviceHandler = serviceHandler;
+        this.managementService = managementService;
     }
 
     @Override
@@ -60,6 +67,14 @@ public class KubernetesServiceBuildHandler implements BuildResourceActionHandler
         V1Service result = provider.buildClient(account).createService(namespace.getExternalId(), service, dryRun);
 
         resource.setExternalId(KubeUtil.getNamespacedRef(result.getMetadata()).toString());
+    }
+
+    @Override
+    public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        ResourceActionResult result = BuildResourceActionHandler.super.checkActionResult(resource, parameters);
+        if(result.taskState() == TaskState.FINISHED || result.taskState() == TaskState.FAILED)
+            managementService.manageEndpointSlice(resource);
+        return result;
     }
 
     @Override

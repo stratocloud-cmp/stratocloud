@@ -48,6 +48,9 @@ public enum ResourceState {
     SHELVED,
 
     INSUFFICIENT_RESOURCE,
+
+    EXECUTING,
+    FINISHED
     ;
 
 

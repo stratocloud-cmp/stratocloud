@@ -1,6 +1,7 @@
 package com.stratocloud.kubernetes.job;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.event.ExternalResourceEvent;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
@@ -9,6 +10,7 @@ import com.stratocloud.kubernetes.common.NamespacedRef;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.constants.ResourceCategories;
+import com.stratocloud.provider.resource.event.EventAwareResourceHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -16,12 +18,13 @@ import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class KubernetesJobHandler extends AbstractResourceHandler {
+public class KubernetesJobHandler extends AbstractResourceHandler implements EventAwareResourceHandler {
 
     private final KubernetesProvider provider;
 
@@ -95,12 +98,12 @@ public class KubernetesJobHandler extends AbstractResourceHandler {
         int failed = status.getFailed() != null ? status.getFailed() : 0;
 
         if(active > 0)
-            return ResourceState.STARTED;
+            return ResourceState.EXECUTING;
 
         if(failed > 0)
             return ResourceState.ERROR;
 
-        return ResourceState.STOPPED;
+        return ResourceState.FINISHED;
     }
 
     @Override
@@ -145,6 +148,21 @@ public class KubernetesJobHandler extends AbstractResourceHandler {
                 "Job",
                 metadata,
                 resource.getOwnerId()
+        );
+    }
+
+    @Override
+    public List<ExternalResourceEvent> describeResourceEvents(ExternalAccount account,
+                                                              String externalId,
+                                                              LocalDateTime happenedAfter) {
+        return KubeUtil.describeResourceEvents(
+                provider,
+                account,
+                "Job",
+                getResourceTypeId(),
+                externalId,
+                happenedAfter,
+                true
         );
     }
 }

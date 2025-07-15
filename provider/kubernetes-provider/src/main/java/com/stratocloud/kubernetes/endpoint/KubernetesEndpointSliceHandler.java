@@ -66,7 +66,7 @@ public class KubernetesEndpointSliceHandler extends AbstractResourceHandler {
         return provider.buildClient(account).describeEndpointSlice(NamespacedRef.fromString(externalId));
     }
 
-    private ExternalResource toExternalResource(ExternalAccount account, V1EndpointSlice endpointSlice) {
+    public ExternalResource toExternalResource(ExternalAccount account, V1EndpointSlice endpointSlice) {
         return new ExternalResource(
                 provider.getId(),
                 account.getId(),

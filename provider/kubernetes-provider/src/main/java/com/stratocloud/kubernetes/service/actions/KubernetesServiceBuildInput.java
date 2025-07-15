@@ -18,10 +18,10 @@ public class KubernetesServiceBuildInput implements ResourceActionInput {
               name: my-service
             spec:
               selector:
-                app.kubernetes.io/name: MyApp
+                app.kubernetes.io/name: nginx
               ports:
                 - protocol: TCP
                   port: 80
-                  targetPort: 9376
+                  targetPort: 80
             """;
 }

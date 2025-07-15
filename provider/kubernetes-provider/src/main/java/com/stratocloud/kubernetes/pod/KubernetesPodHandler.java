@@ -1,6 +1,7 @@
 package com.stratocloud.kubernetes.pod;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.event.ExternalResourceEvent;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
@@ -8,6 +9,7 @@ import com.stratocloud.kubernetes.common.NamespacedRef;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.constants.ResourceCategories;
+import com.stratocloud.provider.resource.event.EventAwareResourceHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.custom.Quantity;
@@ -18,12 +20,13 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class KubernetesPodHandler extends AbstractResourceHandler {
+public class KubernetesPodHandler extends AbstractResourceHandler implements EventAwareResourceHandler {
 
     private final KubernetesProvider provider;
 
@@ -95,7 +98,7 @@ public class KubernetesPodHandler extends AbstractResourceHandler {
             return ResourceState.UNKNOWN;
 
         return switch (phase){
-            case "Pending" -> ResourceState.BUILDING;
+            case "Pending" -> ResourceState.STARTING;
             case "Running" -> ResourceState.STARTED;
             case "Succeeded" -> ResourceState.STOPPED;
             case "Failed" -> ResourceState.ERROR;
@@ -174,5 +177,20 @@ public class KubernetesPodHandler extends AbstractResourceHandler {
     @Override
     public List<ResourceUsageType> getUsagesTypes() {
         return List.of();
+    }
+
+    @Override
+    public List<ExternalResourceEvent> describeResourceEvents(ExternalAccount account,
+                                                              String externalId,
+                                                              LocalDateTime happenedAfter) {
+        return KubeUtil.describeResourceEvents(
+                provider,
+                account,
+                "Pod",
+                getResourceTypeId(),
+                externalId,
+                happenedAfter,
+                true
+        );
     }
 }

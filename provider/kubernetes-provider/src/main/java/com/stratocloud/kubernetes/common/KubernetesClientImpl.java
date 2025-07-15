@@ -9,6 +9,7 @@ import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.kubernetes.volume.PodVolume;
 import com.stratocloud.kubernetes.volume.PodVolumeId;
 import com.stratocloud.utils.JSON;
+import com.stratocloud.utils.TimeUtil;
 import com.stratocloud.utils.Utils;
 import com.stratocloud.utils.concurrent.SleepUtil;
 import io.kubernetes.client.Metrics;
@@ -27,12 +28,14 @@ import okhttp3.internal.http2.StreamResetException;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 @Slf4j
 public class KubernetesClientImpl implements KubernetesClient {
@@ -385,6 +388,18 @@ public class KubernetesClientImpl implements KubernetesClient {
     public List<V1EndpointSlice> describeEndpointSlices(){
         DiscoveryV1Api.APIlistEndpointSliceForAllNamespacesRequest request
                 = buildDiscoveryV1Api().listEndpointSliceForAllNamespaces();
+        return queryAllByToken(
+                request::execute,
+                request::limit,
+                V1EndpointSliceList::getItems,
+                resp -> getContinueToken(resp.getMetadata()),
+                request::_continue
+        );
+    }
+
+    @Override
+    public List<V1EndpointSlice> describeEndpointSlicesByNamespace(String namespace){
+        var request = buildDiscoveryV1Api().listNamespacedEndpointSlice(namespace);
         return queryAllByToken(
                 request::execute,
                 request::limit,
@@ -1365,6 +1380,58 @@ public class KubernetesClientImpl implements KubernetesClient {
         ).map(
                 v -> new PodVolume(podVolumeId, v)
         ).findAny();
+    }
+
+    @Override
+    public List<CoreV1Event> describeEventsByObjectRef(V1ObjectReference ref, LocalDateTime happenedAfter){
+        List<CoreV1Event> events = describeEvents();
+        Stream<CoreV1Event> stream = events.stream().filter(
+                e -> Objects.equals(e.getInvolvedObject().getKind(), ref.getKind())
+        ).filter(
+                e -> Objects.equals(e.getInvolvedObject().getName(), ref.getName())
+        );
+
+        if(Utils.isNotBlank(ref.getNamespace())){
+            stream = stream.filter(
+                    e -> Objects.equals(
+                            e.getInvolvedObject().getNamespace(), ref.getNamespace()
+                    )
+            ).filter(
+                    e -> e.getLastTimestamp() != null && e.getLastTimestamp().isAfter(
+                            happenedAfter.atZone(TimeUtil.BEIJING_ZONE_ID).toOffsetDateTime()
+                    )
+            );
+        }
+
+        List<CoreV1Event> list = stream.toList();
+        return new ArrayList<>(list);
+    }
+
+    @Override
+    public List<CoreV1Event> describeEvents(){
+        try {
+            return CacheUtil.queryWithCache(
+                    cacheService,
+                    "K8s-EventList-" + kubeConfig.getServer(),
+                    15L,
+                    this::doDescribeEvents,
+                    new ArrayList<>()
+            );
+        }catch (Exception e){
+            log.warn("Failed to describe Events: {}", e.toString());
+            return new ArrayList<>();
+        }
+    }
+
+    private List<CoreV1Event> doDescribeEvents() {
+        var request = buildCoreV1Api().listEventForAllNamespaces();
+        return queryAllByToken(
+                request::execute,
+                request::limit,
+                CoreV1EventList::getItems,
+                resp -> getContinueToken(resp.getMetadata()),
+                request::_continue
+        );
     }
 
 

@@ -27,6 +27,7 @@ public class KubernetesDeploymentBuildInput implements ResourceActionInput {
                 metadata:
                   labels:
                     app: nginx
+                    app.kubernetes.io/name: nginx
                 spec:
                   containers:
                   - name: nginx

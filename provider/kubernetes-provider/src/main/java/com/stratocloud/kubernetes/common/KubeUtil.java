@@ -1,14 +1,22 @@
 package com.stratocloud.kubernetes.common;
 
+import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.event.ExternalResourceEvent;
+import com.stratocloud.event.StratoEventLevel;
+import com.stratocloud.event.StratoEventSource;
+import com.stratocloud.event.StratoEventType;
 import com.stratocloud.exceptions.BadCommandException;
 import com.stratocloud.form.info.CodeBlockFieldDetail;
 import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.form.info.FieldInfo;
+import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.utils.Assert;
 import com.stratocloud.utils.TimeUtil;
 import com.stratocloud.utils.Utils;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.util.Yaml;
 import lombok.extern.slf4j.Slf4j;
@@ -102,5 +110,79 @@ public class KubeUtil {
         ).withZoneSameInstant(
                 ZoneId.systemDefault()
         ).toLocalDateTime();
+    }
+
+
+    public static List<ExternalResourceEvent> describeResourceEvents(KubernetesProvider provider,
+                                                                     ExternalAccount account,
+                                                                     String objectKind,
+                                                                     String resourceTypeId,
+                                                                     String externalId,
+                                                                     LocalDateTime happenedAfter,
+                                                                     boolean isNamespaced) {
+        V1ObjectReference ref = new V1ObjectReference();
+        ref.setKind(objectKind);
+        if(isNamespaced){
+            NamespacedRef namespacedRef = NamespacedRef.fromString(externalId);
+            ref.setNamespace(namespacedRef.namespace());
+            ref.setName(namespacedRef.name());
+        }else {
+            ref.setName(externalId);
+        }
+
+
+        return provider.buildClient(account).describeEventsByObjectRef(ref, happenedAfter).stream().filter(
+                e -> e.getLastTimestamp() != null
+        ).map(
+                e -> new ExternalResourceEvent(
+                        e.getMetadata().getUid(),
+                        convertEventType(e),
+                        convertEventLevel(e.getType()),
+                        StratoEventSource.EXTERNAL_ACTION,
+                        resourceTypeId,
+                        account.getId(),
+                        externalId,
+                        getEventMessage(e),
+                        e.getLastTimestamp().toLocalDateTime()
+                )
+        ).toList();
+    }
+
+    private static String getEventMessage(CoreV1Event event) {
+        String result = "";
+
+        if(Utils.isNotBlank(event.getMessage()))
+            result = result+event.getMessage()+"\n";
+
+        result = result+"Count: %s".formatted(
+                event.getCount() != null ? event.getCount() : 0
+        );
+
+        return result;
+    }
+
+    private static StratoEventType convertEventType(CoreV1Event event) {
+        String eventType;
+
+        if(Utils.isBlank(event.getReason()) && Utils.isBlank(event.getAction())) {
+            eventType = "UNKNOWN";
+        } else if(Utils.isBlank(event.getReason()) && Utils.isNotBlank(event.getAction())){
+            eventType = event.getAction();
+        } else if(Utils.isNotBlank(event.getReason()) && Utils.isBlank(event.getAction())){
+            eventType = event.getReason();
+        }else {
+            eventType = "%s.%s".formatted(event.getAction(), event.getReason());
+        }
+        return new StratoEventType(eventType, eventType);
+    }
+
+    private static StratoEventLevel convertEventLevel(String type) {
+        if(Utils.isBlank(type))
+            return StratoEventLevel.REMIND;
+        return switch (type){
+            case "Warning" -> StratoEventLevel.WARNING;
+            case "Normal" -> StratoEventLevel.INFO;
+            default -> StratoEventLevel.REMIND;
+        };
     }
 }

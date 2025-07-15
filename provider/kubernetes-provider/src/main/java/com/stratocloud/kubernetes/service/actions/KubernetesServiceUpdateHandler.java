@@ -6,6 +6,7 @@ import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
+import com.stratocloud.kubernetes.common.KubernetesManagementService;
 import com.stratocloud.kubernetes.service.KubernetesServiceHandler;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.resource.ResourceActionHandler;
@@ -28,8 +29,12 @@ public class KubernetesServiceUpdateHandler implements ResourceActionHandler {
 
     private final KubernetesServiceHandler serviceHandler;
 
-    public KubernetesServiceUpdateHandler(KubernetesServiceHandler serviceHandler) {
+    private final KubernetesManagementService managementService;
+
+    public KubernetesServiceUpdateHandler(KubernetesServiceHandler serviceHandler,
+                                          KubernetesManagementService managementService) {
         this.serviceHandler = serviceHandler;
+        this.managementService = managementService;
     }
 
     @Override
@@ -108,6 +113,7 @@ public class KubernetesServiceUpdateHandler implements ResourceActionHandler {
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        managementService.manageEndpointSlice(resource);
         return ResourceActionResult.finished();
     }
 

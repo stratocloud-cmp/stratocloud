@@ -3,14 +3,17 @@ package com.stratocloud.kubernetes.common;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.kubernetes.KubernetesProvider;
+import com.stratocloud.kubernetes.endpoint.KubernetesEndpointSliceHandler;
 import com.stratocloud.kubernetes.pod.KubernetesPodHandler;
 import com.stratocloud.kubernetes.volume.KubernetesPodVolumeHandler;
 import com.stratocloud.kubernetes.volume.PodVolume;
 import com.stratocloud.kubernetes.volume.PodVolumeId;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.ExternalResource;
+import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.ResourceManagementService;
 import com.stratocloud.utils.Utils;
+import io.kubernetes.client.openapi.models.V1EndpointSlice;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -102,4 +105,43 @@ public class KubernetesManagementService {
         }
     }
 
+
+    public void manageEndpointSlice(Resource serviceResource){
+        if(Utils.isBlank(serviceResource.getExternalId()))
+            return;
+
+        NamespacedRef serviceRef = NamespacedRef.fromString(serviceResource.getExternalId());
+        KubernetesProvider provider = (KubernetesProvider) serviceResource.getResourceHandler().getProvider();
+        ExternalAccount account = provider.getAccountRepository().findExternalAccount(serviceResource.getAccountId());
+
+        var endpointSlices = provider.buildClient(account).describeEndpointSlicesByNamespace(
+                serviceRef.namespace()
+        ).stream().filter(
+                p -> p.getMetadata() != null && p.getMetadata().getOwnerReferences() != null
+        ).filter(
+                p -> p.getMetadata().getOwnerReferences().stream().anyMatch(
+                        or -> Objects.equals(or.getKind(), "Service") &&
+                                Objects.equals(or.getName(), serviceRef.name())
+                )
+        ).toList();
+
+        var optional = provider.getResourceHandlerByCategory(ResourceCategories.ENDPOINT_SLICE.id());
+
+        if(optional.isEmpty())
+            return;
+
+        KubernetesEndpointSliceHandler endpointSliceHandler = (KubernetesEndpointSliceHandler) optional.get();
+
+        for (V1EndpointSlice endpointSlice : endpointSlices) {
+            ExternalResource externalResource = endpointSliceHandler.toExternalResource(account, endpointSlice);
+
+            try {
+                resourceManagementService.manageExternalResource(
+                        serviceResource.getOwnerId(), externalResource
+                );
+            }catch (Exception e){
+                log.warn("Failed to manage endpoint slice. EndpointSlice={}.", externalResource.name(), e);
+            }
+        }
+    }
 }

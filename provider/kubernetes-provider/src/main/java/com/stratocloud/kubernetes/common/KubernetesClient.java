@@ -6,6 +6,7 @@ import io.kubernetes.client.custom.NodeMetrics;
 import io.kubernetes.client.custom.PodMetrics;
 import io.kubernetes.client.openapi.models.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,6 +40,8 @@ public interface KubernetesClient {
     void deleteService(NamespacedRef ref, boolean dryRun);
 
     List<V1EndpointSlice> describeEndpointSlices();
+
+    List<V1EndpointSlice> describeEndpointSlicesByNamespace(String namespace);
 
     Optional<V1EndpointSlice> describeEndpointSlice(NamespacedRef ref);
 
@@ -201,6 +204,10 @@ public interface KubernetesClient {
     List<PodVolume> describePodVolumes();
 
     Optional<PodVolume> describePodVolume(PodVolumeId podVolumeId);
+
+    List<CoreV1Event> describeEventsByObjectRef(V1ObjectReference ref, LocalDateTime happenedAfter);
+
+    List<CoreV1Event> describeEvents();
 
     Optional<NodeMetrics> describeNodeMetrics(String nodeName);
 
