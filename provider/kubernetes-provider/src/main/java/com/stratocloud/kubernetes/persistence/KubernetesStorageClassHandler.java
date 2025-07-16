@@ -42,7 +42,7 @@ public class KubernetesStorageClassHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.STORAGE_CLASS;
+        return ResourceCategories.CLUSTER_CONFIG;
     }
 
     @Override

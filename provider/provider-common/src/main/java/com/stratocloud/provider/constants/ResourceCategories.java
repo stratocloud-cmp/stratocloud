@@ -286,171 +286,52 @@ public class ResourceCategories {
             107
     );
 
-    public static final ResourceCategory DEPLOYMENT = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_WORKLOAD,
-            "DEPLOYMENT",
-            "Deployment",
-            "deployment",
+    public static final ResourceCategory CONTAINER_WORKLOAD = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "CONTAINER_WORKLOAD",
+            "工作负载",
+            "workload",
             61
     );
 
-    public static final ResourceCategory STATEFUL_SET = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_WORKLOAD,
-            "STATEFUL_SET",
-            "StatefulSet",
-            "stateful-set",
-            62
-    );
-
-    public static final ResourceCategory DAEMON_SET = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_WORKLOAD,
-            "DAEMON_SET",
-            "DaemonSet",
-            "daemon-set",
-            63
-    );
-
     public static final ResourceCategory POD = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_WORKLOAD,
+            ResourceCategoryGroups.CONTAINER_RELATED,
             "POD",
             "Pod",
             "pod",
+            62
+    );
+
+    public static final ResourceCategory CONTAINER_STORAGE = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "CONTAINER_STORAGE",
+            "容器存储",
+            "container-storage",
+            63
+    );
+
+
+    public static final ResourceCategory CONTAINER_NETWORK = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "CONTAINER_NETWORK",
+            "容器网络",
+            "service",
             64
     );
 
-    public static final ResourceCategory CONTAINER_JOB = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_WORKLOAD,
-            "CONTAINER_JOB",
-            "Job",
-            "container-job",
+    public static final ResourceCategory CLUSTER_CONFIG = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "CLUSTER_CONFIG",
+            "集群配置",
+            "namespace",
             65
     );
 
-    public static final ResourceCategory CONTAINER_CRON_JOB = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_WORKLOAD,
-            "CONTAINER_CRON_JOB",
-            "CronJob",
-            "container-cron-job",
+    public static final ResourceCategory NODE = new ResourceCategory(
+            ResourceCategoryGroups.CONTAINER_RELATED,
+            "NODE",
+            "集群节点",
+            "node",
             66
     );
-
-    public static final ResourceCategory POD_VOLUME = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_STORAGE,
-            "POD_VOLUME",
-            "Volume",
-            "pod-volume",
-            71
-    );
-
-    public static final ResourceCategory PERSISTENT_VOLUME = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_STORAGE,
-            "PERSISTENT_VOLUME",
-            "PV",
-            "pv",
-            72
-    );
-
-    public static final ResourceCategory PERSISTENT_VOLUME_CLAIM = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_STORAGE,
-            "PERSISTENT_VOLUME_CLAIM",
-            "PVC",
-            "pvc",
-            73
-    );
-
-
-
-    public static final ResourceCategory STORAGE_CLASS = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_STORAGE,
-            "STORAGE_CLASS",
-            "StorageClass",
-            "storage-class",
-            74
-    );
-
-    public static final ResourceCategory CONFIG_MAP = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_STORAGE,
-            "CONFIG_MAP",
-            "ConfigMap",
-            "config-map",
-            75
-    );
-
-    public static final ResourceCategory SECRET = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_STORAGE,
-            "SECRET",
-            "Secret",
-            "secret",
-            76
-    );
-
-    public static final ResourceCategory SERVICE = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_NETWORK,
-            "SERVICE",
-            "Service",
-            "service",
-            81
-    );
-
-    public static final ResourceCategory ENDPOINT_SLICE = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_NETWORK,
-            "ENDPOINT_SLICE",
-            "EndpointSlice",
-            "endpoint-slice",
-            82
-    );
-
-    public static final ResourceCategory INGRESS = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_NETWORK,
-            "INGRESS",
-            "Ingress",
-            "ingress",
-            83
-    );
-    public static final ResourceCategory INGRESS_CLASS = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_NETWORK,
-            "INGRESS_CLASS",
-            "IngressClass",
-            "ingress-class",
-            84
-    );
-
-
-
-    public static final ResourceCategory NETWORK_POLICY = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_NETWORK,
-            "NETWORK_POLICY",
-            "NetworkPolicy",
-            "network-policy",
-            85
-    );
-
-
-
-    public static final ResourceCategory NAMESPACE = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_CLUSTER,
-            "NAMESPACE",
-            "Namespace",
-            "namespace",
-            86
-    );
-
-    public static final ResourceCategory NODE = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_CLUSTER,
-            "NODE",
-            "Node",
-            "node",
-            87
-    );
-
-    public static final ResourceCategory RUNTIME_CLASS = new ResourceCategory(
-            ResourceCategoryGroups.CONTAINER_CLUSTER,
-            "RUNTIME_CLASS",
-            "RuntimeClass",
-            "runtime-class",
-            88
-    );
-
-
-
 }

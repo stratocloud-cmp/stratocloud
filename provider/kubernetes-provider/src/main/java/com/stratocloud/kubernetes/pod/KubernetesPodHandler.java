@@ -28,6 +28,7 @@ import java.util.Optional;
 @Component
 public class KubernetesPodHandler extends AbstractResourceHandler implements EventAwareResourceHandler {
 
+    public static final String TYPE_ID = "KUBERNETES_POD";
     private final KubernetesProvider provider;
 
     public KubernetesPodHandler(KubernetesProvider provider) {
@@ -41,7 +42,7 @@ public class KubernetesPodHandler extends AbstractResourceHandler implements Eve
 
     @Override
     public String getResourceTypeId() {
-        return "KUBERNETES_POD";
+        return TYPE_ID;
     }
 
     @Override

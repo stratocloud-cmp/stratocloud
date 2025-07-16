@@ -6,8 +6,8 @@ import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
+import com.stratocloud.kubernetes.namespace.KubernetesNamespaceHandler;
 import com.stratocloud.kubernetes.persistence.KubernetesPvcHandler;
-import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
@@ -92,7 +92,7 @@ public class KubernetesPvcUpdateHandler implements ResourceActionHandler {
     private void updatePv(Resource resource, Map<String, Object> parameters, boolean dryRun) {
         KubernetesPvcUpdateInput input = JSON.convert(parameters, KubernetesPvcUpdateInput.class);
 
-        Resource namespace = resource.getEssentialTarget(ResourceCategories.NAMESPACE).orElseThrow(
+        Resource namespace = resource.getEssentialTargetByType(KubernetesNamespaceHandler.TYPE_ID).orElseThrow(
                 () -> new StratoException("Namespace not found when updating PVC")
         );
 

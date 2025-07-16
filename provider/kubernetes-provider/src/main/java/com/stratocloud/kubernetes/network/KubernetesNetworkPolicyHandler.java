@@ -43,7 +43,7 @@ public class KubernetesNetworkPolicyHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.NETWORK_POLICY;
+        return ResourceCategories.CONTAINER_NETWORK;
     }
 
     @Override

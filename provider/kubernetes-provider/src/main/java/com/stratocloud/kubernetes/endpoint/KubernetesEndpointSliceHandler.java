@@ -20,6 +20,7 @@ import java.util.Optional;
 @Component
 public class KubernetesEndpointSliceHandler extends AbstractResourceHandler {
 
+    public static final String TYPE_ID = "KUBERNETES_ENDPOINT_SLICE";
     private final KubernetesProvider provider;
 
     public KubernetesEndpointSliceHandler(KubernetesProvider provider) {
@@ -33,7 +34,7 @@ public class KubernetesEndpointSliceHandler extends AbstractResourceHandler {
 
     @Override
     public String getResourceTypeId() {
-        return "KUBERNETES_ENDPOINT_SLICE";
+        return TYPE_ID;
     }
 
     @Override
@@ -43,7 +44,7 @@ public class KubernetesEndpointSliceHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.ENDPOINT_SLICE;
+        return ResourceCategories.CONTAINER_NETWORK;
     }
 
     @Override

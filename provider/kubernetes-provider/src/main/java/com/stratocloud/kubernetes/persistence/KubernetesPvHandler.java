@@ -46,7 +46,7 @@ public class KubernetesPvHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.PERSISTENT_VOLUME;
+        return ResourceCategories.CONTAINER_STORAGE;
     }
 
     @Override

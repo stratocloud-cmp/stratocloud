@@ -54,7 +54,7 @@ public class KubernetesDeploymentHandler extends AbstractResourceHandler impleme
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.DEPLOYMENT;
+        return ResourceCategories.CONTAINER_WORKLOAD;
     }
 
     @Override

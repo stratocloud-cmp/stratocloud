@@ -53,7 +53,7 @@ public class KubernetesDaemonSetHandler extends AbstractResourceHandler implemen
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.DAEMON_SET;
+        return ResourceCategories.CONTAINER_WORKLOAD;
     }
 
     @Override

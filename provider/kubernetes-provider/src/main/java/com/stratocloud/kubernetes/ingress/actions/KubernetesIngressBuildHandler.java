@@ -5,7 +5,7 @@ import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.ingress.KubernetesIngressHandler;
-import com.stratocloud.provider.constants.ResourceCategories;
+import com.stratocloud.kubernetes.namespace.KubernetesNamespaceHandler;
 import com.stratocloud.provider.resource.BuildResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
@@ -52,7 +52,7 @@ public class KubernetesIngressBuildHandler implements BuildResourceActionHandler
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         var input = JSON.convert(parameters, KubernetesIngressBuildInput.class);
 
-        Resource namespace = resource.getEssentialTarget(ResourceCategories.NAMESPACE).orElseThrow(
+        Resource namespace = resource.getEssentialTargetByType(KubernetesNamespaceHandler.TYPE_ID).orElseThrow(
                 () -> new StratoException("Namespace not found when creating ingress")
         );
 

@@ -42,7 +42,7 @@ public class KubernetesConfigMapHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.CONFIG_MAP;
+        return ResourceCategories.CONTAINER_STORAGE;
     }
 
     @Override

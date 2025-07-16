@@ -1,14 +1,12 @@
 package com.stratocloud.kubernetes.common;
 
 import com.stratocloud.account.ExternalAccount;
-import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.endpoint.KubernetesEndpointSliceHandler;
 import com.stratocloud.kubernetes.pod.KubernetesPodHandler;
 import com.stratocloud.kubernetes.volume.KubernetesPodVolumeHandler;
 import com.stratocloud.kubernetes.volume.PodVolume;
 import com.stratocloud.kubernetes.volume.PodVolumeId;
-import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.resource.ExternalResource;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.ResourceManagementService;
@@ -58,16 +56,12 @@ public class KubernetesManagementService {
                 )
         ).toList();
 
-        KubernetesPodHandler podHandler = (KubernetesPodHandler) provider.getResourceHandlerByCategory(
-                ResourceCategories.POD.id()
-        ).orElseThrow(
-                () -> new StratoException("Pod handler not found")
+        KubernetesPodHandler podHandler = (KubernetesPodHandler) provider.getResourceHandlerByType(
+                KubernetesPodHandler.TYPE_ID
         );
 
-        KubernetesPodVolumeHandler volumeHandler = (KubernetesPodVolumeHandler) provider.getResourceHandlerByCategory(
-                ResourceCategories.POD_VOLUME.id()
-        ).orElseThrow(
-                () -> new StratoException("Pod volume handler not found")
+        KubernetesPodVolumeHandler volumeHandler = (KubernetesPodVolumeHandler) provider.getResourceHandlerByType(
+                KubernetesPodVolumeHandler.TYPE_ID
         );
 
         if(Utils.isEmpty(pods))
@@ -125,12 +119,11 @@ public class KubernetesManagementService {
                 )
         ).toList();
 
-        var optional = provider.getResourceHandlerByCategory(ResourceCategories.ENDPOINT_SLICE.id());
 
-        if(optional.isEmpty())
-            return;
-
-        KubernetesEndpointSliceHandler endpointSliceHandler = (KubernetesEndpointSliceHandler) optional.get();
+        var endpointSliceHandler
+                = (KubernetesEndpointSliceHandler) provider.getResourceHandlerByType(
+                KubernetesEndpointSliceHandler.TYPE_ID
+        );
 
         for (V1EndpointSlice endpointSlice : endpointSlices) {
             ExternalResource externalResource = endpointSliceHandler.toExternalResource(account, endpointSlice);

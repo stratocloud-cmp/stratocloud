@@ -42,7 +42,7 @@ public class KubernetesRuntimeClassHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.RUNTIME_CLASS;
+        return ResourceCategories.CLUSTER_CONFIG;
     }
 
     @Override

@@ -44,7 +44,7 @@ public class KubernetesServiceHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.SERVICE;
+        return ResourceCategories.CONTAINER_NETWORK;
     }
 
     @Override

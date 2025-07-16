@@ -19,6 +19,7 @@ import java.util.Optional;
 @Component
 public class KubernetesNamespaceHandler extends AbstractResourceHandler {
 
+    public static final String TYPE_ID = "KUBERNETES_NAMESPACE";
     private final KubernetesProvider provider;
 
     public KubernetesNamespaceHandler(KubernetesProvider provider) {
@@ -32,7 +33,7 @@ public class KubernetesNamespaceHandler extends AbstractResourceHandler {
 
     @Override
     public String getResourceTypeId() {
-        return "KUBERNETES_NAMESPACE";
+        return TYPE_ID;
     }
 
     @Override
@@ -42,7 +43,7 @@ public class KubernetesNamespaceHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.NAMESPACE;
+        return ResourceCategories.CLUSTER_CONFIG;
     }
 
     @Override

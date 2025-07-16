@@ -42,7 +42,7 @@ public class KubernetesSecretHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.SECRET;
+        return ResourceCategories.CONTAINER_STORAGE;
     }
 
     @Override

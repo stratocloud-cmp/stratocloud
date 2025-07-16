@@ -7,7 +7,7 @@ import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.kubernetes.common.KubeUtil;
 import com.stratocloud.kubernetes.ingress.KubernetesIngressHandler;
-import com.stratocloud.provider.constants.ResourceCategories;
+import com.stratocloud.kubernetes.namespace.KubernetesNamespaceHandler;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
@@ -92,7 +92,7 @@ public class KubernetesIngressUpdateHandler implements ResourceActionHandler {
     private void updateIngress(Resource resource, Map<String, Object> parameters, boolean dryRun) {
         KubernetesIngressUpdateInput input = JSON.convert(parameters, KubernetesIngressUpdateInput.class);
 
-        Resource namespace = resource.getEssentialTarget(ResourceCategories.NAMESPACE).orElseThrow(
+        Resource namespace = resource.getEssentialTargetByType(KubernetesNamespaceHandler.TYPE_ID).orElseThrow(
                 () -> new StratoException("Namespace not found when updating ingress")
         );
 

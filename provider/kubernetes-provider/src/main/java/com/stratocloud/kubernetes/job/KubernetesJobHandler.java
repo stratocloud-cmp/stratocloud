@@ -53,7 +53,7 @@ public class KubernetesJobHandler extends AbstractResourceHandler implements Eve
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.CONTAINER_JOB;
+        return ResourceCategories.CONTAINER_WORKLOAD;
     }
 
     @Override

@@ -52,7 +52,7 @@ public class KubernetesCronJobHandler extends AbstractResourceHandler implements
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.CONTAINER_CRON_JOB;
+        return ResourceCategories.CONTAINER_WORKLOAD;
     }
 
     @Override

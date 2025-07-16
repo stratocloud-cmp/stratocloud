@@ -42,7 +42,7 @@ public class KubernetesIngressClassHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.INGRESS_CLASS;
+        return ResourceCategories.CLUSTER_CONFIG;
     }
 
     @Override

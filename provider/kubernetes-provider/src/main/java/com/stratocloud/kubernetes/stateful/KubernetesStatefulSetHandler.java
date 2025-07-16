@@ -53,7 +53,7 @@ public class KubernetesStatefulSetHandler extends AbstractResourceHandler implem
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.STATEFUL_SET;
+        return ResourceCategories.CONTAINER_WORKLOAD;
     }
 
     @Override

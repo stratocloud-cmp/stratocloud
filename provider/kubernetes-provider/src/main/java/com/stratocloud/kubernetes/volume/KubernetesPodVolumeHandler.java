@@ -17,6 +17,7 @@ import java.util.Optional;
 @Component
 public class KubernetesPodVolumeHandler extends AbstractResourceHandler {
 
+    public static final String TYPE_ID = "KUBERNETES_POD_VOLUME";
     private final KubernetesProvider provider;
 
     public KubernetesPodVolumeHandler(KubernetesProvider provider) {
@@ -30,7 +31,7 @@ public class KubernetesPodVolumeHandler extends AbstractResourceHandler {
 
     @Override
     public String getResourceTypeId() {
-        return "KUBERNETES_POD_VOLUME";
+        return TYPE_ID;
     }
 
     @Override
@@ -40,7 +41,7 @@ public class KubernetesPodVolumeHandler extends AbstractResourceHandler {
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.POD_VOLUME;
+        return ResourceCategories.CONTAINER_STORAGE;
     }
 
     @Override
