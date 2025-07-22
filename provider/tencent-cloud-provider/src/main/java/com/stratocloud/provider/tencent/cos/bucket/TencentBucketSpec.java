@@ -34,9 +34,7 @@ public class TencentBucketSpec {
         );
 
         Optional<HeadBucketResult> headBucketResult = cosSession.headBucket(bucketName);
-        headBucketResult.ifPresent(head -> {
-            bucketSpec.setEnableMultiAz(head.isMazBucket());
-        });
+        headBucketResult.ifPresent(head -> bucketSpec.setEnableMultiAz(head.isMazBucket()));
 
         Map<String, Object> properties = bucketResource.getProperties();
         if(Utils.isNotEmpty(properties) && properties.containsKey("enableMultiAz")){
