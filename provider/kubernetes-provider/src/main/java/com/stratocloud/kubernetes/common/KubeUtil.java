@@ -6,9 +6,9 @@ import com.stratocloud.event.StratoEventLevel;
 import com.stratocloud.event.StratoEventSource;
 import com.stratocloud.event.StratoEventType;
 import com.stratocloud.exceptions.BadCommandException;
+import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.CodeBlockFieldDetail;
 import com.stratocloud.form.info.DynamicFormMetaData;
-import com.stratocloud.form.info.FieldInfo;
 import com.stratocloud.kubernetes.KubernetesProvider;
 import com.stratocloud.utils.Assert;
 import com.stratocloud.utils.TimeUtil;
@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -70,35 +69,15 @@ public class KubeUtil {
 
     public static DynamicFormMetaData replaceYamlContent(DynamicFormMetaData formMetaData,
                                                          String yamlContent) {
-        List<FieldInfo> fieldInfoList = new ArrayList<>();
-
-        if(Utils.isNotEmpty(formMetaData.fieldInfoList())){
-            for (FieldInfo fieldInfo : formMetaData.fieldInfoList()) {
-                if("yamlContent".equals(fieldInfo.key()) && fieldInfo.detail() instanceof CodeBlockFieldDetail c){
-
-                    FieldInfo newFieldInfo = new FieldInfo(
-                            fieldInfo.type(),
-                            fieldInfo.key(),
-                            fieldInfo.label(),
-                            fieldInfo.description(),
-                            new CodeBlockFieldDetail(
-                                    yamlContent,
-                                    c.required(),
-                                    c.conditions(),
-                                    c.language()
-                            )
-                    );
-                    fieldInfoList.add(newFieldInfo);
-                } else {
-                    fieldInfoList.add(fieldInfo);
-                }
-            }
-        }
-
-        return new DynamicFormMetaData(
-                formMetaData.formClass(),
-                fieldInfoList
-        );
+        return DynamicFormHelper.changeFieldDetail(
+                formMetaData,
+                "yamlContent",
+                new CodeBlockFieldDetail(
+                        yamlContent,
+                        true,
+                        List.of(),
+                        "yaml"
+        ));
     }
 
     public static LocalDateTime toLocalDateTime(String kubernetesTime) {

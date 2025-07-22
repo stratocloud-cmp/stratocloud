@@ -5,6 +5,7 @@ import org.springframework.core.GenericTypeResolver;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 public class Utils {
     public static int length(final CharSequence cs) {
@@ -88,5 +89,15 @@ public class Utils {
             return false;
 
         return s1.equalsIgnoreCase(s2);
+    }
+
+    public static <E> List<List<E>> partition(List<E> list, int partitionSize){
+        return IntStream.range(
+                0, Math.max(0, list.size() - partitionSize) + 1
+        ).filter(
+                i -> i % partitionSize == 0
+        ).mapToObj(
+                i -> list.subList(i, Math.min(i + partitionSize, list.size()))
+        ).toList();
     }
 }

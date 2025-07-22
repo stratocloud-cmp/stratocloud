@@ -64,4 +64,7 @@ public class ResourceActions {
     public static final ResourceAction READ_YAML = new ResourceAction(
             "READ_YAML", "查看YAML", 401
     );
+    public static final ResourceAction EMPTY = new ResourceAction(
+            "EMPTY", "清空", 402
+    );
 }

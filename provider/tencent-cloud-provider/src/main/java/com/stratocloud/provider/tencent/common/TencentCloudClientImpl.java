@@ -7,6 +7,7 @@ import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.exceptions.ProviderConnectionException;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.provider.constants.SecurityGroupPolicyDirection;
+import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
 import com.stratocloud.provider.tencent.flavor.TencentFlavorId;
 import com.stratocloud.provider.tencent.lb.backend.TencentBackend;
 import com.stratocloud.provider.tencent.lb.backend.TencentInstanceBackendId;
@@ -2031,5 +2032,10 @@ public class TencentCloudClientImpl implements TencentCloudClient{
                 request::setPageNumber,
                 request::setPageSize
         );
+    }
+
+    @Override
+    public CosSessionKey getCosSessionKey(){
+        return new CosSessionKey(credential.getSecretId(), credential.getSecretKey(), region);
     }
 }

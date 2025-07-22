@@ -1,14 +1,13 @@
 package com.stratocloud.form;
 
-import com.stratocloud.form.info.DynamicFormMetaData;
-import com.stratocloud.form.info.FieldInfo;
-import com.stratocloud.form.info.FieldInfoGenerator;
-import com.stratocloud.form.info.FieldInfoGeneratorRegistry;
+import com.stratocloud.form.info.*;
+import com.stratocloud.utils.Utils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class DynamicFormHelper {
 
@@ -48,4 +47,32 @@ public class DynamicFormHelper {
         }
     }
 
+    public static DynamicFormMetaData changeFieldDetail(DynamicFormMetaData formMetaData,
+                                                        String key,
+                                                        FieldDetail fieldDetail){
+        List<FieldInfo> fieldInfoList = new ArrayList<>();
+
+        if(Utils.isNotEmpty(formMetaData.fieldInfoList())){
+            for (FieldInfo fieldInfo : formMetaData.fieldInfoList()) {
+                if(Objects.equals(key, fieldInfo.key())){
+
+                    FieldInfo newFieldInfo = new FieldInfo(
+                            fieldInfo.type(),
+                            fieldInfo.key(),
+                            fieldInfo.label(),
+                            fieldInfo.description(),
+                            fieldDetail
+                    );
+                    fieldInfoList.add(newFieldInfo);
+                } else {
+                    fieldInfoList.add(fieldInfo);
+                }
+            }
+        }
+
+        return new DynamicFormMetaData(
+                formMetaData.formClass(),
+                fieldInfoList
+        );
+    }
 }

@@ -334,4 +334,11 @@ public class ResourceCategories {
             "node",
             66
     );
+    public static final ResourceCategory BUCKET = new ResourceCategory(
+            ResourceCategoryGroups.STORAGE_RELATED,
+            "BUCKET",
+            "存储桶",
+            "bucket",
+            107
+    );
 }

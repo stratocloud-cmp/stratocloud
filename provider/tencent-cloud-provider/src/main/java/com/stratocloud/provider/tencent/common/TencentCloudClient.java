@@ -1,6 +1,7 @@
 package com.stratocloud.provider.tencent.common;
 
 import com.stratocloud.provider.constants.SecurityGroupPolicyDirection;
+import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
 import com.stratocloud.provider.tencent.flavor.TencentFlavorId;
 import com.stratocloud.provider.tencent.lb.backend.TencentBackend;
 import com.stratocloud.provider.tencent.lb.backend.TencentInstanceBackendId;
@@ -305,4 +306,6 @@ public interface TencentCloudClient {
 
     List<AlarmHistory> describeAlarmHistories(String resourceId,
                                               LocalDateTime startTime);
+
+    CosSessionKey getCosSessionKey();
 }
