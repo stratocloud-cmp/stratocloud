@@ -93,7 +93,7 @@ public class Utils {
 
     public static <E> List<List<E>> partition(List<E> list, int partitionSize){
         return IntStream.range(
-                0, Math.max(0, list.size() - partitionSize) + 1
+                0, list.size()
         ).filter(
                 i -> i % partitionSize == 0
         ).mapToObj(

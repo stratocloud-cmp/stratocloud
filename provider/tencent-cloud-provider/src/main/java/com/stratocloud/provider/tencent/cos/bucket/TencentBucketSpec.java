@@ -3,12 +3,9 @@ package com.stratocloud.provider.tencent.cos.bucket;
 import com.qcloud.cos.model.*;
 import com.stratocloud.provider.tencent.cos.session.CosSession;
 import com.stratocloud.resource.Resource;
-import com.stratocloud.utils.Utils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.MapUtils;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -35,17 +32,6 @@ public class TencentBucketSpec {
 
         Optional<HeadBucketResult> headBucketResult = cosSession.headBucket(bucketName);
         headBucketResult.ifPresent(head -> bucketSpec.setEnableMultiAz(head.isMazBucket()));
-
-        Map<String, Object> properties = bucketResource.getProperties();
-        if(Utils.isNotEmpty(properties) && properties.containsKey("enableMultiAz")){
-            try {
-                Boolean multiAz = MapUtils.getBoolean(properties, "enableMultiAz");
-
-                bucketSpec.setEnableMultiAz(multiAz != null && multiAz);
-            }catch (Exception e){
-                log.warn(e.toString());
-            }
-        }
 
         var versioningConfigurationOptional = cosSession.describeBucketVersioning(bucketName);
         versioningConfigurationOptional.ifPresent(
