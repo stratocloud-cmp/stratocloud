@@ -76,7 +76,7 @@ public class TencentBucketLifecycleRuleHandler extends AbstractResourceHandler {
                 getResourceCategory().id(),
                 getResourceTypeId(),
                 rule.id().toString(),
-                rule.id().toString(),
+                rule.id().ruleId(),
                 convertStatus(rule)
         );
     }

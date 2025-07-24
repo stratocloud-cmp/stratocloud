@@ -75,7 +75,7 @@ public class TencentBucketCorsRuleHandler extends AbstractResourceHandler {
                 getResourceCategory().id(),
                 getResourceTypeId(),
                 rule.id().toString(),
-                rule.id().toString(),
+                rule.id().ruleId(),
                 ResourceState.IN_USE
         );
     }

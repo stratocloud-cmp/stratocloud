@@ -11,7 +11,7 @@ import java.util.List;
 
 @Data
 public class TencentBucketCorsRuleBuildInput implements ResourceActionInput {
-    @InputField(label = "规则ID")
+    @InputField(label = "规则名称")
     private String ruleId;
 
     @SelectField(label = "来源Origin", multiSelect = true, allowCreate = true)
