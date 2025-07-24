@@ -1,25 +1,27 @@
 package com.stratocloud.provider.tencent.cos.acl;
 
-import com.qcloud.cos.model.Grant;
+import com.qcloud.cos.model.Grantee;
 
-public record TencentBucketAclId(String granteeType, String granteeIdentifier, String permission) {
+public record TencentBucketAclId(String bucketName,
+                                 String granteeType,
+                                 String granteeIdentifier) {
 
 
-    public TencentBucketAclId fromGrant(Grant grant){
+    public static TencentBucketAclId fromGrantee(String bucketName, Grantee grantee){
         return new TencentBucketAclId(
-                grant.getGrantee().getTypeIdentifier(),
-                grant.getGrantee().getIdentifier(),
-                grant.getPermission().toString()
+                bucketName,
+                grantee.getTypeIdentifier(),
+                grantee.getIdentifier()
         );
     }
 
     @Override
     public String toString() {
-        return granteeType+"@"+granteeIdentifier+"@"+permission;
+        return granteeIdentifier+"@"+granteeType+"@"+bucketName;
     }
 
     public static TencentBucketAclId fromString(String externalId){
         String[] split = externalId.split("@");
-        return new TencentBucketAclId(split[0], split[1], split[2]);
+        return new TencentBucketAclId(split[2], split[1], split[0]);
     }
 }

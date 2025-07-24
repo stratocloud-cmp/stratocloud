@@ -50,7 +50,10 @@ public enum ResourceState {
     INSUFFICIENT_RESOURCE,
 
     EXECUTING,
-    FINISHED
+    FINISHED,
+
+    ENABLED,
+    DISABLED
     ;
 
 

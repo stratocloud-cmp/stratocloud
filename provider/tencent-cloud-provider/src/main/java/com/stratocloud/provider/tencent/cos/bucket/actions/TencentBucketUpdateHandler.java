@@ -10,6 +10,7 @@ import com.stratocloud.form.SelectType;
 import com.stratocloud.form.Source;
 import com.stratocloud.form.info.BooleanFieldDetail;
 import com.stratocloud.form.info.DynamicFormMetaData;
+import com.stratocloud.form.info.InputFieldDetail;
 import com.stratocloud.form.info.SelectFieldDetail;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
@@ -110,6 +111,49 @@ public class TencentBucketUpdateHandler implements ResourceActionHandler {
                 defaultIntelligentTierDaysFieldTDetail
         );
 
+        formMetaData = DynamicFormHelper.changeFieldDetail(
+                formMetaData,
+                "enableLogging",
+                new BooleanFieldDetail(
+                        bucketSpec.isEnableLogging(),
+                        List.of()
+                )
+        );
+
+        List<String> bucketNames = cosSession.describeBuckets().stream().map(Bucket::getName).toList();
+        String targetBucketName = bucketSpec.getLoggingTargetBucketName();
+        SelectFieldDetail loggingTargetBucketFieldDetail = new SelectFieldDetail(
+                false,
+                false,
+                Utils.isNotBlank(targetBucketName) ? List.of(targetBucketName) : List.of(),
+                bucketNames,
+                bucketNames,
+                Source.STATIC,
+                SelectEntityType.NONE,
+                List.of(),
+                true,
+                List.of("this.enableLogging === true"),
+                SelectType.NORMAL
+        );
+        formMetaData = DynamicFormHelper.changeFieldDetail(
+                formMetaData,
+                "loggingTargetBucketName",
+                loggingTargetBucketFieldDetail
+        );
+
+        formMetaData = DynamicFormHelper.changeFieldDetail(
+                formMetaData,
+                "loggingFilePrefix",
+                new InputFieldDetail(
+                        bucketSpec.getLoggingFilePrefix(),
+                        true,
+                        List.of("this.enableLogging === true"),
+                        "",
+                        "",
+                        "text"
+                )
+        );
+
         return Optional.of(formMetaData);
     }
 
@@ -134,6 +178,7 @@ public class TencentBucketUpdateHandler implements ResourceActionHandler {
 
         bucketSpec.applyVersioningQuietly(cosSession, bucket.getName());
         bucketSpec.applyIntelligentTierQuietly(cosSession, bucket.getName());
+        bucketSpec.applyLoggingQuietly(cosSession, bucket.getName());
     }
 
     @Override

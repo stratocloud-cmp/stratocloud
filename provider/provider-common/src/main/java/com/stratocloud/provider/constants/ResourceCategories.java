@@ -341,4 +341,25 @@ public class ResourceCategories {
             "bucket",
             107
     );
+    public static final ResourceCategory BUCKET_ACL = new ResourceCategory(
+            ResourceCategoryGroups.STORAGE_RELATED,
+            "BUCKET_ACL",
+            "存储桶ACL",
+            "bucket-acl",
+            108
+    );
+    public static final ResourceCategory BUCKET_CORS = new ResourceCategory(
+            ResourceCategoryGroups.STORAGE_RELATED,
+            "BUCKET_CORS",
+            "存储桶CORS",
+            "bucket-cors",
+            109
+    );
+    public static final ResourceCategory BUCKET_LIFECYCLE = new ResourceCategory(
+            ResourceCategoryGroups.STORAGE_RELATED,
+            "BUCKET_LIFECYCLE",
+            "存储桶生命周期",
+            "bucket-lifecycle",
+            110
+    );
 }

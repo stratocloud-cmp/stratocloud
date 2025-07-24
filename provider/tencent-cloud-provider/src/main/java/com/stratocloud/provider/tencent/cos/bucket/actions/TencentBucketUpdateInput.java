@@ -2,6 +2,7 @@ package com.stratocloud.provider.tencent.cos.bucket.actions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.stratocloud.form.BooleanField;
+import com.stratocloud.form.InputField;
 import com.stratocloud.form.SelectField;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.tencent.cos.bucket.TencentBucketSpec;
@@ -35,14 +36,26 @@ public class TencentBucketUpdateInput implements ResourceActionInput {
     )
     private Integer defaultIntelligentTierDays = 30;
 
+    @BooleanField(label = "日志存储")
+    private boolean enableLogging;
+
+    @SelectField(label = "目标存储桶", conditions = "this.enableLogging === true")
+    private String loggingTargetBucketName;
+    @InputField(label = "日志路径前缀", conditions = "this.enableLogging === true", defaultValue = "cos-access-log/")
+    private String loggingFilePrefix;
+
 
     @JsonIgnore
     public TencentBucketSpec toSpec(){
         TencentBucketSpec bucketSpec = new TencentBucketSpec();
         bucketSpec.setEnableVersioning(enableVersioning);
-        bucketSpec.setEnableIntelligentTier(enableIntelligentTier);
 
+        bucketSpec.setEnableIntelligentTier(enableIntelligentTier);
         bucketSpec.setDefaultIntelligentTierDays(defaultIntelligentTierDays);
+
+        bucketSpec.setEnableLogging(enableLogging);
+        bucketSpec.setLoggingTargetBucketName(loggingTargetBucketName);
+        bucketSpec.setLoggingFilePrefix(loggingFilePrefix);
 
         return bucketSpec;
     }

@@ -3,6 +3,7 @@ package com.stratocloud.provider.tencent.cos.bucket;
 import com.qcloud.cos.model.*;
 import com.stratocloud.provider.tencent.cos.session.CosSession;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.utils.Utils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,8 +18,13 @@ public class TencentBucketSpec {
     private CannedAccessControlList aclType = CannedAccessControlList.Default;
     private boolean enableMultiAz;
     private boolean enableVersioning;
+
     private boolean enableIntelligentTier;
     private int defaultIntelligentTierDays = 30;
+
+    private boolean enableLogging;
+    private String loggingTargetBucketName;
+    private String loggingFilePrefix;
 
     public static TencentBucketSpec retrieveFrom(CosSession cosSession, Resource bucketResource){
         TencentBucketSpec bucketSpec = new TencentBucketSpec();
@@ -58,6 +64,15 @@ public class TencentBucketSpec {
                                 days > 0 ? days : 30
                         );
                     }
+                }
+        );
+
+        var loggingConfigurationOptional = cosSession.describeBucketLogging(bucketName);
+        loggingConfigurationOptional.ifPresent(
+                configuration -> {
+                    bucketSpec.setEnableLogging(Utils.isNotBlank(configuration.getDestinationBucketName()));
+                    bucketSpec.setLoggingTargetBucketName(configuration.getDestinationBucketName());
+                    bucketSpec.setLoggingFilePrefix(configuration.getLogFilePrefix());
                 }
         );
 
@@ -116,6 +131,22 @@ public class TencentBucketSpec {
             }
         }catch (Exception e){
             log.warn("Failed to apply bucket intelligent tier", e);
+        }
+    }
+
+    public void applyLoggingQuietly(CosSession cosSession,
+                                    String bucketName){
+        try {
+            BucketLoggingConfiguration configuration;
+            if(isEnableLogging()){
+                configuration = new BucketLoggingConfiguration(loggingTargetBucketName, loggingFilePrefix);
+            }else {
+                configuration = new BucketLoggingConfiguration(null, null);
+            }
+
+            cosSession.setBucketLogging(bucketName, configuration);
+        }catch (Exception e){
+            log.warn("Failed to apply bucket logging", e);
         }
     }
 }

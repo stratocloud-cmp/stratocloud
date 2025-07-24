@@ -76,7 +76,7 @@ public class TencentBucketHandler extends AbstractResourceHandler {
                 getResourceTypeId(),
                 bucket.getName(),
                 bucket.getName(),
-                ResourceState.AVAILABLE
+                ResourceState.IN_USE
         );
     }
 
@@ -132,5 +132,10 @@ public class TencentBucketHandler extends AbstractResourceHandler {
     @Override
     public List<ResourceUsageType> getUsagesTypes() {
         return List.of();
+    }
+
+    @Override
+    public boolean supportCascadedDestruction() {
+        return true;
     }
 }
