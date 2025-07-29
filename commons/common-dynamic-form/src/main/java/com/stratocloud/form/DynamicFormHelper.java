@@ -1,12 +1,14 @@
 package com.stratocloud.form;
 
 import com.stratocloud.form.info.*;
+import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class DynamicFormHelper {
@@ -74,5 +76,159 @@ public class DynamicFormHelper {
                 formMetaData.formClass(),
                 fieldInfoList
         );
+    }
+
+    public static DynamicFormMetaData changeOptions(DynamicFormMetaData formMetaData,
+                                                    String key,
+                                                    List<String> options,
+                                                    List<String> optionNames){
+        List<FieldInfo> fieldInfoList = formMetaData.fieldInfoList();
+
+        FieldInfo replacingFieldInfo = null;
+        Integer replacingFieldIndex = null;
+        if(Utils.isNotEmpty(fieldInfoList)){
+            for (int i = 0; i < fieldInfoList.size(); i++) {
+                FieldInfo fieldInfo = fieldInfoList.get(i);
+                if(Objects.equals(fieldInfo.key(), key)){
+                    if(fieldInfo.detail() instanceof SelectFieldDetail selectFieldDetail){
+                        SelectFieldDetail newDetail = new SelectFieldDetail(
+                                selectFieldDetail.multiSelect(),
+                                selectFieldDetail.allowCreate(),
+                                selectFieldDetail.defaultValues(),
+                                options,
+                                optionNames,
+                                selectFieldDetail.source(),
+                                selectFieldDetail.entityType(),
+                                selectFieldDetail.dependsOn(),
+                                selectFieldDetail.required(),
+                                selectFieldDetail.conditions(),
+                                selectFieldDetail.type()
+                        );
+                        replacingFieldInfo = new FieldInfo(
+                                fieldInfo.type(),
+                                fieldInfo.key(),
+                                fieldInfo.label(),
+                                fieldInfo.description(),
+                                newDetail
+                        );
+                        replacingFieldIndex = i;
+                    }
+                }
+            }
+        }
+
+        List<FieldInfo> newFieldInfoList = new ArrayList<>(fieldInfoList);
+        if(replacingFieldIndex != null){
+            newFieldInfoList.set(replacingFieldIndex, replacingFieldInfo);
+        }
+        return new DynamicFormMetaData(formMetaData.formClass(), newFieldInfoList);
+    }
+
+
+    public static DynamicFormMetaData changeDefaultValues(DynamicFormMetaData formMetaData,
+                                                          DynamicForm formData){
+        List<FieldInfo> fieldInfoList = formMetaData.fieldInfoList();
+
+        if(Utils.isNotEmpty(fieldInfoList)){
+            Map<String, Object> formDataMap = JSON.toMap(formData);
+
+            for (FieldInfo fieldInfo : fieldInfoList) {
+                FieldDetail fieldDetail;
+
+                Object o = formDataMap.get(fieldInfo.key());
+
+                if(fieldInfo.detail() instanceof BooleanFieldDetail booleanFieldDetail){
+                    if(o instanceof Boolean b){
+                        fieldDetail = new BooleanFieldDetail(
+                                b,
+                                booleanFieldDetail.conditions()
+                        );
+                    } else {
+                        continue;
+                    }
+                } else if(fieldInfo.detail() instanceof SelectFieldDetail selectFieldDetail){
+                    List<String> defaultValues;
+                    if(o instanceof String s){
+                        defaultValues = List.of(s);
+                    } else if(o instanceof List<?> l){
+                        defaultValues = l.stream().map(Object::toString).toList();
+                    } else {
+                        continue;
+                    }
+
+                    fieldDetail = new SelectFieldDetail(
+                            selectFieldDetail.multiSelect(),
+                            selectFieldDetail.allowCreate(),
+                            defaultValues,
+                            selectFieldDetail.options(),
+                            selectFieldDetail.optionNames(),
+                            selectFieldDetail.source(),
+                            selectFieldDetail.entityType(),
+                            selectFieldDetail.dependsOn(),
+                            selectFieldDetail.required(),
+                            selectFieldDetail.conditions(),
+                            selectFieldDetail.type()
+                    );
+                } else if(fieldInfo.detail() instanceof InputFieldDetail inputFieldDetail){
+                    if(o instanceof String s){
+                        fieldDetail = new InputFieldDetail(
+                                s,
+                                inputFieldDetail.required(),
+                                inputFieldDetail.conditions(),
+                                inputFieldDetail.regex(),
+                                inputFieldDetail.regexMessage(),
+                                inputFieldDetail.inputType()
+                        );
+                    } else {
+                        continue;
+                    }
+                } else if(fieldInfo.detail() instanceof NumberFieldDetail numberFieldDetail){
+                    int defaultValue;
+                    if(o instanceof Integer i){
+                        defaultValue = i;
+                    } else if(o instanceof Long l){
+                        try {
+                            defaultValue = Math.toIntExact(l);
+                        }catch (Exception e){
+                            continue;
+                        }
+                    } else if(o instanceof String s){
+                        try {
+                            defaultValue = Integer.parseInt(s);
+                        }catch (Exception e){
+                            continue;
+                        }
+                    }else {
+                        continue;
+                    }
+
+                    fieldDetail = new NumberFieldDetail(
+                            defaultValue,
+                            numberFieldDetail.min(),
+                            numberFieldDetail.max(),
+                            numberFieldDetail.required(),
+                            numberFieldDetail.conditions(),
+                            numberFieldDetail.placeholder()
+                    );
+                } else if(fieldInfo.detail() instanceof CodeBlockFieldDetail codeBlockFieldDetail){
+                    if(o instanceof String s){
+                        fieldDetail = new CodeBlockFieldDetail(
+                                s,
+                                codeBlockFieldDetail.required(),
+                                codeBlockFieldDetail.conditions(),
+                                codeBlockFieldDetail.language()
+                        );
+                    } else {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+
+                formMetaData = changeFieldDetail(formMetaData, fieldInfo.key(), fieldDetail);
+            }
+        }
+
+        return formMetaData;
     }
 }

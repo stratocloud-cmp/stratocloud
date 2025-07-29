@@ -1,9 +1,7 @@
 package com.stratocloud.provider.tencent.cos.bucket.actions;
 
-import com.qcloud.cos.model.Bucket;
+import com.qcloud.cos.model.BucketPolicy;
 import com.stratocloud.account.ExternalAccount;
-import com.stratocloud.exceptions.BadCommandException;
-import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.provider.resource.ResourceActionHandler;
@@ -11,8 +9,8 @@ import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.cos.bucket.TencentBucketHandler;
-import com.stratocloud.provider.tencent.cos.bucket.TencentBucketSpec;
 import com.stratocloud.provider.tencent.cos.session.CosSession;
+import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
 import com.stratocloud.provider.tencent.cos.session.CosSessionManager;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.JSON;
@@ -25,11 +23,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class TencentBucketUpdateHandler implements ResourceActionHandler {
+public class TencentBucketUpdatePolicyHandler implements ResourceActionHandler {
 
     private final TencentBucketHandler bucketHandler;
 
-    public TencentBucketUpdateHandler(TencentBucketHandler bucketHandler) {
+    public TencentBucketUpdatePolicyHandler(TencentBucketHandler bucketHandler) {
         this.bucketHandler = bucketHandler;
     }
 
@@ -40,12 +38,16 @@ public class TencentBucketUpdateHandler implements ResourceActionHandler {
 
     @Override
     public ResourceAction getAction() {
-        return ResourceActions.UPDATE;
+        return new ResourceAction(
+                "UPDATE_BUCKET_POLICY",
+                "配置访问策略",
+                501
+        );
     }
 
     @Override
     public String getTaskName() {
-        return "更新存储桶";
+        return "配置存储桶访问策略";
     }
 
     @Override
@@ -60,27 +62,27 @@ public class TencentBucketUpdateHandler implements ResourceActionHandler {
 
     @Override
     public Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData(Resource resource) {
+        if(Utils.isBlank(resource.getExternalId()))
+            return Optional.empty();
+
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdatePolicyInput.class);
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
         CosSession cosSession = CosSessionManager.getSession(provider.buildClient(account).getCosSessionKey());
 
-        TencentBucketSpec bucketSpec = TencentBucketSpec.retrieveFrom(cosSession, resource);
+        Optional<BucketPolicy> policy = cosSession.describeBucketPolicy(resource.getExternalId());
 
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdateInput.class);
+        TencentBucketUpdatePolicyInput input = new TencentBucketUpdatePolicyInput();
+        if(policy.isEmpty()) {
+            input.setEnabled(false);
+        } else {
+            input.setEnabled(true);
+            input.setPolicyText(policy.get().getPolicyText());
+        }
 
-        TencentBucketUpdateInput input = TencentBucketUpdateInput.fromSpec(bucketSpec);
-
-        formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
-
-
-
-        List<String> bucketNames = cosSession.describeBuckets().stream().map(Bucket::getName).toList();
-
-        formMetaData = DynamicFormHelper.changeOptions(
+        formMetaData = DynamicFormHelper.changeDefaultValues(
                 formMetaData,
-                "loggingTargetBucketName",
-                bucketNames,
-                bucketNames
+                input
         );
 
         return Optional.of(formMetaData);
@@ -88,26 +90,22 @@ public class TencentBucketUpdateHandler implements ResourceActionHandler {
 
     @Override
     public Class<? extends ResourceActionInput> getInputClass() {
-        return TencentBucketUpdateInput.class;
+        return TencentBucketUpdatePolicyInput.class;
     }
 
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
+        TencentBucketUpdatePolicyInput input = JSON.convert(parameters, TencentBucketUpdatePolicyInput.class);
+
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
-        CosSession cosSession = CosSessionManager.getSession(provider.buildClient(account).getCosSessionKey());
+        CosSessionKey sessionKey = provider.buildClient(account).getCosSessionKey();
+        CosSession cosSession = CosSessionManager.getSession(sessionKey);
 
-        Bucket bucket = bucketHandler.describeBucket(account, resource.getExternalId()).orElseThrow(
-                () -> new StratoException("Bucket not found")
-        );
-
-        TencentBucketUpdateInput input = JSON.convert(parameters, TencentBucketUpdateInput.class);
-
-        TencentBucketSpec bucketSpec = input.toSpec();
-
-        bucketSpec.applyVersioningQuietly(cosSession, bucket.getName());
-        bucketSpec.applyIntelligentTierQuietly(cosSession, bucket.getName());
-        bucketSpec.applyLoggingQuietly(cosSession, bucket.getName());
+        if(input.isEnabled())
+            cosSession.setBucketPolicy(resource.getExternalId(), input.getPolicyText());
+        else
+            cosSession.deleteBucketPolicy(resource.getExternalId());
     }
 
     @Override
@@ -122,22 +120,6 @@ public class TencentBucketUpdateHandler implements ResourceActionHandler {
 
     @Override
     public void validatePrecondition(Resource resource, Map<String, Object> parameters) {
-        if(Utils.isBlank(resource.getExternalId()))
-            return;
 
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
-        CosSession cosSession = CosSessionManager.getSession(provider.buildClient(account).getCosSessionKey());
-
-        if(!cosSession.doesBucketExist(resource.getExternalId()))
-            throw new BadCommandException("存储桶不存在");
-
-        TencentBucketUpdateInput input = JSON.convert(parameters, TencentBucketUpdateInput.class);
-
-        TencentBucketSpec currentSpec = TencentBucketSpec.retrieveFrom(cosSession, resource);
-        TencentBucketSpec newSpec = input.toSpec();
-
-        if(currentSpec.isEnableIntelligentTier() && !newSpec.isEnableVersioning())
-            throw new BadCommandException("智能分层开启后无法关闭");
     }
 }

@@ -20,6 +20,7 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 @Data
 public class TencentBucketLifecycleRuleSpec {
@@ -297,5 +298,126 @@ public class TencentBucketLifecycleRuleSpec {
             transitions.add(transition);
         }
         return transitions;
+    }
+
+    public static <T extends TencentBucketLifecycleRuleSpec> T getSpec(BucketLifecycleConfiguration.Rule rule,
+                                                                       Supplier<T> specConstructor){
+        T t = specConstructor.get();
+        t.setEnabled(Objects.equals(BucketLifecycleConfiguration.ENABLED, rule.getStatus()));
+
+        resolveFilter(rule, t);
+        resolveCvTransitions(rule, t);
+
+        resolveHvTransitions(rule, t);
+
+        if(rule.getAbortIncompleteMultipartUpload() != null)
+            t.setAbortIncompleteDays(rule.getAbortIncompleteMultipartUpload().getDaysAfterInitiation());
+
+        return t;
+    }
+
+    private static void resolveHvTransitions(BucketLifecycleConfiguration.Rule rule,
+                                             TencentBucketLifecycleRuleSpec t) {
+        List<BucketLifecycleConfiguration.NoncurrentVersionTransition> transitions
+                = rule.getNoncurrentVersionTransitions();
+
+        if(Utils.isEmpty(transitions) || rule.getNoncurrentVersionExpirationInDays() > 0)
+            t.setEnableHvTransitions(true);
+
+        if(Utils.isNotEmpty(transitions)){
+            for (BucketLifecycleConfiguration.NoncurrentVersionTransition transition : transitions) {
+                String storageClass = transition.getStorageClassAsString();
+
+                if(Utils.isBlank(storageClass))
+                    continue;
+
+                switch (storageClass){
+                    case "STANDARD_IA", "MAZ_STANDARD_IA" -> t.setHvIaTransitionDays(transition.getDays());
+                    case "ARCHIVE" -> t.setHvArchiveTransitionDays(transition.getDays());
+                    case "DEEP_ARCHIVE" -> t.setHvDeepArchiveTransitionDays(transition.getDays());
+                }
+            }
+        }
+
+        if(rule.getNoncurrentVersionExpirationInDays() > 0)
+            t.setHvDeleteTransitionDays(rule.getNoncurrentVersionExpirationInDays());
+    }
+
+    private static void resolveCvTransitions(BucketLifecycleConfiguration.Rule rule,
+                                             TencentBucketLifecycleRuleSpec t) {
+        List<BucketLifecycleConfiguration.Transition> transitions = rule.getTransitions();
+
+        if(Utils.isEmpty(transitions) || rule.getExpirationInDays() > 0)
+            t.setEnableCvTransitions(true);
+
+        if(Utils.isNotEmpty(transitions)){
+            for (BucketLifecycleConfiguration.Transition transition : transitions) {
+                String storageClass = transition.getStorageClass();
+
+                if(Utils.isBlank(storageClass))
+                    continue;
+
+                switch (storageClass){
+                    case "STANDARD_IA", "MAZ_STANDARD_IA" -> t.setCvIaTransitionDays(transition.getDays());
+                    case "ARCHIVE" -> t.setCvArchiveTransitionDays(transition.getDays());
+                    case "DEEP_ARCHIVE" -> t.setCvDeepArchiveTransitionDays(transition.getDays());
+                }
+            }
+        }
+
+        if(rule.getExpirationInDays() > 0)
+            t.setCvDeleteTransitionDays(rule.getExpirationInDays());
+    }
+
+    private static void resolveFilter(BucketLifecycleConfiguration.Rule rule,
+                                      TencentBucketLifecycleRuleSpec t) {
+        LifecycleFilter filter = rule.getFilter();
+
+        if(filter != null && filter.getPredicate() != null){
+            t.setFilterOption("filtered");
+
+            LifecycleFilterPredicate predicate = filter.getPredicate();
+
+            if(predicate instanceof LifecyclePrefixPredicate prefixPredicate){
+                t.setEnablePrefix(true);
+                t.setPrefix(prefixPredicate.getPrefix());
+            } else if(predicate instanceof LifecycleTagPredicate tagPredicate) {
+                t.setEnableTags(true);
+
+
+                if(tagPredicate.getTag() != null){
+                    t.setTags(List.of(
+                            "%s:%s".formatted(tagPredicate.getTag().getKey(), tagPredicate.getTag().getValue())
+                    ));
+                }
+            } else if(predicate instanceof LifecycleAndOperator andOperator){
+                List<String> tags = new ArrayList<>();
+
+                if(Utils.isNotEmpty(andOperator.getOperands())){
+                    for (LifecycleFilterPredicate operand : andOperator.getOperands()) {
+                        if(operand instanceof LifecyclePrefixPredicate prefixPredicate){
+                            t.setEnablePrefix(true);
+                            t.setPrefix(prefixPredicate.getPrefix());
+                        } else if(operand instanceof LifecycleTagPredicate tagPredicate) {
+                            if(tagPredicate.getTag() != null){
+                                tags.add(
+                                        "%s:%s".formatted(
+                                                tagPredicate.getTag().getKey(),
+                                                tagPredicate.getTag().getValue()
+                                        )
+                                );
+                            }
+                        }
+                    }
+                }
+
+                if(!tags.isEmpty()){
+                    t.setEnableTags(true);
+                    t.setTags(tags);
+                }
+            }
+        }else {
+            t.setFilterOption("unfiltered");
+        }
     }
 }

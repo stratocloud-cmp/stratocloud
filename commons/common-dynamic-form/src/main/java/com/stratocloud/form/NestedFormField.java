@@ -7,16 +7,20 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface NestedField {
+public @interface NestedFormField {
     String label();
 
     String description() default "";
 
+    String[] defaultJsonValues() default {};
+
     boolean multiple() default false;
 
-    String[] dependsOn() default {};
+    int multipleMin() default 0;
 
-    boolean required() default true;
+    int multipleMax() default 50;
 
     String[] conditions() default {};
+
+    Class<? extends DynamicForm> nestedFormClass();
 }

@@ -59,4 +59,15 @@ public class TencentBucketUpdateInput implements ResourceActionInput {
 
         return bucketSpec;
     }
+
+    public static TencentBucketUpdateInput fromSpec(TencentBucketSpec bucketSpec){
+        TencentBucketUpdateInput input = new TencentBucketUpdateInput();
+        input.setEnableVersioning(bucketSpec.isEnableVersioning());
+        input.setEnableIntelligentTier(bucketSpec.isEnableIntelligentTier());
+        input.setDefaultIntelligentTierDays(bucketSpec.getDefaultIntelligentTierDays());
+        input.setEnableLogging(bucketSpec.isEnableLogging());
+        input.setLoggingTargetBucketName(bucketSpec.getLoggingTargetBucketName());
+        input.setLoggingFilePrefix(bucketSpec.getLoggingFilePrefix());
+        return input;
+    }
 }

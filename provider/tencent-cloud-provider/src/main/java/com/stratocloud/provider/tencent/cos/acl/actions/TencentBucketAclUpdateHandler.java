@@ -6,7 +6,6 @@ import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.BadCommandException;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.DynamicFormHelper;
-import com.stratocloud.form.info.BooleanFieldDetail;
 import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.provider.resource.BuildResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
@@ -60,50 +59,15 @@ public class TencentBucketAclUpdateHandler implements BuildResourceActionHandler
 
         DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketAclUpdateInput.class);
 
-        formMetaData = DynamicFormHelper.changeFieldDetail(
-                formMetaData,
-                "allowFullControl",
-                new BooleanFieldDetail(
-                        permissions.contains(Permission.FullControl),
-                        List.of()
-                )
-        );
+        TencentBucketAclUpdateInput updateInput = new TencentBucketAclUpdateInput();
 
-        formMetaData = DynamicFormHelper.changeFieldDetail(
-                formMetaData,
-                "allowRead",
-                new BooleanFieldDetail(
-                        permissions.contains(Permission.Read),
-                        List.of("this.allowFullControl === false")
-                )
-        );
+        updateInput.setAllowFullControl(permissions.contains(Permission.FullControl));
+        updateInput.setAllowRead(permissions.contains(Permission.Read));
+        updateInput.setAllowWrite(permissions.contains(Permission.Write));
+        updateInput.setAllowReadAcp(permissions.contains(Permission.ReadAcp));
+        updateInput.setAllowWriteAcp(permissions.contains(Permission.WriteAcp));
 
-        formMetaData = DynamicFormHelper.changeFieldDetail(
-                formMetaData,
-                "allowWrite",
-                new BooleanFieldDetail(
-                        permissions.contains(Permission.Write),
-                        List.of("this.allowFullControl === false")
-                )
-        );
-
-        formMetaData = DynamicFormHelper.changeFieldDetail(
-                formMetaData,
-                "allowReadAcp",
-                new BooleanFieldDetail(
-                        permissions.contains(Permission.ReadAcp),
-                        List.of("this.allowFullControl === false")
-                )
-        );
-
-        formMetaData = DynamicFormHelper.changeFieldDetail(
-                formMetaData,
-                "allowWriteAcp",
-                new BooleanFieldDetail(
-                        permissions.contains(Permission.WriteAcp),
-                        List.of("this.allowFullControl === false")
-                )
-        );
+        formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, updateInput);
 
         return Optional.of(formMetaData);
     }
