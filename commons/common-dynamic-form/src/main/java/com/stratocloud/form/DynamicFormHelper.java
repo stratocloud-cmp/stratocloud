@@ -177,7 +177,8 @@ public class DynamicFormHelper {
                                 inputFieldDetail.conditions(),
                                 inputFieldDetail.regex(),
                                 inputFieldDetail.regexMessage(),
-                                inputFieldDetail.inputType()
+                                inputFieldDetail.inputType(),
+                                inputFieldDetail.disabled()
                         );
                     } else {
                         continue;
@@ -217,6 +218,28 @@ public class DynamicFormHelper {
                                 codeBlockFieldDetail.required(),
                                 codeBlockFieldDetail.conditions(),
                                 codeBlockFieldDetail.language()
+                        );
+                    } else {
+                        continue;
+                    }
+                } else if(fieldInfo.detail() instanceof NestedFormFieldDetail nestedFormFieldDetail){
+                    if(o instanceof List<?> list){
+                        fieldDetail = new NestedFormFieldDetail(
+                                list.stream().map(JSON::toMap).toList(),
+                                nestedFormFieldDetail.multiple(),
+                                nestedFormFieldDetail.multipleMin(),
+                                nestedFormFieldDetail.multipleMax(),
+                                nestedFormFieldDetail.conditions(),
+                                nestedFormFieldDetail.nestedFormMetadata()
+                        );
+                    } else if(o != null){
+                        fieldDetail = new NestedFormFieldDetail(
+                                List.of(JSON.toMap(o)),
+                                nestedFormFieldDetail.multiple(),
+                                nestedFormFieldDetail.multipleMin(),
+                                nestedFormFieldDetail.multipleMax(),
+                                nestedFormFieldDetail.conditions(),
+                                nestedFormFieldDetail.nestedFormMetadata()
                         );
                     } else {
                         continue;

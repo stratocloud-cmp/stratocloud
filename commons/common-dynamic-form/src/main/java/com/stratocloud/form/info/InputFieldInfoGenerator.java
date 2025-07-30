@@ -31,7 +31,8 @@ public class InputFieldInfoGenerator implements FieldInfoGenerator {
                 List.of(inputField.conditions()),
                 inputField.regex(),
                 inputField.regexMessage(),
-                inputField.inputType()
+                inputField.inputType(),
+                inputField.disabled()
         );
 
         return new FieldInfo(type, key, label, description, detail);

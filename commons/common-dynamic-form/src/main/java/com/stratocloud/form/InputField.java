@@ -23,4 +23,6 @@ public @interface InputField {
     String regex() default "";
 
     String regexMessage() default "";
+
+    boolean disabled() default false;
 }

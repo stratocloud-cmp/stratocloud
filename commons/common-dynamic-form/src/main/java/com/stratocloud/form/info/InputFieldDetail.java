@@ -7,5 +7,6 @@ public record InputFieldDetail(String defaultValue,
                                List<String> conditions,
                                String regex,
                                String regexMessage,
-                               String inputType) implements FieldDetail {
+                               String inputType,
+                               boolean disabled) implements FieldDetail {
 }

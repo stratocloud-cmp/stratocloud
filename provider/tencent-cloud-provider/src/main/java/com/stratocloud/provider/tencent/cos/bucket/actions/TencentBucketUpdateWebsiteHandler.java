@@ -91,6 +91,12 @@ public class TencentBucketUpdateWebsiteHandler implements ResourceActionHandler 
             configuration.setErrorDocument(input.getErrorDocument());
             configuration.setRoutingRules(convertRoutingRules(input.getRoutingRules()));
 
+            if(input.isForceHttps()){
+                RedirectRule redirectAllRequestsTo = new RedirectRule();
+                redirectAllRequestsTo.setProtocol("https");
+                configuration.setRedirectAllRequestsTo(redirectAllRequestsTo);
+            }
+
             cosSession.setBucketWebsite(resource.getExternalId(), configuration);
         }else {
             cosSession.deleteBucketWebsite(resource.getExternalId());
@@ -107,18 +113,28 @@ public class TencentBucketUpdateWebsiteHandler implements ResourceActionHandler 
             RoutingRule routingRule = new RoutingRule();
 
             RoutingRuleCondition condition = new RoutingRuleCondition();
-            condition.setKeyPrefixEquals(routingRuleInput.getKeyPrefixEquals());
-            condition.setHttpErrorCodeReturnedEquals(routingRuleInput.getHttpErrorCodeReturnedEquals());
             routingRule.setCondition(condition);
 
             RedirectRule redirect = new RedirectRule();
-            redirect.setProtocol(routingRuleInput.getProtocol());
-            redirect.setHostName(routingRuleInput.getHostName());
-            redirect.setReplaceKeyPrefixWith(routingRuleInput.getReplaceKeyPrefixWith());
-            redirect.setReplaceKeyWith(routingRuleInput.getReplaceKeyWith());
-            redirect.setHttpRedirectCode(routingRuleInput.getHttpRedirectCode());
-
             routingRule.setRedirect(redirect);
+
+            if(routingRuleInput.getRoutingType() == TencentBucketUpdateWebsiteInput.RoutingType.KeyPrefix){
+                condition.setKeyPrefixEquals(routingRuleInput.getKeyPrefix());
+
+                if(routingRuleInput.isReplaceKeyPrefix()){
+                    redirect.setReplaceKeyPrefixWith(routingRuleInput.getReplaceKeyPrefixWith());
+                } else {
+                    redirect.setReplaceKeyWith(routingRuleInput.getReplaceKeyWith());
+                }
+            } else {
+                condition.setHttpErrorCodeReturnedEquals(routingRuleInput.getErrorCode());
+                redirect.setReplaceKeyWith(routingRuleInput.getReplaceKeyWith());
+            }
+
+            if(routingRuleInput.isForceHttps())
+                redirect.setProtocol("https");
+
+            result.add(routingRule);
         }
 
         return result;
