@@ -321,7 +321,7 @@ public class TencentBucketLifecycleRuleSpec {
         List<BucketLifecycleConfiguration.NoncurrentVersionTransition> transitions
                 = rule.getNoncurrentVersionTransitions();
 
-        if(Utils.isEmpty(transitions) || rule.getNoncurrentVersionExpirationInDays() > 0)
+        if(Utils.isNotEmpty(transitions) || rule.getNoncurrentVersionExpirationInDays() > 0)
             t.setEnableHvTransitions(true);
 
         if(Utils.isNotEmpty(transitions)){
@@ -347,7 +347,7 @@ public class TencentBucketLifecycleRuleSpec {
                                              TencentBucketLifecycleRuleSpec t) {
         List<BucketLifecycleConfiguration.Transition> transitions = rule.getTransitions();
 
-        if(Utils.isEmpty(transitions) || rule.getExpirationInDays() > 0)
+        if(Utils.isNotEmpty(transitions) || rule.getExpirationInDays() > 0)
             t.setEnableCvTransitions(true);
 
         if(Utils.isNotEmpty(transitions)){
@@ -379,16 +379,20 @@ public class TencentBucketLifecycleRuleSpec {
             LifecycleFilterPredicate predicate = filter.getPredicate();
 
             if(predicate instanceof LifecyclePrefixPredicate prefixPredicate){
-                t.setEnablePrefix(true);
-                t.setPrefix(prefixPredicate.getPrefix());
+                if(Utils.isBlank(prefixPredicate.getPrefix())){
+                    t.setFilterOption("unfiltered");
+                }else {
+                    t.setEnablePrefix(true);
+                    t.setPrefix(prefixPredicate.getPrefix());
+                }
             } else if(predicate instanceof LifecycleTagPredicate tagPredicate) {
-                t.setEnableTags(true);
-
-
                 if(tagPredicate.getTag() != null){
+                    t.setEnableTags(true);
                     t.setTags(List.of(
                             "%s:%s".formatted(tagPredicate.getTag().getKey(), tagPredicate.getTag().getValue())
                     ));
+                }else {
+                    t.setFilterOption("unfiltered");
                 }
             } else if(predicate instanceof LifecycleAndOperator andOperator){
                 List<String> tags = new ArrayList<>();

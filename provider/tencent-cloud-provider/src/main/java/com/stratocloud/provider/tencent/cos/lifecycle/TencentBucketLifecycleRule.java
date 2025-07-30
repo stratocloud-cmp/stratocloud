@@ -57,7 +57,7 @@ public record TencentBucketLifecycleRule(TencentBucketLifecycleRuleId id,
         AbortIncompleteMultipartUpload multipartUpload = detail.getAbortIncompleteMultipartUpload();
 
         if(multipartUpload != null && multipartUpload.getDaysAfterInitiation() > 0)
-            contentLines.add("碎片删除: %s天".formatted(detail.getNoncurrentVersionExpirationInDays()));
+            contentLines.add("碎片删除: %s天".formatted(multipartUpload.getDaysAfterInitiation()));
 
         return String.join("\n", contentLines);
     }
@@ -100,8 +100,14 @@ public record TencentBucketLifecycleRule(TencentBucketLifecycleRuleId id,
 
             return String.join("\n", lines);
         } else if(predicate instanceof LifecyclePrefixPredicate prefixPredicate){
+            if(Utils.isBlank(prefixPredicate.getPrefix()))
+                return "整个存储桶";
+
             return "前缀: %s".formatted(prefixPredicate.getPrefix());
         } else if(predicate instanceof LifecycleTagPredicate tagPredicate){
+            if(tagPredicate.getTag() == null)
+                return "整个存储桶";
+
             return "标签: [%s:%s]".formatted(tagPredicate.getTag().getKey(), tagPredicate.getTag().getValue());
         } else {
             return "Unexpected predicate type: %s".formatted(predicate.getClass().getSimpleName());

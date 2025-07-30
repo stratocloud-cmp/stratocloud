@@ -77,7 +77,7 @@ public class TencentBucketLifecycleRuleBuildHandler implements BuildResourceActi
                 = cosSession.describeBucketLifecycleRulesByBucket(bucketName);
 
         boolean ruleIdExists = currentRules.stream().anyMatch(
-                r -> Objects.equals(r.id().ruleId(), input.getRuleId())
+                r -> Objects.equals(r.id().ruleId(), resource.getName())
         );
         if(ruleIdExists)
             throw new BadCommandException("规则名称不得重复");
@@ -87,6 +87,7 @@ public class TencentBucketLifecycleRuleBuildHandler implements BuildResourceActi
         );
 
         var ruleToAdd = new BucketLifecycleConfiguration.Rule();
+        ruleToAdd.setId(resource.getName());
         input.validateAndApply(ruleToAdd, bucketSpec.isEnableMultiAz());
 
         newRules.add(ruleToAdd);
@@ -100,7 +101,7 @@ public class TencentBucketLifecycleRuleBuildHandler implements BuildResourceActi
             resource.setExternalId(
                     new TencentBucketLifecycleRuleId(
                             bucketName,
-                            input.getRuleId()
+                            resource.getName()
                     ).toString()
             );
         };
