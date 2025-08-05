@@ -330,7 +330,7 @@ public class TencentBucketUpdateLifecycleInput implements ResourceActionInput {
             var rule = new BucketLifecycleConfiguration.Rule();
 
             rule.setStatus(
-                    enabled ? BucketLifecycleConfiguration.ENABLED : BucketLifecycleConfiguration.DISABLED
+                    ruleInput.isEnabled() ? BucketLifecycleConfiguration.ENABLED : BucketLifecycleConfiguration.DISABLED
             );
 
             List<LifecycleFilterPredicate> predicates = new ArrayList<>();

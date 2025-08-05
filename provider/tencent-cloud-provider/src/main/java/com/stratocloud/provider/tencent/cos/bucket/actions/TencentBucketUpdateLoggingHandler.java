@@ -1,6 +1,7 @@
 package com.stratocloud.provider.tencent.cos.bucket.actions;
 
 import com.qcloud.cos.model.Bucket;
+import com.qcloud.cos.model.BucketLoggingConfiguration;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
@@ -70,7 +71,7 @@ public class TencentBucketUpdateLoggingHandler implements ResourceActionHandler 
         var logging = cosSession.describeBucketLogging(resource.getExternalId());
 
         TencentBucketUpdateLoggingInput input = new TencentBucketUpdateLoggingInput();
-        if(logging.isEmpty()) {
+        if(logging.isEmpty() || Utils.isBlank(logging.get().getDestinationBucketName())) {
             input.setEnableLogging(false);
         } else {
             input.setEnableLogging(true);
@@ -109,7 +110,7 @@ public class TencentBucketUpdateLoggingHandler implements ResourceActionHandler 
         if(input.isEnableLogging())
             cosSession.setBucketLogging(resource.getExternalId(), input.toConfig());
         else
-            cosSession.deleteBucketPolicy(resource.getExternalId());
+            cosSession.setBucketLogging(resource.getExternalId(), new BucketLoggingConfiguration());
     }
 
     @Override

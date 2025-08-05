@@ -97,18 +97,19 @@ public class AliyunBucketUpdateLifecycleInput implements ResourceActionInput {
         }
 
         public LifecycleRule.StorageTransition toStorageTransition() {
-            if(type == TransitionType.DATE)
+            if(type == TransitionType.DATE) {
                 return new LifecycleRule.StorageTransition(
                         TimeUtil.toDate(expirationDate),
                         storageClass
                 );
-            else
+            } else {
                 return new LifecycleRule.StorageTransition(
                         days,
                         storageClass,
                         accessTime,
-                        returnToStdWhenVisit
+                        accessTime ? returnToStdWhenVisit : null
                 );
+            }
         }
 
         public static Transition fromStorageTransition(LifecycleRule.StorageTransition storageTransition) {
@@ -173,7 +174,7 @@ public class AliyunBucketUpdateLifecycleInput implements ResourceActionInput {
                     days,
                     storageClass,
                     accessTime,
-                    returnToStdWhenVisit
+                    accessTime ? returnToStdWhenVisit : null
             );
         }
 
@@ -201,35 +202,43 @@ public class AliyunBucketUpdateLifecycleInput implements ResourceActionInput {
         @InputField(label = "前缀", conditions = "this.enablePrefix === true")
         private String prefix;
 
-        @BooleanField(label = "匹配标签")
+        @BooleanField(label = "匹配标签", conditions = "this.expirationType !== 'DELETE_MARKER'")
         private boolean enableTags;
         @NestedFormField(
                 label = "标签",
                 multiple = true,
                 nestedFormClass = Tag.class,
-                conditions = "this.enableTags === true"
+                conditions = "this.enableTags === true && this.expirationType !== 'DELETE_MARKER'"
         )
         private List<Tag> tags;
 
-        @BooleanField(label = "是否排除前缀")
+        @BooleanField(label = "是否排除前缀", conditions = "this.expirationType !== 'DELETE_MARKER'")
         private boolean excludingPrefix;
-        @InputField(label = "排除前缀")
+        @InputField(label = "排除前缀", conditions = "this.expirationType !== 'DELETE_MARKER' && this.excludingPrefix === true")
         private String excludedPrefix;
-        @BooleanField(label = "是否排除标签")
+        @BooleanField(label = "是否排除标签", conditions = "this.expirationType !== 'DELETE_MARKER'")
         private boolean excludingTags;
-        @NestedFormField(label = "排除前缀", multiple = true, multipleMax = 1, nestedFormClass = Tag.class)
+        @NestedFormField(
+                label = "排除标签",
+                multiple = true,
+                multipleMax = 1,
+                nestedFormClass = Tag.class,
+                conditions = "this.expirationType !== 'DELETE_MARKER' && this.excludingTags === true"
+        )
         private List<Tag> excludedTags;
 
         @NumberField(
                 label = "最小文件大小(B)",
                 required = false,
-                placeHolder = "留空代表不限制"
+                placeHolder = "留空代表不限制",
+                conditions = "this.expirationType !== 'DELETE_MARKER'"
         )
         private Long objectSizeGreaterThan;
         @NumberField(
                 label = "最大文件大小(B)",
                 required = false,
-                placeHolder = "留空代表不限制"
+                placeHolder = "留空代表不限制",
+                conditions = "this.expirationType !== 'DELETE_MARKER'"
         )
         private Long objectSizeLessThan;
 
@@ -312,6 +321,11 @@ public class AliyunBucketUpdateLifecycleInput implements ResourceActionInput {
 
             if(Utils.isNotEmpty(historyTransitions))
                 historyTransitions.forEach(HistoryTransition::validate);
+
+            if(fragmentExpirationType != TransitionType.DISABLED){
+                if(objectSizeGreaterThan != null || objectSizeLessThan != null)
+                    throw new BadCommandException("指定文件大小与碎片清理策略不能同时启用");
+            }
         }
     }
 
@@ -333,14 +347,16 @@ public class AliyunBucketUpdateLifecycleInput implements ResourceActionInput {
             LifecycleRule rule = new LifecycleRule();
 
             rule.setStatus(
-                    enabled ? LifecycleRule.RuleStatus.Enabled : LifecycleRule.RuleStatus.Disabled
+                    ruleInput.isEnabled() ? LifecycleRule.RuleStatus.Enabled : LifecycleRule.RuleStatus.Disabled
             );
 
             if(ruleInput.isEnablePrefix()){
                 rule.setPrefix(ruleInput.getPrefix());
             }
 
-            if(ruleInput.isEnableTags() && Utils.isNotEmpty(ruleInput.getTags())){
+            boolean deleteMarker = ruleInput.getExpirationType() == TransitionType.DELETE_MARKER;
+
+            if(!deleteMarker && ruleInput.isEnableTags() && Utils.isNotEmpty(ruleInput.getTags())){
                 rule.setTags(
                         ruleInput.getTags().stream().collect(
                                 Collectors.toMap(Tag::getKey, Tag::getValue)
@@ -348,7 +364,7 @@ public class AliyunBucketUpdateLifecycleInput implements ResourceActionInput {
                 );
             }
 
-            if(ruleInput.isExcludingPrefix() || ruleInput.isExcludingTags()){
+            if(!deleteMarker && (ruleInput.isExcludingPrefix() || ruleInput.isExcludingTags())){
                 LifecycleFilter filter = rule.getFilter();
 
                 if(filter == null){
@@ -369,7 +385,7 @@ public class AliyunBucketUpdateLifecycleInput implements ResourceActionInput {
                 filter.setNotList(List.of(lifecycleNot));
             }
 
-            if(ruleInput.getObjectSizeGreaterThan() != null || ruleInput.getObjectSizeLessThan() != null){
+            if(!deleteMarker && (ruleInput.getObjectSizeGreaterThan() != null || ruleInput.getObjectSizeLessThan() != null)){
                 LifecycleFilter filter = rule.getFilter();
 
                 if(filter == null){

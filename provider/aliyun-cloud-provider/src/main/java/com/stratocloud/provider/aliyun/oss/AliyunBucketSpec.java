@@ -137,10 +137,12 @@ public class AliyunBucketSpec {
             var encryption = sseConfig.getApplyServerSideEncryptionByDefault();
 
             if(Utils.isNotBlank(encryption.getSSEAlgorithm())){
-                t.setEnableEncryption(true);
-                t.setSseAlgorithm(encryption.getSSEAlgorithm());
-                t.setKmsDataEncryption(encryption.getKMSDataEncryption());
-                t.setKmsMasterKeyId(encryption.getKMSMasterKeyID());
+                if(!"None".equals(encryption.getSSEAlgorithm())){
+                    t.setEnableEncryption(true);
+                    t.setSseAlgorithm(encryption.getSSEAlgorithm());
+                    t.setKmsDataEncryption(encryption.getKMSDataEncryption());
+                    t.setKmsMasterKeyId(encryption.getKMSMasterKeyID());
+                }
             }
         }
 

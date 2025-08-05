@@ -15,6 +15,11 @@ public class TencentBucketUpdateAclInput implements ResourceActionInput {
     @NestedFormField(label = "ACL规则", multiple = true, nestedFormClass = RuleInput.class)
     private List<RuleInput> rules;
 
+    @InputField(label = "存储桶持有者ID", disabled = true)
+    private String ownerId;
+    @InputField(label = "存储桶持有者名称", disabled = true)
+    private String ownerName;
+
     @Data
     public static class RuleInput implements DynamicForm {
         @BooleanField(label = "授权所有用户")
@@ -70,6 +75,8 @@ public class TencentBucketUpdateAclInput implements ResourceActionInput {
     public AccessControlList toAcl(){
         AccessControlList acl = new AccessControlList();
 
+        acl.setOwner(new Owner(ownerId, ownerName));
+
         if(Utils.isNotEmpty(rules)){
             for (RuleInput rule : rules) {
                 Grant grant = rule.toGrant();
@@ -89,6 +96,11 @@ public class TencentBucketUpdateAclInput implements ResourceActionInput {
                             RuleInput::fromGrant
                     ).toList()
             );
+        }
+
+        if(acl.getOwner() != null){
+            input.setOwnerId(acl.getOwner().getId());
+            input.setOwnerName(acl.getOwner().getDisplayName());
         }
 
         return input;
