@@ -1,7 +1,8 @@
 package com.stratocloud.provider.tencent.cos.bucket.actions;
 
-import com.qcloud.cos.model.BucketRefererConfiguration;
+import com.qcloud.cos.model.HeadBucketResult;
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.provider.constants.BucketActions;
@@ -24,11 +25,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class TencentBucketUpdateRefererHandler implements ResourceActionHandler {
+public class TencentBucketUpdateLifecycleHandler implements ResourceActionHandler {
 
     private final TencentBucketHandler bucketHandler;
 
-    public TencentBucketUpdateRefererHandler(TencentBucketHandler bucketHandler) {
+    public TencentBucketUpdateLifecycleHandler(TencentBucketHandler bucketHandler) {
         this.bucketHandler = bucketHandler;
     }
 
@@ -39,12 +40,12 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
 
     @Override
     public ResourceAction getAction() {
-        return BucketActions.UPDATE_REFERER;
+        return BucketActions.UPDATE_LIFECYCLE;
     }
 
     @Override
     public String getTaskName() {
-        return "配置存储桶防盗链";
+        return "配置存储桶生命周期";
     }
 
     @Override
@@ -58,38 +59,49 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
     }
 
     @Override
-    public Class<? extends ResourceActionInput> getInputClass() {
-        return TencentBucketUpdateRefererInput.class;
-    }
-
-    @Override
     public Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData(Resource resource) {
         if(Utils.isBlank(resource.getExternalId()))
             return Optional.empty();
 
-        TencentBucketUpdateRefererInput input = TencentBucketUpdateRefererInput.getInput(resource);
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdateRefererInput.class);
-        formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdatePolicyInput.class);
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+        TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
+        CosSession cosSession = CosSessionManager.getSession(provider.buildClient(account).getCosSessionKey());
+
+        TencentBucketUpdateLifecycleInput input = TencentBucketUpdateLifecycleInput.getInput(
+                cosSession, resource.getExternalId()
+        );
+
+        formMetaData = DynamicFormHelper.changeDefaultValues(
+                formMetaData,
+                input
+        );
+
         return Optional.of(formMetaData);
     }
 
     @Override
+    public Class<? extends ResourceActionInput> getInputClass() {
+        return TencentBucketUpdateLifecycleInput.class;
+    }
+
+    @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        TencentBucketUpdateRefererInput input = JSON.convert(parameters, TencentBucketUpdateRefererInput.class);
+        TencentBucketUpdateLifecycleInput input = JSON.convert(parameters, TencentBucketUpdateLifecycleInput.class);
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
         CosSessionKey sessionKey = provider.buildClient(account).getCosSessionKey();
         CosSession cosSession = CosSessionManager.getSession(sessionKey);
 
-        BucketRefererConfiguration configuration = new BucketRefererConfiguration();
+        HeadBucketResult headBucketResult = cosSession.headBucket(resource.getExternalId()).orElseThrow(
+                () -> new StratoException("Bucket not found")
+        );
 
-        configuration.setStatus(input.getStatus());
-        configuration.setRefererType(input.getRefererType());
-        configuration.setDomainList(input.getDomainList());
-        configuration.setEmptyReferConfiguration(input.getEmptyReferer());
-
-        cosSession.setBucketReferer(resource.getExternalId(), configuration);
+        if(input.isEnabled() && Utils.isNotEmpty(input.getRules()))
+            cosSession.setBucketLifecycle(resource.getExternalId(), input.toConfig(headBucketResult.isMazBucket()));
+        else
+            cosSession.deleteBucketLifecycle(resource.getExternalId());
     }
 
     @Override
@@ -104,6 +116,6 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
 
     @Override
     public void validatePrecondition(Resource resource, Map<String, Object> parameters) {
-
+        JSON.convert(parameters, TencentBucketUpdateLifecycleInput.class).validate();
     }
 }

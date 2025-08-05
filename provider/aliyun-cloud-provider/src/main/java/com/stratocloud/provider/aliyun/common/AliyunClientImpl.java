@@ -86,4 +86,9 @@ public class AliyunClientImpl implements AliyunClient {
     public AliyunTrailService trail(){
         return new AliyunTrailServiceImpl(cacheService, config);
     }
+
+    @Override
+    public AliyunOssService oss(){
+        return new AliyunOssServiceImpl(config);
+    }
 }

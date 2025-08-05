@@ -1,18 +1,17 @@
-package com.stratocloud.provider.tencent.cos.bucket.actions;
+package com.stratocloud.provider.aliyun.oss.actions;
 
-import com.qcloud.cos.model.BucketRefererConfiguration;
+import com.aliyun.oss.model.BucketReferer;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
+import com.stratocloud.provider.aliyun.AliyunCloudProvider;
+import com.stratocloud.provider.aliyun.common.AliyunClient;
+import com.stratocloud.provider.aliyun.common.services.AliyunOssService;
+import com.stratocloud.provider.aliyun.oss.AliyunBucketHandler;
 import com.stratocloud.provider.constants.BucketActions;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
-import com.stratocloud.provider.tencent.TencentCloudProvider;
-import com.stratocloud.provider.tencent.cos.bucket.TencentBucketHandler;
-import com.stratocloud.provider.tencent.cos.session.CosSession;
-import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
-import com.stratocloud.provider.tencent.cos.session.CosSessionManager;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
@@ -24,11 +23,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class TencentBucketUpdateRefererHandler implements ResourceActionHandler {
+public class AliyunBucketUpdateRefererHandler implements ResourceActionHandler {
 
-    private final TencentBucketHandler bucketHandler;
+    private final AliyunBucketHandler bucketHandler;
 
-    public TencentBucketUpdateRefererHandler(TencentBucketHandler bucketHandler) {
+    public AliyunBucketUpdateRefererHandler(AliyunBucketHandler bucketHandler) {
         this.bucketHandler = bucketHandler;
     }
 
@@ -59,7 +58,7 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
 
     @Override
     public Class<? extends ResourceActionInput> getInputClass() {
-        return TencentBucketUpdateRefererInput.class;
+        return AliyunBucketUpdateRefererInput.class;
     }
 
     @Override
@@ -67,29 +66,33 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
         if(Utils.isBlank(resource.getExternalId()))
             return Optional.empty();
 
-        TencentBucketUpdateRefererInput input = TencentBucketUpdateRefererInput.getInput(resource);
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdateRefererInput.class);
+        AliyunCloudProvider provider = (AliyunCloudProvider) bucketHandler.getProvider();
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+        AliyunClient client = provider.buildClient(account);
+
+        AliyunBucketUpdateRefererInput input = AliyunBucketUpdateRefererInput.getInput(
+                client, resource.getExternalId()
+        );
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(AliyunBucketUpdateRefererInput.class);
         formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
         return Optional.of(formMetaData);
     }
 
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        TencentBucketUpdateRefererInput input = JSON.convert(parameters, TencentBucketUpdateRefererInput.class);
+        AliyunBucketUpdateRefererInput input = JSON.convert(parameters, AliyunBucketUpdateRefererInput.class);
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
-        CosSessionKey sessionKey = provider.buildClient(account).getCosSessionKey();
-        CosSession cosSession = CosSessionManager.getSession(sessionKey);
+        AliyunCloudProvider provider = (AliyunCloudProvider) bucketHandler.getProvider();
+        AliyunOssService ossService = provider.buildClient(account).oss();
 
-        BucketRefererConfiguration configuration = new BucketRefererConfiguration();
+        BucketReferer referer = new BucketReferer();
+        referer.setAllowEmptyReferer(input.isAllowEmptyReferer());
+        referer.setRefererList(input.getRefererList());
+        referer.setAllowTruncateQueryString(input.isAllowTruncateQueryString());
+        referer.setBlackRefererList(input.getBlackRefererList());
 
-        configuration.setStatus(input.getStatus());
-        configuration.setRefererType(input.getRefererType());
-        configuration.setDomainList(input.getDomainList());
-        configuration.setEmptyReferConfiguration(input.getEmptyReferer());
-
-        cosSession.setBucketReferer(resource.getExternalId(), configuration);
+        ossService.setBucketReferer(resource.getExternalId(), referer);
     }
 
     @Override

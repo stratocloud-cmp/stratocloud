@@ -107,7 +107,6 @@ public class TencentBucketUpdateHandler implements ResourceActionHandler {
 
         bucketSpec.applyVersioningQuietly(cosSession, bucket.getName());
         bucketSpec.applyIntelligentTierQuietly(cosSession, bucket.getName());
-        bucketSpec.applyLoggingQuietly(cosSession, bucket.getName());
     }
 
     @Override

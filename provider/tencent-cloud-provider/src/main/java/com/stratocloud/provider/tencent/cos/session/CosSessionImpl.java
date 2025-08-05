@@ -7,10 +7,7 @@ import com.qcloud.cos.model.*;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.exceptions.ProviderConnectionException;
 import com.stratocloud.exceptions.StratoException;
-import com.stratocloud.provider.tencent.cos.cors.TencentBucketCorsRule;
-import com.stratocloud.provider.tencent.cos.cors.TencentBucketCorsRuleId;
-import com.stratocloud.provider.tencent.cos.lifecycle.TencentBucketLifecycleRule;
-import com.stratocloud.provider.tencent.cos.lifecycle.TencentBucketLifecycleRuleId;
+import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
 import com.stratocloud.utils.concurrent.SleepUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -151,6 +148,8 @@ public class CosSessionImpl implements CosSession {
         DeleteObjectsRequest request = new DeleteObjectsRequest(bucketName);
         request.setKeys(keyVersions);
         tryRunnable(() -> cosClient.deleteObjects(request));
+        log.info("Tencent bucket objects deleted. BucketName={}. Count={}. KeyVersions={}.",
+                bucketName, keyVersions.size(), JSON.toJsonString(keyVersions));
     }
 
     @Override
@@ -274,47 +273,10 @@ public class CosSessionImpl implements CosSession {
     }
 
     @Override
-    public List<TencentBucketCorsRule> describeBucketCorsRules() {
-        List<Bucket> buckets = describeBuckets();
-
-        List<TencentBucketCorsRule> result = new ArrayList<>();
-
-        for (Bucket bucket : buckets) {
-            result.addAll(describeBucketCorsRulesByBucket(bucket.getName()));
-        }
-
-        return result;
-    }
-
-    @Override
-    public Optional<TencentBucketCorsRule> describeBucketCorsRule(TencentBucketCorsRuleId ruleId){
-        return describeBucketCorsRulesByBucket(ruleId.bucketName()).stream().filter(
-                r -> r.id().equals(ruleId)
-        ).findAny();
-    }
-
-    @Override
-    public List<TencentBucketCorsRule> describeBucketCorsRulesByBucket(String bucketName){
-        Optional<BucketCrossOriginConfiguration> configuration = queryCosOne(
+    public Optional<BucketCrossOriginConfiguration> describeBucketCors(String bucketName){
+        return queryCosOne(
                 () -> cosClient.getBucketCrossOriginConfiguration(bucketName)
         );
-
-        if(configuration.isEmpty())
-            return List.of();
-
-        List<CORSRule> rules = configuration.get().getRules();
-
-        if(Utils.isEmpty(rules))
-            return List.of();
-
-        return rules.stream().filter(
-                r -> Utils.isNotBlank(r.getId())
-        ).map(
-                r -> new TencentBucketCorsRule(
-                        new TencentBucketCorsRuleId(bucketName, r.getId()),
-                        r
-                )
-        ).toList();
     }
 
     @Override
@@ -335,50 +297,12 @@ public class CosSessionImpl implements CosSession {
         }
     }
 
-    @Override
-    public List<TencentBucketLifecycleRule> describeBucketLifecycleRules(){
-        List<Bucket> buckets = describeBuckets();
-
-        List<TencentBucketLifecycleRule> result = new ArrayList<>();
-
-        for (Bucket bucket : buckets) {
-            result.addAll(describeBucketLifecycleRulesByBucket(bucket.getName()));
-        }
-
-        return result;
-    }
 
     @Override
-    public Optional<TencentBucketLifecycleRule> describeBucketLifecycleRule(TencentBucketLifecycleRuleId ruleId){
-        return describeBucketLifecycleRulesByBucket(
-                ruleId.bucketName()
-        ).stream().filter(
-                r -> Objects.equals(r.id(), ruleId)
-        ).findAny();
-    }
-
-    @Override
-    public List<TencentBucketLifecycleRule> describeBucketLifecycleRulesByBucket(String bucketName){
-        Optional<BucketLifecycleConfiguration> configuration = queryCosOne(
+    public Optional<BucketLifecycleConfiguration> describeBucketLifecycle(String bucketName){
+        return queryCosOne(
                 () -> cosClient.getBucketLifecycleConfiguration(bucketName)
         );
-
-        if(configuration.isEmpty())
-            return List.of();
-
-        List<BucketLifecycleConfiguration.Rule> rules = configuration.get().getRules();
-
-        if(Utils.isEmpty(rules))
-            return List.of();
-
-        return rules.stream().filter(
-                r -> Utils.isNotBlank(r.getId())
-        ).map(
-                r -> new TencentBucketLifecycleRule(
-                        new TencentBucketLifecycleRuleId(bucketName, r.getId()),
-                        r
-                )
-        ).toList();
     }
 
     @Override

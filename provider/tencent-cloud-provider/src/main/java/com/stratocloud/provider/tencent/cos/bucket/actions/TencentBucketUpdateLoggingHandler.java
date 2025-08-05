@@ -1,6 +1,6 @@
 package com.stratocloud.provider.tencent.cos.bucket.actions;
 
-import com.qcloud.cos.model.BucketRefererConfiguration;
+import com.qcloud.cos.model.Bucket;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
@@ -24,11 +24,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class TencentBucketUpdateRefererHandler implements ResourceActionHandler {
+public class TencentBucketUpdateLoggingHandler implements ResourceActionHandler {
 
     private final TencentBucketHandler bucketHandler;
 
-    public TencentBucketUpdateRefererHandler(TencentBucketHandler bucketHandler) {
+    public TencentBucketUpdateLoggingHandler(TencentBucketHandler bucketHandler) {
         this.bucketHandler = bucketHandler;
     }
 
@@ -39,12 +39,12 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
 
     @Override
     public ResourceAction getAction() {
-        return BucketActions.UPDATE_REFERER;
+        return BucketActions.UPDATE_LOGGING;
     }
 
     @Override
     public String getTaskName() {
-        return "配置存储桶防盗链";
+        return "配置存储桶日志转存";
     }
 
     @Override
@@ -58,38 +58,58 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
     }
 
     @Override
-    public Class<? extends ResourceActionInput> getInputClass() {
-        return TencentBucketUpdateRefererInput.class;
-    }
-
-    @Override
     public Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData(Resource resource) {
         if(Utils.isBlank(resource.getExternalId()))
             return Optional.empty();
 
-        TencentBucketUpdateRefererInput input = TencentBucketUpdateRefererInput.getInput(resource);
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdateRefererInput.class);
-        formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdatePolicyInput.class);
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+        TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
+        CosSession cosSession = CosSessionManager.getSession(provider.buildClient(account).getCosSessionKey());
+
+        var logging = cosSession.describeBucketLogging(resource.getExternalId());
+
+        TencentBucketUpdateLoggingInput input = new TencentBucketUpdateLoggingInput();
+        if(logging.isEmpty()) {
+            input.setEnableLogging(false);
+        } else {
+            input.setEnableLogging(true);
+            input.setLoggingTargetBucketName(logging.get().getDestinationBucketName());
+            input.setLoggingFilePrefix(logging.get().getLogFilePrefix());
+        }
+
+        formMetaData = DynamicFormHelper.changeDefaultValues(
+                formMetaData,
+                input
+        );
+
+        List<String> bucketNames = cosSession.describeBuckets().stream().map(Bucket::getName).toList();
+
+        formMetaData = DynamicFormHelper.changeOptions(
+                formMetaData, "loggingTargetBucketName", bucketNames, bucketNames
+        );
+
         return Optional.of(formMetaData);
     }
 
     @Override
+    public Class<? extends ResourceActionInput> getInputClass() {
+        return TencentBucketUpdateLoggingInput.class;
+    }
+
+    @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        TencentBucketUpdateRefererInput input = JSON.convert(parameters, TencentBucketUpdateRefererInput.class);
+        TencentBucketUpdateLoggingInput input = JSON.convert(parameters, TencentBucketUpdateLoggingInput.class);
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
         CosSessionKey sessionKey = provider.buildClient(account).getCosSessionKey();
         CosSession cosSession = CosSessionManager.getSession(sessionKey);
 
-        BucketRefererConfiguration configuration = new BucketRefererConfiguration();
-
-        configuration.setStatus(input.getStatus());
-        configuration.setRefererType(input.getRefererType());
-        configuration.setDomainList(input.getDomainList());
-        configuration.setEmptyReferConfiguration(input.getEmptyReferer());
-
-        cosSession.setBucketReferer(resource.getExternalId(), configuration);
+        if(input.isEnableLogging())
+            cosSession.setBucketLogging(resource.getExternalId(), input.toConfig());
+        else
+            cosSession.deleteBucketPolicy(resource.getExternalId());
     }
 
     @Override

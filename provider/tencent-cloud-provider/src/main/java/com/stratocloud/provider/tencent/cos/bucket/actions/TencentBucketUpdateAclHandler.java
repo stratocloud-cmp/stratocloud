@@ -1,6 +1,6 @@
 package com.stratocloud.provider.tencent.cos.bucket.actions;
 
-import com.qcloud.cos.model.BucketRefererConfiguration;
+import com.qcloud.cos.model.AccessControlList;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
@@ -24,11 +24,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class TencentBucketUpdateRefererHandler implements ResourceActionHandler {
+public class TencentBucketUpdateAclHandler implements ResourceActionHandler {
 
     private final TencentBucketHandler bucketHandler;
 
-    public TencentBucketUpdateRefererHandler(TencentBucketHandler bucketHandler) {
+    public TencentBucketUpdateAclHandler(TencentBucketHandler bucketHandler) {
         this.bucketHandler = bucketHandler;
     }
 
@@ -39,12 +39,12 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
 
     @Override
     public ResourceAction getAction() {
-        return BucketActions.UPDATE_REFERER;
+        return BucketActions.UPDATE_ACL;
     }
 
     @Override
     public String getTaskName() {
-        return "配置存储桶防盗链";
+        return "配置存储桶ACL";
     }
 
     @Override
@@ -58,38 +58,45 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
     }
 
     @Override
-    public Class<? extends ResourceActionInput> getInputClass() {
-        return TencentBucketUpdateRefererInput.class;
-    }
-
-    @Override
     public Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData(Resource resource) {
         if(Utils.isBlank(resource.getExternalId()))
             return Optional.empty();
-
-        TencentBucketUpdateRefererInput input = TencentBucketUpdateRefererInput.getInput(resource);
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdateRefererInput.class);
-        formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
-        return Optional.of(formMetaData);
-    }
-
-    @Override
-    public void run(Resource resource, Map<String, Object> parameters) {
-        TencentBucketUpdateRefererInput input = JSON.convert(parameters, TencentBucketUpdateRefererInput.class);
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
         CosSessionKey sessionKey = provider.buildClient(account).getCosSessionKey();
         CosSession cosSession = CosSessionManager.getSession(sessionKey);
 
-        BucketRefererConfiguration configuration = new BucketRefererConfiguration();
+        Optional<AccessControlList> acl = cosSession.describeBucketAcl(resource.getExternalId());
 
-        configuration.setStatus(input.getStatus());
-        configuration.setRefererType(input.getRefererType());
-        configuration.setDomainList(input.getDomainList());
-        configuration.setEmptyReferConfiguration(input.getEmptyReferer());
+        if(acl.isEmpty())
+            return Optional.empty();
 
-        cosSession.setBucketReferer(resource.getExternalId(), configuration);
+        TencentBucketUpdateAclInput input = TencentBucketUpdateAclInput.fromAcl(acl.get());
+
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdateAclInput.class);
+        formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
+
+        return Optional.of(formMetaData);
+    }
+
+    @Override
+    public Class<? extends ResourceActionInput> getInputClass() {
+        return TencentBucketUpdateAclInput.class;
+    }
+
+    @Override
+    public void run(Resource resource, Map<String, Object> parameters) {
+        TencentBucketUpdateAclInput input = JSON.convert(parameters, TencentBucketUpdateAclInput.class);
+
+        AccessControlList accessControlList = input.toAcl();
+
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+        TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
+        CosSessionKey sessionKey = provider.buildClient(account).getCosSessionKey();
+        CosSession cosSession = CosSessionManager.getSession(sessionKey);
+
+        cosSession.setBucketAcl(resource.getExternalId(), accessControlList);
     }
 
     @Override

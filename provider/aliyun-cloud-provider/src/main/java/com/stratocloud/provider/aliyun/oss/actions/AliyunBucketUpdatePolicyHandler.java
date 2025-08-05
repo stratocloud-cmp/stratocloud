@@ -1,18 +1,16 @@
-package com.stratocloud.provider.tencent.cos.bucket.actions;
+package com.stratocloud.provider.aliyun.oss.actions;
 
-import com.qcloud.cos.model.BucketPolicy;
+import com.aliyun.oss.model.GetBucketPolicyResult;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
+import com.stratocloud.provider.aliyun.AliyunCloudProvider;
+import com.stratocloud.provider.aliyun.common.services.AliyunOssService;
+import com.stratocloud.provider.aliyun.oss.AliyunBucketHandler;
 import com.stratocloud.provider.constants.BucketActions;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
-import com.stratocloud.provider.tencent.TencentCloudProvider;
-import com.stratocloud.provider.tencent.cos.bucket.TencentBucketHandler;
-import com.stratocloud.provider.tencent.cos.session.CosSession;
-import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
-import com.stratocloud.provider.tencent.cos.session.CosSessionManager;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
@@ -24,11 +22,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class TencentBucketUpdatePolicyHandler implements ResourceActionHandler {
+public class AliyunBucketUpdatePolicyHandler implements ResourceActionHandler {
 
-    private final TencentBucketHandler bucketHandler;
+    private final AliyunBucketHandler bucketHandler;
 
-    public TencentBucketUpdatePolicyHandler(TencentBucketHandler bucketHandler) {
+    public AliyunBucketUpdatePolicyHandler(AliyunBucketHandler bucketHandler) {
         this.bucketHandler = bucketHandler;
     }
 
@@ -62,14 +60,14 @@ public class TencentBucketUpdatePolicyHandler implements ResourceActionHandler {
         if(Utils.isBlank(resource.getExternalId()))
             return Optional.empty();
 
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdatePolicyInput.class);
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(AliyunBucketUpdatePolicyInput.class);
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
-        CosSession cosSession = CosSessionManager.getSession(provider.buildClient(account).getCosSessionKey());
+        AliyunCloudProvider provider = (AliyunCloudProvider) bucketHandler.getProvider();
+        AliyunOssService ossService = provider.buildClient(account).oss();
 
-        Optional<BucketPolicy> policy = cosSession.describeBucketPolicy(resource.getExternalId());
+        Optional<GetBucketPolicyResult> policy = ossService.describeBucketPolicy(resource.getExternalId());
 
-        TencentBucketUpdatePolicyInput input = new TencentBucketUpdatePolicyInput();
+        AliyunBucketUpdatePolicyInput input = new AliyunBucketUpdatePolicyInput();
         if(policy.isEmpty()) {
             input.setEnabled(false);
         } else {
@@ -87,22 +85,21 @@ public class TencentBucketUpdatePolicyHandler implements ResourceActionHandler {
 
     @Override
     public Class<? extends ResourceActionInput> getInputClass() {
-        return TencentBucketUpdatePolicyInput.class;
+        return AliyunBucketUpdatePolicyInput.class;
     }
 
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        TencentBucketUpdatePolicyInput input = JSON.convert(parameters, TencentBucketUpdatePolicyInput.class);
+        AliyunBucketUpdatePolicyInput input = JSON.convert(parameters, AliyunBucketUpdatePolicyInput.class);
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
-        CosSessionKey sessionKey = provider.buildClient(account).getCosSessionKey();
-        CosSession cosSession = CosSessionManager.getSession(sessionKey);
+        AliyunCloudProvider provider = (AliyunCloudProvider) bucketHandler.getProvider();
+        AliyunOssService ossService = provider.buildClient(account).oss();
 
         if(input.isEnabled())
-            cosSession.setBucketPolicy(resource.getExternalId(), input.getPolicyText());
+            ossService.setBucketPolicy(resource.getExternalId(), input.getPolicyText());
         else
-            cosSession.deleteBucketPolicy(resource.getExternalId());
+            ossService.deleteBucketPolicy(resource.getExternalId());
     }
 
     @Override

@@ -1,10 +1,6 @@
 package com.stratocloud.provider.tencent.cos.session;
 
 import com.qcloud.cos.model.*;
-import com.stratocloud.provider.tencent.cos.cors.TencentBucketCorsRule;
-import com.stratocloud.provider.tencent.cos.cors.TencentBucketCorsRuleId;
-import com.stratocloud.provider.tencent.cos.lifecycle.TencentBucketLifecycleRule;
-import com.stratocloud.provider.tencent.cos.lifecycle.TencentBucketLifecycleRuleId;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,21 +39,13 @@ public interface CosSession {
     void setDefaultBucketIntelligentTier(String bucketName, BucketIntelligentTierConfiguration configuration);
 
 
-    List<TencentBucketCorsRule> describeBucketCorsRules();
-
-    Optional<TencentBucketCorsRule> describeBucketCorsRule(TencentBucketCorsRuleId ruleId);
-
-    List<TencentBucketCorsRule> describeBucketCorsRulesByBucket(String bucketName);
+    Optional<BucketCrossOriginConfiguration> describeBucketCors(String bucketName);
 
     void setBucketCors(String bucketName, BucketCrossOriginConfiguration configuration);
 
     void deleteBucketCors(String bucketName);
 
-    List<TencentBucketLifecycleRule> describeBucketLifecycleRules();
-
-    Optional<TencentBucketLifecycleRule> describeBucketLifecycleRule(TencentBucketLifecycleRuleId ruleId);
-
-    List<TencentBucketLifecycleRule> describeBucketLifecycleRulesByBucket(String bucketName);
+    Optional<BucketLifecycleConfiguration> describeBucketLifecycle(String bucketName);
 
     void setBucketLifecycle(String bucketName, BucketLifecycleConfiguration configuration);
 

@@ -1,17 +1,15 @@
-package com.stratocloud.provider.tencent.cos.bucket.actions;
+package com.stratocloud.provider.aliyun.oss.actions;
 
-import com.qcloud.cos.model.COSVersionSummary;
-import com.qcloud.cos.model.DeleteObjectsRequest;
+import com.aliyun.oss.model.DeleteVersionsRequest;
+import com.aliyun.oss.model.OSSVersionSummary;
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.provider.aliyun.AliyunCloudProvider;
+import com.stratocloud.provider.aliyun.common.services.AliyunOssService;
+import com.stratocloud.provider.aliyun.oss.AliyunBucketHandler;
 import com.stratocloud.provider.constants.BucketActions;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
-import com.stratocloud.provider.tencent.TencentCloudProvider;
-import com.stratocloud.provider.tencent.cos.bucket.TencentBucketHandler;
-import com.stratocloud.provider.tencent.cos.session.CosSession;
-import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
-import com.stratocloud.provider.tencent.cos.session.CosSessionManager;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.Utils;
 import org.springframework.stereotype.Component;
@@ -22,11 +20,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class TencentBucketEmptyHandler implements ResourceActionHandler {
+public class AliyunBucketEmptyHandler implements ResourceActionHandler {
 
-    private final TencentBucketHandler bucketHandler;
+    private final AliyunBucketHandler bucketHandler;
 
-    public TencentBucketEmptyHandler(TencentBucketHandler bucketHandler) {
+    public AliyunBucketEmptyHandler(AliyunBucketHandler bucketHandler) {
         this.bucketHandler = bucketHandler;
     }
 
@@ -67,24 +65,22 @@ public class TencentBucketEmptyHandler implements ResourceActionHandler {
             return;
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
-        CosSessionKey sessionKey = provider.buildClient(account).getCosSessionKey();
+        AliyunCloudProvider provider = (AliyunCloudProvider) bucketHandler.getProvider();
+        AliyunOssService ossService = provider.buildClient(account).oss();
 
-        CosSession cosSession = CosSessionManager.getSession(sessionKey);
-
-        if(!cosSession.doesBucketExist(bucketName))
+        if(!ossService.doesBucketExist(bucketName))
             return;
 
-        List<COSVersionSummary> versionSummaries = cosSession.describeObjectVersions(bucketName);
+        List<OSSVersionSummary> versionSummaries = ossService.describeObjectVersions(bucketName);
 
         if(Utils.isEmpty(versionSummaries))
             return;
 
-        for (List<COSVersionSummary> partition : Utils.partition(versionSummaries, 1000)) {
-            cosSession.deleteObjects(
+        for (List<OSSVersionSummary> partition : Utils.partition(versionSummaries, 1000)) {
+            ossService.deleteVersions(
                     bucketName,
                     partition.stream().map(
-                            v -> new DeleteObjectsRequest.KeyVersion(v.getKey(), v.getVersionId())
+                            v -> new DeleteVersionsRequest.KeyVersion(v.getKey(), v.getVersionId())
                     ).toList()
             );
         }

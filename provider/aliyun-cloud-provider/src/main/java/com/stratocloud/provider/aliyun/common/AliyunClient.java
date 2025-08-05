@@ -22,4 +22,6 @@ public interface AliyunClient {
     AliyunCmsService cms();
 
     AliyunTrailService trail();
+
+    AliyunOssService oss();
 }

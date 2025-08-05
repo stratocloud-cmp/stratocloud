@@ -65,7 +65,6 @@ public class TencentBucketBuildHandler implements BuildResourceActionHandler {
         TencentBucketSpec spec = input.toSpec();
         spec.applyVersioningQuietly(cosSession, bucket.getName());
         spec.applyIntelligentTierQuietly(cosSession, bucket.getName());
-        spec.applyLoggingQuietly(cosSession, bucket.getName());
     }
 
     @Override

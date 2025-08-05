@@ -7,6 +7,7 @@ import com.qcloud.cos.model.RoutingRuleCondition;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
+import com.stratocloud.provider.constants.BucketActions;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
@@ -38,11 +39,7 @@ public class TencentBucketUpdateWebsiteHandler implements ResourceActionHandler 
 
     @Override
     public ResourceAction getAction() {
-        return new ResourceAction(
-                "UPDATE_BUCKET_WEBSITE",
-                "配置静态网站",
-                503
-        );
+        return BucketActions.UPDATE_WEBSITE;
     }
 
     @Override

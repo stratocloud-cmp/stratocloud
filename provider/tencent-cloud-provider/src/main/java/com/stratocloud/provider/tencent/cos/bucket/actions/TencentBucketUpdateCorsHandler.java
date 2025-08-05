@@ -1,6 +1,5 @@
 package com.stratocloud.provider.tencent.cos.bucket.actions;
 
-import com.qcloud.cos.model.BucketRefererConfiguration;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
@@ -24,11 +23,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class TencentBucketUpdateRefererHandler implements ResourceActionHandler {
+public class TencentBucketUpdateCorsHandler implements ResourceActionHandler {
 
     private final TencentBucketHandler bucketHandler;
 
-    public TencentBucketUpdateRefererHandler(TencentBucketHandler bucketHandler) {
+    public TencentBucketUpdateCorsHandler(TencentBucketHandler bucketHandler) {
         this.bucketHandler = bucketHandler;
     }
 
@@ -39,12 +38,12 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
 
     @Override
     public ResourceAction getAction() {
-        return BucketActions.UPDATE_REFERER;
+        return BucketActions.UPDATE_CORS;
     }
 
     @Override
     public String getTaskName() {
-        return "配置存储桶防盗链";
+        return "配置存储桶CORS";
     }
 
     @Override
@@ -58,38 +57,46 @@ public class TencentBucketUpdateRefererHandler implements ResourceActionHandler 
     }
 
     @Override
-    public Class<? extends ResourceActionInput> getInputClass() {
-        return TencentBucketUpdateRefererInput.class;
-    }
-
-    @Override
     public Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData(Resource resource) {
         if(Utils.isBlank(resource.getExternalId()))
             return Optional.empty();
-
-        TencentBucketUpdateRefererInput input = TencentBucketUpdateRefererInput.getInput(resource);
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdateRefererInput.class);
-        formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
-        return Optional.of(formMetaData);
-    }
-
-    @Override
-    public void run(Resource resource, Map<String, Object> parameters) {
-        TencentBucketUpdateRefererInput input = JSON.convert(parameters, TencentBucketUpdateRefererInput.class);
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
         CosSessionKey sessionKey = provider.buildClient(account).getCosSessionKey();
         CosSession cosSession = CosSessionManager.getSession(sessionKey);
 
-        BucketRefererConfiguration configuration = new BucketRefererConfiguration();
+        var cors = cosSession.describeBucketCors(resource.getExternalId());
 
-        configuration.setStatus(input.getStatus());
-        configuration.setRefererType(input.getRefererType());
-        configuration.setDomainList(input.getDomainList());
-        configuration.setEmptyReferConfiguration(input.getEmptyReferer());
+        if(cors.isEmpty())
+            return Optional.empty();
 
-        cosSession.setBucketReferer(resource.getExternalId(), configuration);
+        TencentBucketUpdateCorsInput input = TencentBucketUpdateCorsInput.fromConfig(cors.get());
+
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdateCorsInput.class);
+        formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
+
+        return Optional.of(formMetaData);
+    }
+
+    @Override
+    public Class<? extends ResourceActionInput> getInputClass() {
+        return TencentBucketUpdateCorsInput.class;
+    }
+
+    @Override
+    public void run(Resource resource, Map<String, Object> parameters) {
+        TencentBucketUpdateCorsInput input = JSON.convert(parameters, TencentBucketUpdateCorsInput.class);
+
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+        TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
+        CosSessionKey sessionKey = provider.buildClient(account).getCosSessionKey();
+        CosSession cosSession = CosSessionManager.getSession(sessionKey);
+
+        if(input.isEnabled() && Utils.isNotEmpty(input.getRules()))
+            cosSession.setBucketCors(resource.getExternalId(), input.toConfig());
+        else
+            cosSession.deleteBucketCors(resource.getExternalId());
     }
 
     @Override
