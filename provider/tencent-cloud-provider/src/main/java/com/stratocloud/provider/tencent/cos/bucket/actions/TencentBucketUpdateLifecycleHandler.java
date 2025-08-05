@@ -63,7 +63,7 @@ public class TencentBucketUpdateLifecycleHandler implements ResourceActionHandle
         if(Utils.isBlank(resource.getExternalId()))
             return Optional.empty();
 
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdatePolicyInput.class);
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(TencentBucketUpdateLifecycleInput.class);
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         TencentCloudProvider provider = (TencentCloudProvider) bucketHandler.getProvider();
         CosSession cosSession = CosSessionManager.getSession(provider.buildClient(account).getCosSessionKey());

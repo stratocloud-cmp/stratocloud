@@ -112,7 +112,7 @@ public class TencentBucketUpdateLifecycleInput implements ResourceActionInput {
         private StorageClass storageClass;
         @NumberField(label = "该天数后沉降", conditions = "this.type === 'DAYS'")
         private int days;
-        @DateTimeField(label = "该日期后沉降", conditions = "this.type === 'DATE'")
+        @DateTimeField(label = "该日期后沉降", conditions = "this.type === 'DATE'", dateOnly = true)
         private LocalDateTime expirationDate;
 
         @JsonIgnore
@@ -143,9 +143,11 @@ public class TencentBucketUpdateLifecycleInput implements ResourceActionInput {
 
             if(expirationDays > 0) {
                 transition.setType(TransitionType.DAYS);
+                transition.setStorageClass(StorageClass.parse(storageTransition.getStorageClass()));
                 transition.setDays(expirationDays);
             } else if(createdBeforeDate != null) {
                 transition.setType(TransitionType.DATE);
+                transition.setStorageClass(StorageClass.parse(storageTransition.getStorageClass()));
                 transition.setExpirationDate(TimeUtil.fromDate(createdBeforeDate));
             } else {
                 transition.setType(TransitionType.DISABLED);
@@ -247,7 +249,7 @@ public class TencentBucketUpdateLifecycleInput implements ResourceActionInput {
         private TransitionType expirationType;
         @NumberField(label = "该天数后删除当前版本文件", conditions = "this.expirationType === 'DAYS'")
         private int expirationDays;
-        @DateTimeField(label = "该日期后删除当前版本文件", conditions = "this.expirationType === 'DATE'")
+        @DateTimeField(label = "该日期后删除当前版本文件", conditions = "this.expirationType === 'DATE'", dateOnly = true)
         private LocalDateTime expirationDate;
 
         @NestedFormField(label = "当前版本文件沉降策略", multiple = true, nestedFormClass = Transition.class)
@@ -269,7 +271,7 @@ public class TencentBucketUpdateLifecycleInput implements ResourceActionInput {
         @NumberField(label = "该天数后删除历史版本文件", conditions = "this.historyExpirationType === 'DAYS'")
         private int historyExpirationDays;
 
-        @NestedFormField(label = "历史版本文件沉降策略", multiple = true, nestedFormClass = Transition.class)
+        @NestedFormField(label = "历史版本文件沉降策略", multiple = true, nestedFormClass = HistoryTransition.class)
         private List<HistoryTransition> historyTransitions;
 
 
@@ -288,7 +290,7 @@ public class TencentBucketUpdateLifecycleInput implements ResourceActionInput {
         private TransitionType fragmentExpirationType;
         @NumberField(label = "该天数后清理碎片", conditions = "this.fragmentExpirationType === 'DAYS'")
         private int fragmentExpirationDays;
-        @DateTimeField(label = "该日期后清理碎片", conditions = "this.fragmentExpirationType === 'DATE'")
+        @DateTimeField(label = "该日期后清理碎片", conditions = "this.fragmentExpirationType === 'DATE'", dateOnly = true)
         private LocalDateTime fragmentExpirationDate;
 
         @JsonIgnore

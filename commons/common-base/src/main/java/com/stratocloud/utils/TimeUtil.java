@@ -23,4 +23,10 @@ public class TimeUtil {
     public static LocalDateTime fromDate(Date date) {
         return date.toInstant().atZone(BEIJING_ZONE_ID).toLocalDateTime();
     }
+
+    public static LocalDateTime fromBeijingEpochMillis(long epochMillis) {
+        return Instant.ofEpochMilli(epochMillis).atZone(BEIJING_ZONE_ID).withZoneSameInstant(
+                ZoneId.systemDefault()
+        ).toLocalDateTime();
+    }
 }

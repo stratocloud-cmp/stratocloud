@@ -14,9 +14,13 @@ public @interface DateTimeField {
 
     String placeHolder() default "";
 
-    long[] defaultValue() default {};
+    long[] defaultValues() default {};
 
     boolean allowFutureTime() default true;
+
+    boolean isRange() default false;
+
+    boolean dateOnly() default false;
 
     boolean required() default true;
 
