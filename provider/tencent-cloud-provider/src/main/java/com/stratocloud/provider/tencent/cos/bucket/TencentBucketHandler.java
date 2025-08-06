@@ -133,9 +133,4 @@ public class TencentBucketHandler extends AbstractResourceHandler {
     public List<ResourceUsageType> getUsagesTypes() {
         return List.of();
     }
-
-    @Override
-    public boolean supportCascadedDestruction() {
-        return true;
-    }
 }

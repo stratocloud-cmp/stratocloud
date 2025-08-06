@@ -41,7 +41,8 @@ public class AliyunMetricsProvider implements MetricsProvider {
                 DISK_READ_BPS,DISK_READ_BPS_UTIL,DISK_READ_IOPS,DISK_READ_IOPS_UTIL,
                 DISK_WRITE_BPS,DISK_WRITE_BPS_UTIL,DISK_WRITE_IOPS,DISK_WRITE_IOPS_UTIL,
                 INTRANET_IN_RATE,INTRANET_IN_RATE_UTIL,INTRANET_OUT_RATE,INTRANET_OUT_RATE_UTIL,
-                ECS_EIP_OUT_RATE,ECS_EIP_IN_RATE,EIP_OUT_RATE,EIP_IN_RATE
+                ECS_EIP_OUT_RATE,ECS_EIP_IN_RATE,EIP_OUT_RATE,EIP_IN_RATE,
+                BUCKET_STORAGE
         );
     }
 
@@ -53,6 +54,22 @@ public class AliyunMetricsProvider implements MetricsProvider {
                 new MetricObject(
                         List.of(
                                 new MetricDimension("instanceId", resource.getExternalId())
+                        )
+                )
+        );
+    }
+
+    private static List<MetricObject> getBucketMetricObjects(Resource resource) {
+        if(Utils.isBlank(resource.getExternalId()))
+            return List.of();
+
+        String regionId = getClient(resource).getRegionId();
+
+        return List.of(
+                new MetricObject(
+                        List.of(
+                                new MetricDimension("BucketName", resource.getExternalId()),
+                                new MetricDimension("region", regionId)
                         )
                 )
         );
@@ -163,8 +180,11 @@ public class AliyunMetricsProvider implements MetricsProvider {
         List<AliyunMetricDataPoint> dataPoints = getClient(resource).cms().describeMetricList(request);
 
         if(Utils.isNotEmpty(dataPoints)) {
-            Map<String, List<AliyunMetricDataPoint>> sequencesMap
-                    = dataPoints.stream().collect(Collectors.groupingBy(AliyunMetricsProvider::getSequenceName));
+            Map<String, List<AliyunMetricDataPoint>> sequencesMap = dataPoints.stream().collect(
+                    Collectors.groupingBy(
+                            p -> getSequenceName(p, supportedMetric, resource.getName())
+                    )
+            );
 
             for (String sequenceName : sequencesMap.keySet()) {
                 List<AliyunMetricDataPoint> sequencePoints = sequencesMap.get(sequenceName);
@@ -203,8 +223,11 @@ public class AliyunMetricsProvider implements MetricsProvider {
         return new MetricData(metric, sequences);
     }
 
-    private static String getSequenceName(AliyunMetricDataPoint p) {
-        return Utils.isNotBlank(p.device()) ? p.device() : p.instanceId();
+    private static String getSequenceName(AliyunMetricDataPoint p,
+                                          SupportedMetric supportedMetric,
+                                          String defaultSequenceName) {
+        Object o = JSON.toMap(p).get(supportedMetric.displayDimensionName());
+        return o instanceof String s ? s : defaultSequenceName;
     }
 
     @Override
@@ -215,8 +238,18 @@ public class AliyunMetricsProvider implements MetricsProvider {
                 AliyunMetrics.EIP_IN_RATE, "in",
                 AliyunMetrics.EIP_OUT_RATE, "out",
                 AliyunMetrics.PER_DISK_READ_BPS, "r",
-                AliyunMetrics.PER_DISK_WRITE_BPS, "w"
+                AliyunMetrics.PER_DISK_WRITE_BPS, "w",
+                AliyunMetrics.BUCKET_STORAGE, "total"
         );
+    }
+
+    @Override
+    public double getQuickStatsValue(SupportedMetric quickStatsMetric, List<MetricSequence> sequences) {
+        if(quickStatsMetric.metric().equals(AliyunMetrics.BUCKET_STORAGE)){
+            return sequences.stream().mapToDouble(MetricSequence::latestValue).sum();
+        }else {
+            return MetricsProvider.super.getQuickStatsValue(quickStatsMetric, sequences);
+        }
     }
 
     private Float getMetricValue(Metric metric, AliyunMetricDataPoint sequencePoint) {
@@ -588,4 +621,18 @@ public class AliyunMetricsProvider implements MetricsProvider {
             true,
             ResourceCategories.ELASTIC_IP
     );
+
+
+
+    public static final SupportedMetric BUCKET_STORAGE = new SupportedMetric(
+            AliyunMetrics.BUCKET_STORAGE,
+            "storageType",
+            AliyunMetricsProvider::getBucketMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.BUCKET
+    );
+
+
 }

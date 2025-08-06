@@ -1,6 +1,7 @@
 package com.stratocloud.provider.aliyun.oss;
 
 import com.aliyun.oss.model.Bucket;
+import com.aliyun.oss.model.BucketStat;
 import com.aliyun.oss.model.DataRedundancyType;
 import com.aliyun.oss.model.StorageClass;
 import com.stratocloud.account.ExternalAccount;
@@ -138,15 +139,41 @@ public class AliyunBucketHandler extends AbstractResourceHandler {
                 String.valueOf(redundancyType)
         );
         resource.addOrUpdateRuntimeProperty(redundancyProperty);
+
+        Optional<BucketStat> bucketStat = client.oss().describeBucketStat(bucket.externalId());
+
+        if(bucketStat.isPresent()){
+            Long storageSize = bucketStat.get().getStorageSize();
+            Long objectCount = bucketStat.get().getObjectCount();
+
+            if(storageSize != null){
+                String storageSizeStr = "%.2f".formatted(
+                        storageSize / (double) (1 << 30)
+                );
+                RuntimeProperty storageSizeProperty = RuntimeProperty.ofDisplayInList(
+                        "storageSize",
+                        "存储量(GB)",
+                        storageSizeStr,
+                        storageSizeStr
+                );
+                resource.addOrUpdateRuntimeProperty(storageSizeProperty);
+            }
+
+            if(objectCount != null){
+                String objectCountStr = String.valueOf(objectCount);
+                RuntimeProperty objectCountProperty = RuntimeProperty.ofDisplayable(
+                        "objectCount",
+                        "Object总数",
+                        objectCountStr,
+                        objectCountStr
+                );
+                resource.addOrUpdateRuntimeProperty(objectCountProperty);
+            }
+        }
     }
 
     @Override
     public List<ResourceUsageType> getUsagesTypes() {
         return List.of();
-    }
-
-    @Override
-    public boolean supportCascadedDestruction() {
-        return true;
     }
 }

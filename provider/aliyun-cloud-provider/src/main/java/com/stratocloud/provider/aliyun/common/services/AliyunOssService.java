@@ -71,4 +71,6 @@ public interface AliyunOssService {
     Optional<AccessMonitor> describeAccessMonitor(String bucketName);
 
     void setAccessMonitor(String bucketName, boolean enabled);
+
+    Optional<BucketStat> describeBucketStat(String bucketName);
 }

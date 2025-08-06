@@ -8,6 +8,7 @@ import com.stratocloud.provider.resource.monitor.MetricsProvider;
 import com.stratocloud.provider.tencent.common.TencentCloudAccountProperties;
 import com.stratocloud.provider.tencent.common.TencentCloudClient;
 import com.stratocloud.provider.tencent.common.TencentCloudClientImpl;
+import com.stratocloud.provider.tencent.common.TencentCloudRegion;
 import com.stratocloud.provider.tencent.metric.TencentMetricsProvider;
 import com.stratocloud.repository.ExternalAccountRepository;
 import com.stratocloud.utils.JSON;
@@ -54,6 +55,13 @@ public class TencentCloudProvider extends AbstractProvider {
 
     public TencentCloudClient buildClient(ExternalAccount externalAccount){
         var properties = JSON.convert(externalAccount.getProperties(), TencentCloudAccountProperties.class);
+        return new TencentCloudClientImpl(properties, cacheService);
+    }
+
+    public TencentCloudClient buildClientWithRegion(ExternalAccount externalAccount,
+                                                    TencentCloudRegion region){
+        var properties = JSON.convert(externalAccount.getProperties(), TencentCloudAccountProperties.class);
+        properties.setRegion(region.getId());
         return new TencentCloudClientImpl(properties, cacheService);
     }
 

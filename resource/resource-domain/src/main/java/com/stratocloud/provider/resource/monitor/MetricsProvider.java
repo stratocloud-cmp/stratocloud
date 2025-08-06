@@ -8,6 +8,7 @@ import com.stratocloud.resource.alert.AlertStatus;
 import com.stratocloud.resource.alert.ExternalAlertHistory;
 import com.stratocloud.resource.monitor.Metric;
 import com.stratocloud.resource.monitor.MetricData;
+import com.stratocloud.resource.monitor.MetricSequence;
 import com.stratocloud.resource.monitor.ResourceQuickStats;
 import com.stratocloud.utils.Utils;
 
@@ -20,6 +21,12 @@ import java.util.Optional;
 public interface MetricsProvider {
 
     List<SupportedMetric> getSupportedMetrics();
+
+    default List<SupportedMetric> getSupportedMetrics(Resource resource){
+        return getSupportedMetrics().stream().filter(
+                m -> m.resourceCategory().id().equals(resource.getCategory())
+        ).toList();
+    }
 
     default int getMaxMetricsPullSize() {
         return 1400;
@@ -37,10 +44,8 @@ public interface MetricsProvider {
 
 
     default Optional<ResourceQuickStats> describeQuickStats(Resource resource){
-        List<SupportedMetric> quickStatsMetrics = getSupportedMetrics().stream().filter(
+        List<SupportedMetric> quickStatsMetrics = getSupportedMetrics(resource).stream().filter(
                 SupportedMetric::isQuickStatsMetric
-        ).filter(
-                m -> m.resourceCategory().id().equals(resource.getCategory())
         ).toList();
 
         if(quickStatsMetrics.isEmpty())
@@ -51,17 +56,20 @@ public interface MetricsProvider {
         Map<Metric, String> shortMetricNames = getShortMetricNames();
 
         for (SupportedMetric quickStatsMetric : quickStatsMetrics) {
+            int minPeriodSeconds = quickStatsMetric.metric().supportedPeriodSeconds().get(0);
+
             LocalDateTime to = LocalDateTime.now();
-            LocalDateTime from = to.minusMinutes(10);
+            LocalDateTime from = to.minusMinutes(Math.max(10, minPeriodSeconds * 2 / 60));
             MetricData metricData = describeMetricData(
                     resource,
                     quickStatsMetric,
                     from,
                     to,
-                    quickStatsMetric.metric().supportedPeriodSeconds().get(0)
+                    minPeriodSeconds
             );
-            if(Utils.isNotEmpty(metricData.sequences())){
-                double latestValue = metricData.sequences().get(0).latestValue();
+            List<MetricSequence> sequences = metricData.sequences();
+            if(Utils.isNotEmpty(sequences)){
+                double latestValue = getQuickStatsValue(quickStatsMetric, sequences);
                 String shortName = shortMetricNames.get(quickStatsMetric.metric());
 
                 builder.addItem(
@@ -75,6 +83,10 @@ public interface MetricsProvider {
         }
 
         return Optional.of(builder.build());
+    }
+
+    default double getQuickStatsValue(SupportedMetric quickStatsMetric, List<MetricSequence> sequences) {
+        return sequences.get(0).latestValue();
     }
 
 

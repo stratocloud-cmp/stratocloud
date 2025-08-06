@@ -1164,12 +1164,9 @@ public class ResourceServiceImpl implements ResourceService {
 
         Map<MetricGroup, List<Future<MetricData>>> futureMap = new LinkedHashMap<>();
 
-        List<SupportedMetric> supportedMetrics = metricsProvider.get().getSupportedMetrics();
+        List<SupportedMetric> supportedMetrics = metricsProvider.get().getSupportedMetrics(resource);
 
         for (SupportedMetric supportedMetric : supportedMetrics) {
-            if(!supportedMetric.resourceCategory().id().equals(resource.getCategory()))
-                continue;
-
             Metric metric = supportedMetric.metric();
 
             Long period = null;
@@ -1187,6 +1184,10 @@ public class ResourceServiceImpl implements ResourceService {
             LocalDateTime earliestFrom = to.minusSeconds(period * maxMetricsPullSize);
             if(from.isBefore(earliestFrom))
                 from = earliestFrom;
+
+            LocalDateTime latestFrom = to.minusSeconds(period * 5);
+            if(from.isAfter(latestFrom))
+                from = latestFrom;
 
             LocalDateTime finalFrom = from;
             LocalDateTime finalTo = to;

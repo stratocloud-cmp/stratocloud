@@ -1,5 +1,6 @@
 package com.stratocloud.provider.tencent.metric;
 
+import com.qcloud.cos.model.HeadBucketResult;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.event.StratoEventLevel;
 import com.stratocloud.provider.ResourceEventTypes;
@@ -9,7 +10,11 @@ import com.stratocloud.provider.resource.monitor.MetricsProvider;
 import com.stratocloud.provider.resource.monitor.SupportedMetric;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.common.TencentCloudClient;
+import com.stratocloud.provider.tencent.common.TencentCloudRegion;
 import com.stratocloud.provider.tencent.common.TencentTimeUtil;
+import com.stratocloud.provider.tencent.cos.session.CosSession;
+import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
+import com.stratocloud.provider.tencent.cos.session.CosSessionManager;
 import com.stratocloud.provider.tencent.instance.TencentInstanceUtil;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.alert.AlertStatus;
@@ -44,8 +49,32 @@ public class TencentMetricsProvider implements MetricsProvider {
                 OUT_RATIO,
                 LAN_IN_TRAFFIC, LAN_OUT_TRAFFIC, LAN_IN_PKG, LAN_OUT_PKG,
                 WAN_IN_TRAFFIC, WAN_OUT_TRAFFIC, WAN_IN_PKG, WAN_OUT_PKG,
-                VIP_OUT_TRAFFIC, VIP_IN_TRAFFIC
+                VIP_OUT_TRAFFIC, VIP_IN_TRAFFIC,
+                BUCKET_STD_STORAGE, BUCKET_MAZ_STD_STORAGE, BUCKET_IA_STORAGE, BUCKET_MAZ_IA_STORAGE,
+                BUCKET_ARC_STORAGE, BUCKET_MAZ_ARC_STORAGE, BUCKET_DEEP_ARC_STORAGE
         );
+    }
+
+    @Override
+    public List<SupportedMetric> getSupportedMetrics(Resource resource) {
+        if(Objects.equals(ResourceCategories.BUCKET.id(), resource.getCategory())){
+            CosSessionKey sessionKey = getClient(resource).getCosSessionKey();
+            CosSession cosSession = CosSessionManager.getSession(sessionKey);
+
+            Optional<HeadBucketResult> headBucketResult = cosSession.headBucket(resource.getExternalId());
+
+            if(headBucketResult.isPresent()){
+                boolean mazBucket = headBucketResult.get().isMazBucket();
+                if(mazBucket)
+                    return List.of(BUCKET_MAZ_STD_STORAGE, BUCKET_MAZ_IA_STORAGE, BUCKET_MAZ_ARC_STORAGE);
+                else
+                    return List.of(BUCKET_STD_STORAGE, BUCKET_IA_STORAGE, BUCKET_ARC_STORAGE, BUCKET_DEEP_ARC_STORAGE);
+            }else {
+                return List.of();
+            }
+        }
+
+        return MetricsProvider.super.getSupportedMetrics(resource);
     }
 
     private static List<MetricObject> getInstanceMetricObjects(Resource resource){
@@ -56,6 +85,19 @@ public class TencentMetricsProvider implements MetricsProvider {
                 new MetricObject(
                         List.of(
                                 new MetricDimension("InstanceId", resource.getExternalId())
+                        )
+                )
+        );
+    }
+
+    private static List<MetricObject> getBucketMetricObjects(Resource resource) {
+        if(Utils.isBlank(resource.getExternalId()))
+            return List.of();
+
+        return List.of(
+                new MetricObject(
+                        List.of(
+                                new MetricDimension("bucket", resource.getExternalId())
                         )
                 )
         );
@@ -152,7 +194,7 @@ public class TencentMetricsProvider implements MetricsProvider {
         request.setStartTime(TencentTimeUtil.fromLocalDateTime(from));
         request.setEndTime(TencentTimeUtil.fromLocalDateTime(to));
 
-        GetMonitorDataResponse response = getClient(resource).getMonitorData(request);
+        GetMonitorDataResponse response = getClient(resource, true).getMonitorData(request);
         DataPoint[] dataPoints = response.getDataPoints();
 
         if(Utils.isNotEmpty(dataPoints)){
@@ -207,11 +249,20 @@ public class TencentMetricsProvider implements MetricsProvider {
         ).map(Dimension::getValue).findAny();
     }
 
-    private static TencentCloudClient getClient(Resource resource) {
+    private static TencentCloudClient getClient(Resource resource, boolean specifiedBucketMetricsRegion) {
         ResourceHandler resourceHandler = resource.getResourceHandler();
         TencentCloudProvider provider = (TencentCloudProvider) resourceHandler.getProvider();
         ExternalAccount account = provider.getAccountRepository().findExternalAccount(resource.getAccountId());
+
+        if(specifiedBucketMetricsRegion && ResourceCategories.BUCKET.id().equals(resource.getCategory())){
+            return provider.buildClientWithRegion(account, TencentCloudRegion.GUANGZHOU);
+        }
+
         return provider.buildClient(account);
+    }
+
+    private static TencentCloudClient getClient(Resource resource) {
+        return getClient(resource, false);
     }
 
     private static Instance[] getInstancesArray(List<MetricObject> metricObjects) {
@@ -554,4 +605,77 @@ public class TencentMetricsProvider implements MetricsProvider {
             true,
             ResourceCategories.ELASTIC_IP
     );
+
+    public static final SupportedMetric BUCKET_STD_STORAGE = new SupportedMetric(
+            TencentMetrics.BUCKET_STD_STORAGE,
+            "bucket",
+            TencentMetricsProvider::getBucketMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.BUCKET
+    );
+
+    public static final SupportedMetric BUCKET_MAZ_STD_STORAGE = new SupportedMetric(
+            TencentMetrics.BUCKET_MAZ_STD_STORAGE,
+            "bucket",
+            TencentMetricsProvider::getBucketMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.BUCKET
+    );
+
+    public static final SupportedMetric BUCKET_IA_STORAGE = new SupportedMetric(
+            TencentMetrics.BUCKET_IA_STORAGE,
+            "bucket",
+            TencentMetricsProvider::getBucketMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.BUCKET
+    );
+
+    public static final SupportedMetric BUCKET_MAZ_IA_STORAGE = new SupportedMetric(
+            TencentMetrics.BUCKET_MAZ_IA_STORAGE,
+            "bucket",
+            TencentMetricsProvider::getBucketMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.BUCKET
+    );
+
+    public static final SupportedMetric BUCKET_ARC_STORAGE = new SupportedMetric(
+            TencentMetrics.BUCKET_ARC_STORAGE,
+            "bucket",
+            TencentMetricsProvider::getBucketMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.BUCKET
+    );
+
+    public static final SupportedMetric BUCKET_MAZ_ARC_STORAGE = new SupportedMetric(
+            TencentMetrics.BUCKET_MAZ_ARC_STORAGE,
+            "bucket",
+            TencentMetricsProvider::getBucketMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.BUCKET
+    );
+
+    public static final SupportedMetric BUCKET_DEEP_ARC_STORAGE = new SupportedMetric(
+            TencentMetrics.BUCKET_DEEP_ARC_STORAGE,
+            "bucket",
+            TencentMetricsProvider::getBucketMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.BUCKET
+    );
+
+
+
 }

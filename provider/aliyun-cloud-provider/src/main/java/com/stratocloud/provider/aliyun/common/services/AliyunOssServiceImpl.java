@@ -190,7 +190,7 @@ public class AliyunOssServiceImpl implements AliyunOssService {
     public void deleteBucket(String bucketName){
         if(doesBucketExist(bucketName)){
             tryRunnable(() -> buildClient().deleteBucket(bucketName));
-            log.info("Tencent cos bucket deleted. Bucket={}.", bucketName);
+            log.info("Aliyun oss bucket deleted. Bucket={}.", bucketName);
         }
     }
 
@@ -404,5 +404,10 @@ public class AliyunOssServiceImpl implements AliyunOssService {
                 )
         );
         log.info("Aliyun oss bucket access monitor set. Bucket={}.", bucketName);
+    }
+
+    @Override
+    public Optional<BucketStat> describeBucketStat(String bucketName){
+        return queryOssOne(() -> buildClient().getBucketStat(bucketName));
     }
 }

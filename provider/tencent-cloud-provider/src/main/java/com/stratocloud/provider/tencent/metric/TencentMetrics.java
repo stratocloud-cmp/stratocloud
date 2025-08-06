@@ -305,4 +305,89 @@ public class TencentMetrics {
             false,
             List.of(10, 60, 300, 3600, 86400)
     );
+
+    public static final Metric BUCKET_STD_STORAGE = new Metric(
+            "QCE/COS",
+            "StdStorage",
+            "标准存储容量",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.STORAGE_METRICS,
+            MetricValueType.VALUE,
+            false,
+            List.of(3600, 86400)
+    );
+
+    public static final Metric BUCKET_MAZ_STD_STORAGE = new Metric(
+            "QCE/COS",
+            "MazStdStorage",
+            "多AZ标准存储容量",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.STORAGE_METRICS,
+            MetricValueType.VALUE,
+            false,
+            List.of(3600, 86400)
+    );
+
+    public static final Metric BUCKET_IA_STORAGE = new Metric(
+            "QCE/COS",
+            "SiaStorage",
+            "低频访问存储容量",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.STORAGE_METRICS,
+            MetricValueType.VALUE,
+            false,
+            List.of(3600, 86400)
+    );
+
+    public static final Metric BUCKET_MAZ_IA_STORAGE = new Metric(
+            "QCE/COS",
+            "MazIaStorage",
+            "多AZ低频访问存储容量",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.STORAGE_METRICS,
+            MetricValueType.VALUE,
+            false,
+            List.of(3600, 86400)
+    );
+
+
+    public static final Metric BUCKET_ARC_STORAGE = new Metric(
+            "QCE/COS",
+            "ArcStorage",
+            "归档存储容量",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.STORAGE_METRICS,
+            MetricValueType.VALUE,
+            false,
+            List.of(3600, 86400)
+    );
+
+    public static final Metric BUCKET_MAZ_ARC_STORAGE = new Metric(
+            "QCE/COS",
+            "MazArcStorage",
+            "多AZ归档存储容量",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.STORAGE_METRICS,
+            MetricValueType.VALUE,
+            false,
+            List.of(3600, 86400)
+    );
+
+    public static final Metric BUCKET_DEEP_ARC_STORAGE = new Metric(
+            "QCE/COS",
+            "DeepArcStorage",
+            "深度归档存储容量",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.STORAGE_METRICS,
+            MetricValueType.VALUE,
+            false,
+            List.of(3600, 86400)
+    );
 }

@@ -56,7 +56,7 @@ public class TencentBucketUpdateLifecycleInput implements ResourceActionInput {
     public enum StorageClass {
         STANDARD_IA("STANDARD_IA", "MAZ_STANDARD_IA"),
         ARCHIVE("ARCHIVE", "MAZ_ARCHIVE"),
-        DEEP_ARCHIVE("DEEP_ARCHIVE", "MAZ_DEEP_ARCHIVE"),
+        DEEP_ARCHIVE("DEEP_ARCHIVE", "DEEP_ARCHIVE"),
         UNKNOWN("UNKNOWN", "UNKNOWN");
 
         private final String singleAzName;

@@ -329,4 +329,19 @@ public class AliyunMetrics {
             false,
             List.of(60)
     );
+
+
+    public static final Metric BUCKET_STORAGE = new Metric(
+            "acs_oss_dashboard",
+            "MeteringStorageUtilization",
+            "存储空间",
+            "B",
+            MetricType.TIME_SERIES,
+            MetricGroup.STORAGE_METRICS,
+            MetricValueType.VALUE,
+            false,
+            List.of(3600)
+    );
+
+
 }
