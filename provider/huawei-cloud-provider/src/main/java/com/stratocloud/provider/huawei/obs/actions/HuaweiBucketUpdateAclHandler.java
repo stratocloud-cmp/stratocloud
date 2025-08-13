@@ -1,14 +1,13 @@
-package com.stratocloud.provider.aliyun.oss.actions;
+package com.stratocloud.provider.huawei.obs.actions;
 
-import com.aliyun.oss.model.Bucket;
-import com.aliyun.oss.model.CreateBucketRequest;
+import com.obs.services.model.AccessControlList;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
-import com.stratocloud.provider.aliyun.AliyunCloudProvider;
-import com.stratocloud.provider.aliyun.common.AliyunClient;
-import com.stratocloud.provider.aliyun.oss.AliyunBucketHandler;
-import com.stratocloud.provider.aliyun.oss.AliyunBucketSpec;
+import com.stratocloud.provider.constants.BucketActions;
+import com.stratocloud.provider.huawei.HuaweiCloudProvider;
+import com.stratocloud.provider.huawei.common.services.HuaweiObsService;
+import com.stratocloud.provider.huawei.obs.HuaweiBucketHandler;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
@@ -23,11 +22,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class AliyunBucketUpdateHandler implements ResourceActionHandler {
+public class HuaweiBucketUpdateAclHandler implements ResourceActionHandler {
 
-    private final AliyunBucketHandler bucketHandler;
+    private final HuaweiBucketHandler bucketHandler;
 
-    public AliyunBucketUpdateHandler(AliyunBucketHandler bucketHandler) {
+    public HuaweiBucketUpdateAclHandler(HuaweiBucketHandler bucketHandler) {
         this.bucketHandler = bucketHandler;
     }
 
@@ -38,12 +37,12 @@ public class AliyunBucketUpdateHandler implements ResourceActionHandler {
 
     @Override
     public ResourceAction getAction() {
-        return ResourceActions.UPDATE;
+        return BucketActions.UPDATE_ACL;
     }
 
     @Override
     public String getTaskName() {
-        return "更新存储桶";
+        return "配置存储桶ACL";
     }
 
     @Override
@@ -62,44 +61,37 @@ public class AliyunBucketUpdateHandler implements ResourceActionHandler {
             return Optional.empty();
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        AliyunCloudProvider provider = (AliyunCloudProvider) bucketHandler.getProvider();
-        AliyunClient client = provider.buildClient(account);
+        HuaweiCloudProvider provider = (HuaweiCloudProvider) bucketHandler.getProvider();
+        HuaweiObsService obsService = provider.buildClient(account).obs();
 
-        AliyunBucketUpdateInput input = AliyunBucketSpec.getSpec(
-                client,
-                resource.getExternalId(),
-                AliyunBucketUpdateInput::new
-        );
+        Optional<AccessControlList> acl = obsService.describeBucketAcl(resource.getExternalId());
+        if(acl.isEmpty())
+            return Optional.empty();
 
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(AliyunBucketUpdateInput.class);
+        HuaweiBucketUpdateAclInput input = HuaweiBucketUpdateAclInput.fromAcl(acl.get());
 
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(HuaweiBucketUpdateAclInput.class);
         formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
+
         return Optional.of(formMetaData);
     }
 
     @Override
     public Class<? extends ResourceActionInput> getInputClass() {
-        return AliyunBucketUpdateInput.class;
+        return HuaweiBucketUpdateAclInput.class;
     }
 
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        AliyunBucketUpdateInput input = JSON.convert(parameters, AliyunBucketUpdateInput.class);
+        HuaweiBucketUpdateAclInput input = JSON.convert(parameters, HuaweiBucketUpdateAclInput.class);
+
+        AccessControlList accessControlList = input.toAcl();
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        AliyunCloudProvider provider = (AliyunCloudProvider) bucketHandler.getProvider();
-        AliyunClient client = provider.buildClient(account);
+        HuaweiCloudProvider provider = (HuaweiCloudProvider) bucketHandler.getProvider();
+        HuaweiObsService obsService = provider.buildClient(account).obs();
 
-        CreateBucketRequest request = new CreateBucketRequest(resource.getExternalId());
-        request.setCannedACL(input.getAclType());
-        request.setStorageClass(input.getStorageClass());
-        request.setDataRedundancyType(input.getRedundancyType());
-
-        Bucket bucket = client.oss().createBucket(request);
-        resource.setExternalId(bucket.getName());
-
-        input.applyVersioningQuietly(client, bucket.getName());
-        input.applyEncryptionQuietly(client, bucket.getName());
+        obsService.setBucketAcl(resource.getExternalId(), accessControlList);
     }
 
     @Override

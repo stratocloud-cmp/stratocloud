@@ -65,7 +65,7 @@ public class AliyunBucketSpec {
                     "本地冗余",
                     "同城冗余"
             },
-            defaultValues = "LRS"
+            defaultValues = "ZRS"
     )
     private DataRedundancyType redundancyType;
 

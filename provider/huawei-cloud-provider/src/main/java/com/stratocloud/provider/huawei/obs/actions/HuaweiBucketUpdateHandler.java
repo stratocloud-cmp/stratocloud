@@ -1,14 +1,15 @@
-package com.stratocloud.provider.aliyun.oss.actions;
+package com.stratocloud.provider.huawei.obs.actions;
 
-import com.aliyun.oss.model.Bucket;
-import com.aliyun.oss.model.CreateBucketRequest;
+import com.obs.services.model.ObsBucket;
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.info.DynamicFormMetaData;
-import com.stratocloud.provider.aliyun.AliyunCloudProvider;
-import com.stratocloud.provider.aliyun.common.AliyunClient;
-import com.stratocloud.provider.aliyun.oss.AliyunBucketHandler;
-import com.stratocloud.provider.aliyun.oss.AliyunBucketSpec;
+import com.stratocloud.provider.huawei.HuaweiCloudProvider;
+import com.stratocloud.provider.huawei.common.HuaweiCloudClient;
+import com.stratocloud.provider.huawei.common.services.HuaweiObsService;
+import com.stratocloud.provider.huawei.obs.HuaweiBucketHandler;
+import com.stratocloud.provider.huawei.obs.HuaweiBucketSpec;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
@@ -23,11 +24,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class AliyunBucketUpdateHandler implements ResourceActionHandler {
+public class HuaweiBucketUpdateHandler implements ResourceActionHandler {
 
-    private final AliyunBucketHandler bucketHandler;
+    private final HuaweiBucketHandler bucketHandler;
 
-    public AliyunBucketUpdateHandler(AliyunBucketHandler bucketHandler) {
+    public HuaweiBucketUpdateHandler(HuaweiBucketHandler bucketHandler) {
         this.bucketHandler = bucketHandler;
     }
 
@@ -62,44 +63,42 @@ public class AliyunBucketUpdateHandler implements ResourceActionHandler {
             return Optional.empty();
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        AliyunCloudProvider provider = (AliyunCloudProvider) bucketHandler.getProvider();
-        AliyunClient client = provider.buildClient(account);
+        HuaweiCloudProvider provider = (HuaweiCloudProvider) bucketHandler.getProvider();
+        HuaweiCloudClient client = provider.buildClient(account);
 
-        AliyunBucketUpdateInput input = AliyunBucketSpec.getSpec(
+        HuaweiBucketUpdateInput input = HuaweiBucketSpec.getSpec(
                 client,
                 resource.getExternalId(),
-                AliyunBucketUpdateInput::new
+                HuaweiBucketUpdateInput::new
         );
 
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(AliyunBucketUpdateInput.class);
-
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(HuaweiBucketUpdateInput.class);
         formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
+
         return Optional.of(formMetaData);
     }
 
     @Override
     public Class<? extends ResourceActionInput> getInputClass() {
-        return AliyunBucketUpdateInput.class;
+        return HuaweiBucketUpdateInput.class;
     }
 
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        AliyunBucketUpdateInput input = JSON.convert(parameters, AliyunBucketUpdateInput.class);
+        HuaweiBucketUpdateInput input = JSON.convert(parameters, HuaweiBucketUpdateInput.class);
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        AliyunCloudProvider provider = (AliyunCloudProvider) bucketHandler.getProvider();
-        AliyunClient client = provider.buildClient(account);
+        HuaweiCloudProvider provider = (HuaweiCloudProvider) bucketHandler.getProvider();
+        HuaweiCloudClient client = provider.buildClient(account);
+        HuaweiObsService obsService = client.obs();
 
-        CreateBucketRequest request = new CreateBucketRequest(resource.getExternalId());
-        request.setCannedACL(input.getAclType());
-        request.setStorageClass(input.getStorageClass());
-        request.setDataRedundancyType(input.getRedundancyType());
+        ObsBucket obsBucket = obsService.describeBucket(resource.getExternalId()).orElseThrow(
+                () -> new StratoException("Bucket not found")
+        );
 
-        Bucket bucket = client.oss().createBucket(request);
-        resource.setExternalId(bucket.getName());
-
-        input.applyVersioningQuietly(client, bucket.getName());
-        input.applyEncryptionQuietly(client, bucket.getName());
+        input.applyStorageClassQuietly(client, obsBucket.getBucketName());
+        input.applyVersioningQuietly(client, obsBucket.getBucketName());
+        input.applyEncryptionQuietly(client, obsBucket.getBucketName());
     }
 
     @Override

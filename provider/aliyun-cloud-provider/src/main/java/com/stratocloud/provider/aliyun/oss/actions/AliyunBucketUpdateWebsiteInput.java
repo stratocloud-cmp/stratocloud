@@ -21,9 +21,9 @@ public class AliyunBucketUpdateWebsiteInput implements ResourceActionInput {
     @BooleanField(label = "启用静态网站")
     private boolean enabled;
 
-    @InputField(label = "默认首页", required = false)
+    @InputField(label = "默认首页", required = false, conditions = "this.enabled === true")
     private String indexDocument;
-    @BooleanField(label = "开通子目录首页", conditions = "this.indexDocument !== ''")
+    @BooleanField(label = "开通子目录首页", conditions = "this.enabled === true && this.indexDocument !== ''")
     private boolean supportSubDir;
     @SelectField(
             label = "文件404规则",
@@ -38,10 +38,10 @@ public class AliyunBucketUpdateWebsiteInput implements ResourceActionInput {
                     "Index"
             },
             defaultValues = "Redirect",
-            conditions = "this.indexDocument !== '' && this.supportSubDir === true"
+            conditions = "this.enabled === true && this.indexDocument !== '' && this.supportSubDir === true"
     )
     private String subDirType;
-    @InputField(label = "默认404页", required = false)
+    @InputField(label = "默认404页", required = false, conditions = "this.enabled === true")
     private String errorDocument;
     @SelectField(
             label = "错误文档响应码",
@@ -54,7 +54,7 @@ public class AliyunBucketUpdateWebsiteInput implements ResourceActionInput {
                     "200"
             },
             defaultValues = "404",
-            conditions = "this.errorDocument !== ''"
+            conditions = "this.enabled === true && this.errorDocument !== ''"
     )
     private String httpStatus;
 

@@ -1,41 +1,52 @@
-package com.stratocloud.provider.tencent.cos.bucket.actions;
+package com.stratocloud.provider.huawei.obs.actions;
 
-import com.qcloud.cos.model.RedirectRule;
-import com.qcloud.cos.model.RoutingRule;
+import com.obs.services.model.ProtocolEnum;
+import com.obs.services.model.RedirectAllRequest;
+import com.obs.services.model.RouteRule;
 import com.stratocloud.form.*;
+import com.stratocloud.provider.huawei.HuaweiCloudProvider;
+import com.stratocloud.provider.huawei.common.HuaweiCloudClient;
+import com.stratocloud.provider.huawei.common.services.HuaweiObsService;
 import com.stratocloud.provider.resource.ResourceActionInput;
-import com.stratocloud.provider.tencent.TencentCloudProvider;
-import com.stratocloud.provider.tencent.common.TencentCloudClient;
-import com.stratocloud.provider.tencent.cos.session.CosSession;
-import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
-import com.stratocloud.provider.tencent.cos.session.CosSessionManager;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.utils.Utils;
 import lombok.Data;
 
 import java.util.List;
-import java.util.Objects;
 
 @Data
-public class TencentBucketUpdateWebsiteInput implements ResourceActionInput {
+public class HuaweiBucketUpdateWebsiteInput implements ResourceActionInput {
     @BooleanField(label = "启用静态网站", defaultValue = true)
     private boolean enabled;
 
-    @InputField(label = "访问节点", required = false, disabled = true, conditions = "this.enabled === true")
-    private String websiteDomainName;
+    @BooleanField(label = "重定向所有请求")
+    private boolean redirectAllRequests;
 
-    @InputField(label = "索引文档", defaultValue = "index.html", conditions = "this.enabled === true")
+    @BooleanField(label = "强制HTTPS", conditions = "this.enabled === true && this.redirectAllRequests === true")
+    private boolean forceHttps;
+
+    @InputField(label = "重定向至", conditions = "this.enabled === true && this.redirectAllRequests === true")
+    private String redirectToHostName;
+
+    @InputField(
+            label = "索引文档",
+            defaultValue = "index.html",
+            conditions = "this.enabled === true && this.redirectAllRequests === false"
+    )
     private String indexDocumentSuffix;
-    @InputField(label = "错误文档", defaultValue = "error.html", conditions = "this.enabled === true")
+    @InputField(
+            label = "错误文档",
+            defaultValue = "error.html",
+            conditions = "this.enabled === true && this.redirectAllRequests === false"
+    )
     private String errorDocument;
 
-    @BooleanField(label = "强制HTTPS", conditions = "this.enabled === true")
-    private boolean forceHttps;
+
 
     @NestedFormField(
             label = "重定向规则",
             nestedFormClass = RoutingRuleInput.class,
-            conditions = "this.enabled === true",
+            conditions = "this.enabled === true && this.redirectAllRequests === false",
             multiple = true
     )
     private List<RoutingRuleInput> routingRules;
@@ -93,34 +104,32 @@ public class TencentBucketUpdateWebsiteInput implements ResourceActionInput {
         private String replaceKeyPrefixWith;
     }
 
-    public static TencentBucketUpdateWebsiteInput getInput(Resource bucketResource){
-        var provider = (TencentCloudProvider) bucketResource.getResourceHandler().getProvider();
+    public static HuaweiBucketUpdateWebsiteInput getInput(Resource bucketResource){
+        var provider = (HuaweiCloudProvider) bucketResource.getResourceHandler().getProvider();
         var account = provider.getAccountRepository().findExternalAccount(bucketResource.getAccountId());
-        TencentCloudClient client = provider.buildClient(account);
-        CosSessionKey sessionKey = client.getCosSessionKey();
-        CosSession cosSession = CosSessionManager.getSession(sessionKey);
-        var website = cosSession.describeBucketWebsite(
+        HuaweiCloudClient client = provider.buildClient(account);
+
+        HuaweiObsService obsService = client.obs();
+
+        var website = obsService.describeBucketWebsite(
                 bucketResource.getExternalId()
         );
 
-        TencentBucketUpdateWebsiteInput t = new TencentBucketUpdateWebsiteInput();
-
-        t.setWebsiteDomainName(
-                "https://%s.cos-website.%s.myqcloud.com".formatted(
-                        bucketResource.getExternalId(),
-                        client.getRegion()
-                )
-        );
+        HuaweiBucketUpdateWebsiteInput t = new HuaweiBucketUpdateWebsiteInput();
 
         if(website.isPresent()){
             t.setEnabled(true);
-            t.setIndexDocumentSuffix(website.get().getIndexDocumentSuffix());
-            t.setErrorDocument(website.get().getErrorDocument());
-            t.setRoutingRules(convertRoutingRules(website.get().getRoutingRules()));
 
-            RedirectRule allRequestsTo = website.get().getRedirectAllRequestsTo();
-            if(allRequestsTo != null && Objects.equals(allRequestsTo.getprotocol(), "https"))
-                t.setForceHttps(true);
+            RedirectAllRequest redirectAllRequest = website.get().getRedirectAllRequestsTo();
+
+            if(redirectAllRequest != null){
+                t.setRedirectToHostName(redirectAllRequest.getHostName());
+                t.setForceHttps(redirectAllRequest.getRedirectProtocol() == ProtocolEnum.HTTPS);
+            }else {
+                t.setIndexDocumentSuffix(website.get().getSuffix());
+                t.setErrorDocument(website.get().getKey());
+                t.setRoutingRules(convertRoutingRules(website.get().getRouteRules()));
+            }
         } else {
             t.setEnabled(false);
         }
@@ -128,7 +137,7 @@ public class TencentBucketUpdateWebsiteInput implements ResourceActionInput {
         return t;
     }
 
-    private static List<RoutingRuleInput> convertRoutingRules(List<RoutingRule> routingRules) {
+    private static List<RoutingRuleInput> convertRoutingRules(List<RouteRule> routingRules) {
         if(Utils.isEmpty(routingRules))
             return List.of();
         return routingRules.stream().map(
@@ -153,7 +162,7 @@ public class TencentBucketUpdateWebsiteInput implements ResourceActionInput {
                     }
 
                     ruleInput.setForceHttps(
-                            Objects.equals(routingRule.getRedirect().getprotocol(), "https")
+                            routingRule.getRedirect().getRedirectProtocol() == ProtocolEnum.HTTPS
                     );
 
                     return ruleInput;

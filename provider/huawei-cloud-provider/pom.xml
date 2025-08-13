@@ -80,6 +80,13 @@
             <version>3.1.134</version>
         </dependency>
 
+
+        <dependency>
+            <groupId>com.huaweicloud</groupId>
+            <artifactId>esdk-obs-java</artifactId>
+            <version>3.25.7</version>
+        </dependency>
+
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>provider-common</artifactId>

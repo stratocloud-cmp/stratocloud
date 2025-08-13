@@ -53,9 +53,9 @@ public class AliyunBucketBuildHandler implements BuildResourceActionHandler {
         AliyunClient client = provider.buildClient(account);
 
         CreateBucketRequest request = new CreateBucketRequest(resource.getName());
-        request.setCannedACL(request.getCannedACL());
-        request.setStorageClass(request.getStorageClass());
-        request.setDataRedundancyType(request.getDataRedundancyType());
+        request.setCannedACL(input.getAclType());
+        request.setStorageClass(input.getStorageClass());
+        request.setDataRedundancyType(input.getRedundancyType());
 
         Bucket bucket = client.oss().createBucket(request);
         resource.setExternalId(bucket.getName());
