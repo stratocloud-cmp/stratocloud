@@ -264,21 +264,7 @@ public class ResourceCategories {
             "relational-db",
             251
     );
-    public static final ResourceCategory CLOUD_DATABASE_FLAVOR = new ResourceCategory(
-            ResourceCategoryGroups.CLOUD_DB_RELATED,
-            "CLOUD_DATABASE_FLAVOR",
-            "云数据库规格",
-            "db-flavor",
-            252
-    );
 
-    public static final ResourceCategory CLOUD_MQ = new ResourceCategory(
-            ResourceCategoryGroups.CLOUD_MQ_RELATED,
-            "CLOUD_MQ",
-            "云消息队列实例",
-            "cloud-mq",
-            261
-    );
     public static final ResourceCategory INSTANCE_SNAPSHOT = new ResourceCategory(
             ResourceCategoryGroups.COMPUTE_INSTANCE_RELATED,
             "INSTANCE_SNAPSHOT",

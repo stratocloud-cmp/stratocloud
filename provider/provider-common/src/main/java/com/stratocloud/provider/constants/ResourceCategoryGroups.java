@@ -27,10 +27,6 @@ public class ResourceCategoryGroups {
             "CLOUD_DB_RELATED", "云数据库"
     );
 
-    public static final ResourceCategoryGroup CLOUD_MQ_RELATED = new ResourceCategoryGroup(
-            "CLOUD_MQ_RELATED", "云消息队列"
-    );
-
     public static final ResourceCategoryGroup DEVOPS_RELATED = new ResourceCategoryGroup(
             "DEVOPS_RELATED", "运维自动化"
     );
