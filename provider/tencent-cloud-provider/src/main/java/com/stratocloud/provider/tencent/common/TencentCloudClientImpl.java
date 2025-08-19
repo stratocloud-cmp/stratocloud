@@ -29,6 +29,10 @@ import com.tencentcloudapi.cam.v20190116.models.GetUserAppIdResponse;
 import com.tencentcloudapi.cbs.v20170312.CbsClient;
 import com.tencentcloudapi.cbs.v20170312.models.Snapshot;
 import com.tencentcloudapi.cbs.v20170312.models.*;
+import com.tencentcloudapi.cdb.v20170320.CdbClient;
+import com.tencentcloudapi.cdb.v20170320.models.*;
+import com.tencentcloudapi.cdb.v20170320.models.AssociateSecurityGroupsRequest;
+import com.tencentcloudapi.cdb.v20170320.models.DisassociateSecurityGroupsRequest;
 import com.tencentcloudapi.clb.v20180317.ClbClient;
 import com.tencentcloudapi.clb.v20180317.models.*;
 import com.tencentcloudapi.cloudaudit.v20190319.CloudauditClient;
@@ -63,6 +67,7 @@ import com.tencentcloudapi.tat.v20201028.TatClient;
 import com.tencentcloudapi.tat.v20201028.models.*;
 import com.tencentcloudapi.vpc.v20170312.VpcClient;
 import com.tencentcloudapi.vpc.v20170312.models.*;
+import com.tencentcloudapi.vpc.v20170312.models.SecurityGroup;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -185,6 +190,10 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
     private TatClient buildTatClient(){
         return new TatClient(credential, region, createClientProfile());
+    }
+
+    private CdbClient buildCdbClient(){
+        return new CdbClient(credential, region, createClientProfile());
     }
 
     private CloudauditClient buildAuditClient(){
@@ -2037,5 +2046,186 @@ public class TencentCloudClientImpl implements TencentCloudClient{
     @Override
     public CosSessionKey getCosSessionKey(){
         return new CosSessionKey(credential.getSecretId(), credential.getSecretKey(), region);
+    }
+
+    @Override
+    public List<InstanceInfo> describeCdbInstances(DescribeDBInstancesRequest request){
+        return queryAll(
+                () -> buildCdbClient().DescribeDBInstances(request),
+                DescribeDBInstancesResponse::getItems,
+                DescribeDBInstancesResponse::getTotalCount,
+                request::setOffset,
+                request::setLimit
+        );
+    }
+
+    @Override
+    public Optional<InstanceInfo> describeCdbInstance(String instanceId){
+        DescribeDBInstancesRequest request = new DescribeDBInstancesRequest();
+        request.setInstanceIds(new String[]{instanceId});
+        return describeCdbInstances(request).stream().findAny();
+    }
+
+    @Override
+    public String createCdbInstance(CreateDBInstanceRequest request){
+        if(request.getGoodsNum() != null && request.getGoodsNum() > 1)
+            throw new StratoException("Do not create multiple db instances via this method");
+
+        CreateDBInstanceResponse response = tryInvoke(() -> buildCdbClient().CreateDBInstance(request));
+        String[] instanceIds = response.getInstanceIds();
+
+        if(Utils.isEmpty(instanceIds))
+            return null;
+
+        log.info("Tencent create CDB instance request sent. InstanceId={}. RequestId={}.",
+                instanceIds[0], response.getRequestId());
+        return instanceIds[0];
+    }
+
+    @Override
+    public String createCdbHourInstance(CreateDBInstanceHourRequest request){
+        if(request.getGoodsNum() != null && request.getGoodsNum() > 1)
+            throw new StratoException("Do not create multiple db instances via this method");
+
+        CreateDBInstanceHourResponse response = tryInvoke(() -> buildCdbClient().CreateDBInstanceHour(request));
+        String[] instanceIds = response.getInstanceIds();
+
+        if(Utils.isEmpty(instanceIds))
+            return null;
+
+        log.info("Tencent create CDB instance hour request sent. InstanceId={}. RequestId={}.",
+                instanceIds[0], response.getRequestId());
+        return instanceIds[0];
+    }
+
+    @Override
+    public void isolateCdbInstance(String instanceId){
+        IsolateDBInstanceRequest request = new IsolateDBInstanceRequest();
+        request.setInstanceId(instanceId);
+        IsolateDBInstanceResponse response = tryInvoke(
+                () -> buildCdbClient().IsolateDBInstance(request)
+        );
+        log.info("Tencent isolate CDB instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void offlineCdbInstance(String instanceId){
+        OfflineIsolatedInstancesRequest request = new OfflineIsolatedInstancesRequest();
+        request.setInstanceIds(new String[]{instanceId});
+        OfflineIsolatedInstancesResponse response = tryInvoke(
+                () -> buildCdbClient().OfflineIsolatedInstances(request)
+        );
+        log.info("Tencent offline CDB instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void releaseIsolatedHourInstance(String instanceId){
+        ReleaseIsolatedDBInstancesRequest request = new ReleaseIsolatedDBInstancesRequest();
+        request.setInstanceIds(new String[]{instanceId});
+        ReleaseIsolatedDBInstancesResponse response = tryInvoke(
+                () -> buildCdbClient().ReleaseIsolatedDBInstances(request)
+        );
+        log.info("Tencent release isolated CDB hour instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void renewCdbInstance(RenewDBInstanceRequest request){
+        RenewDBInstanceResponse response = tryInvoke(() -> buildCdbClient().RenewDBInstance(request));
+        log.info("Tencent renew CDB instance request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public DescribeCdbZoneConfigResponse describeCdbZoneConfig(){
+        return CacheUtil.queryWithCache(
+                cacheService,
+                buildCacheKey("CdbZoneConfig"),
+                3000L,
+                this::doDescribeCdbZoneConfig,
+                new DescribeCdbZoneConfigResponse()
+        );
+    }
+
+    private DescribeCdbZoneConfigResponse doDescribeCdbZoneConfig() {
+        DescribeCdbZoneConfigRequest request = new DescribeCdbZoneConfigRequest();
+        return tryInvoke(() -> buildCdbClient().DescribeCdbZoneConfig(request));
+    }
+
+    @Override
+    public Optional<CdbSellConfig> describeCdbSellConfig(String sellConfigId){
+        return describeCdbSellConfigs().stream().filter(
+                c -> Objects.equals(String.valueOf(c.getId()), sellConfigId)
+        ).findAny();
+    }
+
+    @Override
+    public List<CdbSellConfig> describeCdbSellConfigs() {
+        DescribeCdbZoneConfigResponse zoneConfig = describeCdbZoneConfig();
+        CdbZoneDataResult zoneConfigDataResult = zoneConfig.getDataResult();
+
+        if(zoneConfigDataResult== null || zoneConfigDataResult.getConfigs() == null)
+            return List.of();
+
+        return List.of(zoneConfigDataResult.getConfigs());
+    }
+
+    @Override
+    public void associateCdbToSecurityGroup(String cdbInstanceId, String securityGroupId) {
+        var request = new AssociateSecurityGroupsRequest();
+        request.setInstanceIds(new String[]{cdbInstanceId});
+        request.setSecurityGroupId(securityGroupId);
+
+        var response = tryInvoke(() -> buildCdbClient().AssociateSecurityGroups(request));
+
+        log.info("Tencent associate cdb to security group request sent. CdbInstanceId={}. SecurityGroupId={}. RequestId={}.",
+                cdbInstanceId, securityGroupId, response.getRequestId());
+    }
+
+    @Override
+    public void disassociateCdbFromSecurityGroup(String cdbInstanceId, String securityGroupId) {
+        var request = new DisassociateSecurityGroupsRequest();
+        request.setInstanceIds(new String[]{cdbInstanceId});
+        request.setSecurityGroupId(securityGroupId);
+        var response = tryInvoke(() -> buildCdbClient().DisassociateSecurityGroups(request));
+
+        log.info("Tencent disassociate cdb from security group request sent. CdbInstanceId={}. SecurityGroupId={}. RequestId={}.",
+                cdbInstanceId, securityGroupId, response.getRequestId());
+    }
+
+    @Override
+    public List<com.tencentcloudapi.cdb.v20170320.models.SecurityGroup> describeCdbSecurityGroups(String instanceId) {
+        DescribeDBSecurityGroupsRequest request = new DescribeDBSecurityGroupsRequest();
+        request.setInstanceId(instanceId);
+        DescribeDBSecurityGroupsResponse response = tryInvoke(
+                () -> buildCdbClient().DescribeDBSecurityGroups(request)
+        );
+
+        if(response.getGroups() == null)
+            return List.of();
+
+        return List.of(response.getGroups());
+    }
+
+    @Override
+    public DescribeDefaultParamsResponse describeCdbDefaultParams(DescribeDefaultParamsRequest request){
+        return CacheUtil.queryWithCache(
+                cacheService,
+                buildCacheKey("CdbDefaultParams", request),
+                3000L,
+                () -> doDescribeCdbDefaultParams(request),
+                new DescribeDefaultParamsResponse()
+        );
+    }
+
+    private DescribeDefaultParamsResponse doDescribeCdbDefaultParams(DescribeDefaultParamsRequest request) {
+        return tryInvoke(() -> buildCdbClient().DescribeDefaultParams(request));
+    }
+
+    @Override
+    public DescribeDBPriceResponse describeCdbPrice(DescribeDBPriceRequest request){
+        return tryInvoke(() -> buildCdbClient().DescribeDBPrice(request));
     }
 }

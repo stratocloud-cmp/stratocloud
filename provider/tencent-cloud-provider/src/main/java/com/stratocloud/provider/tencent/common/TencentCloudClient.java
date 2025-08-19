@@ -14,6 +14,7 @@ import com.stratocloud.provider.tencent.securitygroup.policy.TencentSecurityGrou
 import com.tencentcloudapi.cam.v20190116.models.GetUserAppIdResponse;
 import com.tencentcloudapi.cbs.v20170312.models.Snapshot;
 import com.tencentcloudapi.cbs.v20170312.models.*;
+import com.tencentcloudapi.cdb.v20170320.models.*;
 import com.tencentcloudapi.clb.v20180317.models.*;
 import com.tencentcloudapi.cloudaudit.v20190319.models.Event;
 import com.tencentcloudapi.cvm.v20170312.models.Image;
@@ -28,6 +29,7 @@ import com.tencentcloudapi.ssl.v20191205.models.CreateCertificateRequest;
 import com.tencentcloudapi.ssl.v20191205.models.DescribeCertificatesRequest;
 import com.tencentcloudapi.tat.v20201028.models.*;
 import com.tencentcloudapi.vpc.v20170312.models.*;
+import com.tencentcloudapi.vpc.v20170312.models.SecurityGroup;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -308,4 +310,36 @@ public interface TencentCloudClient {
                                               LocalDateTime startTime);
 
     CosSessionKey getCosSessionKey();
+
+    List<InstanceInfo> describeCdbInstances(DescribeDBInstancesRequest request);
+
+    Optional<InstanceInfo> describeCdbInstance(String instanceId);
+
+    String createCdbInstance(CreateDBInstanceRequest request);
+
+    String createCdbHourInstance(CreateDBInstanceHourRequest request);
+
+    void isolateCdbInstance(String instanceId);
+
+    void offlineCdbInstance(String instanceId);
+
+    void releaseIsolatedHourInstance(String instanceId);
+
+    void renewCdbInstance(RenewDBInstanceRequest request);
+
+    DescribeCdbZoneConfigResponse describeCdbZoneConfig();
+
+    Optional<CdbSellConfig> describeCdbSellConfig(String sellConfigId);
+
+    List<CdbSellConfig> describeCdbSellConfigs();
+
+    void associateCdbToSecurityGroup(String cdbInstanceId, String securityGroupId);
+
+    void disassociateCdbFromSecurityGroup(String cdbInstanceId, String securityGroupId);
+
+    List<com.tencentcloudapi.cdb.v20170320.models.SecurityGroup> describeCdbSecurityGroups(String instanceId);
+
+    DescribeDefaultParamsResponse describeCdbDefaultParams(DescribeDefaultParamsRequest request);
+
+    DescribeDBPriceResponse describeCdbPrice(DescribeDBPriceRequest request);
 }

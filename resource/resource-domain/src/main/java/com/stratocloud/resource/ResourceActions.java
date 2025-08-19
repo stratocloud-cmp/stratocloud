@@ -26,6 +26,10 @@ public class ResourceActions {
             "MODIFY_CHARGE_TYPE", "变更付费方式", 20
     );
 
+    public static final ResourceAction RENEW = new ResourceAction(
+            "RENEW", "续费", 21
+    );
+
 
     public static final ResourceAction READ_PRIVATE_KEY = new ResourceAction(
             "READ_PRIVATE_KEY", "查看私钥", 99

@@ -256,12 +256,20 @@ public class ResourceCategories {
             999
     );
 
-    public static final ResourceCategory CLOUD_DATABASE = new ResourceCategory(
+
+    public static final ResourceCategory CLOUD_RELATIONAL_DATABASE = new ResourceCategory(
             ResourceCategoryGroups.CLOUD_DB_RELATED,
-            "CLOUD_DATABASE",
-            "云数据库实例",
-            "cloud-db",
+            "CLOUD_RELATIONAL_DATABASE",
+            "关系型数据库",
+            "relational-db",
             251
+    );
+    public static final ResourceCategory CLOUD_DATABASE_FLAVOR = new ResourceCategory(
+            ResourceCategoryGroups.CLOUD_DB_RELATED,
+            "CLOUD_DATABASE_FLAVOR",
+            "云数据库规格",
+            "db-flavor",
+            252
     );
 
     public static final ResourceCategory CLOUD_MQ = new ResourceCategory(

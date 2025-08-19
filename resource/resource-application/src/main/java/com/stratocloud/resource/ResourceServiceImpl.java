@@ -467,7 +467,7 @@ public class ResourceServiceImpl implements ResourceService {
         String actionId = request.getActionId();
 
         Long networkResourceId = null;
-        Resource resource = null;
+        Resource resource;
 
         if(resourceId != null) {
             resource = repository.findResource(resourceId);
@@ -481,6 +481,9 @@ public class ResourceServiceImpl implements ResourceService {
 
             if(networkResource.isPresent())
                 networkResourceId = networkResource.get().getId();
+        } else {
+            resource = new Resource();
+            resource.setAccountId(request.getAccountId());
         }
 
         ResourceHandler resourceHandler = ProviderRegistry.getResourceHandler(resourceTypeId);

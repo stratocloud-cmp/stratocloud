@@ -9,6 +9,7 @@ import lombok.Data;
 public class DescribeResourceActionFormRequest implements QueryRequest {
     private String resourceTypeId;
     private Long resourceId;
+    private Long accountId;
     private String actionId;
 
     @Override

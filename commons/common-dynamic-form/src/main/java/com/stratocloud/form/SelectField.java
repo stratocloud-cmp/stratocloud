@@ -12,6 +12,8 @@ public @interface SelectField {
 
     String description() default "";
 
+    String placeholder() default "";
+
     boolean multiSelect() default false;
 
     boolean allowCreate() default false;

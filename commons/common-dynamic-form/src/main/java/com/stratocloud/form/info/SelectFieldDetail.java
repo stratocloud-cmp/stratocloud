@@ -17,5 +17,6 @@ public record SelectFieldDetail(boolean multiSelect,
                                 List<String> dependsOn,
                                 boolean required,
                                 List<String> conditions,
-                                SelectType type) implements FieldDetail {
+                                SelectType type,
+                                String placeholder) implements FieldDetail {
 }

@@ -49,6 +49,47 @@ public class DynamicFormHelper {
         }
     }
 
+    public static DynamicFormMetaData changeNestedFormFieldMetaData(DynamicFormMetaData formMetaData,
+                                                                    String key,
+                                                                    DynamicFormMetaData nestedFormMetaData){
+        List<FieldInfo> fieldInfoList = formMetaData.fieldInfoList();
+
+        FieldInfo replacingFieldInfo = null;
+        Integer replacingFieldIndex = null;
+        if(Utils.isNotEmpty(fieldInfoList)){
+            for (int i = 0; i < fieldInfoList.size(); i++) {
+                FieldInfo fieldInfo = fieldInfoList.get(i);
+                if(Objects.equals(fieldInfo.key(), key)){
+                    if(fieldInfo.detail() instanceof NestedFormFieldDetail nestedFormFieldDetail){
+                        NestedFormFieldDetail newDetail = new NestedFormFieldDetail(
+                                nestedFormFieldDetail.defaultValues(),
+                                nestedFormFieldDetail.multiple(),
+                                nestedFormFieldDetail.multipleMin(),
+                                nestedFormFieldDetail.multipleMax(),
+                                nestedFormFieldDetail.conditions(),
+                                nestedFormMetaData
+                        );
+                        replacingFieldInfo = new FieldInfo(
+                                fieldInfo.type(),
+                                fieldInfo.key(),
+                                fieldInfo.label(),
+                                fieldInfo.description(),
+                                newDetail
+                        );
+                        replacingFieldIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        List<FieldInfo> newFieldInfoList = new ArrayList<>(fieldInfoList);
+        if(replacingFieldIndex != null){
+            newFieldInfoList.set(replacingFieldIndex, replacingFieldInfo);
+        }
+        return new DynamicFormMetaData(formMetaData.formClass(), newFieldInfoList);
+    }
+
     public static DynamicFormMetaData changeFieldDetail(DynamicFormMetaData formMetaData,
                                                         String key,
                                                         FieldDetail fieldDetail){
@@ -57,7 +98,6 @@ public class DynamicFormHelper {
         if(Utils.isNotEmpty(formMetaData.fieldInfoList())){
             for (FieldInfo fieldInfo : formMetaData.fieldInfoList()) {
                 if(Objects.equals(key, fieldInfo.key())){
-
                     FieldInfo newFieldInfo = new FieldInfo(
                             fieldInfo.type(),
                             fieldInfo.key(),
@@ -102,7 +142,8 @@ public class DynamicFormHelper {
                                 selectFieldDetail.dependsOn(),
                                 selectFieldDetail.required(),
                                 selectFieldDetail.conditions(),
-                                selectFieldDetail.type()
+                                selectFieldDetail.type(),
+                                selectFieldDetail.placeholder()
                         );
                         replacingFieldInfo = new FieldInfo(
                                 fieldInfo.type(),
@@ -112,6 +153,7 @@ public class DynamicFormHelper {
                                 newDetail
                         );
                         replacingFieldIndex = i;
+                        break;
                     }
                 }
             }
@@ -144,7 +186,7 @@ public class DynamicFormHelper {
                                 booleanFieldDetail.conditions()
                         );
                     } else {
-                        continue;
+                        fieldDetail = booleanFieldDetail;
                     }
                 } else if(fieldInfo.detail() instanceof SelectFieldDetail selectFieldDetail){
                     List<String> defaultValues;
@@ -153,7 +195,7 @@ public class DynamicFormHelper {
                     } else if(o instanceof List<?> l){
                         defaultValues = l.stream().map(Object::toString).toList();
                     } else {
-                        continue;
+                        defaultValues = selectFieldDetail.defaultValues();
                     }
 
                     fieldDetail = new SelectFieldDetail(
@@ -167,7 +209,8 @@ public class DynamicFormHelper {
                             selectFieldDetail.dependsOn(),
                             selectFieldDetail.required(),
                             selectFieldDetail.conditions(),
-                            selectFieldDetail.type()
+                            selectFieldDetail.type(),
+                            selectFieldDetail.placeholder()
                     );
                 } else if(fieldInfo.detail() instanceof InputFieldDetail inputFieldDetail){
                     if(o instanceof String s){
@@ -181,7 +224,7 @@ public class DynamicFormHelper {
                                 inputFieldDetail.disabled()
                         );
                     } else {
-                        continue;
+                        fieldDetail = inputFieldDetail;
                     }
                 } else if(fieldInfo.detail() instanceof NumberFieldDetail numberFieldDetail){
                     int defaultValue;
@@ -191,16 +234,16 @@ public class DynamicFormHelper {
                         try {
                             defaultValue = Math.toIntExact(l);
                         }catch (Exception e){
-                            continue;
+                            defaultValue = numberFieldDetail.defaultValue();
                         }
                     } else if(o instanceof String s){
                         try {
                             defaultValue = Integer.parseInt(s);
                         }catch (Exception e){
-                            continue;
+                            defaultValue = numberFieldDetail.defaultValue();
                         }
                     }else {
-                        continue;
+                        defaultValue = numberFieldDetail.defaultValue();
                     }
 
                     fieldDetail = new NumberFieldDetail(
@@ -220,7 +263,7 @@ public class DynamicFormHelper {
                                 codeBlockFieldDetail.language()
                         );
                     } else {
-                        continue;
+                        fieldDetail = codeBlockFieldDetail;
                     }
                 } else if(fieldInfo.detail() instanceof NestedFormFieldDetail nestedFormFieldDetail){
                     if(o instanceof List<?> list){
@@ -242,10 +285,10 @@ public class DynamicFormHelper {
                                 nestedFormFieldDetail.nestedFormMetadata()
                         );
                     } else {
-                        continue;
+                        fieldDetail = nestedFormFieldDetail;
                     }
                 } else {
-                    continue;
+                    fieldDetail = fieldInfo.detail();
                 }
 
                 formMetaData = changeFieldDetail(formMetaData, fieldInfo.key(), fieldDetail);

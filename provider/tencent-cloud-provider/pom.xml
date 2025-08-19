@@ -94,6 +94,12 @@
             <artifactId>cos_api</artifactId>
             <version>5.6.247</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.tencentcloudapi</groupId>
+            <artifactId>tencentcloud-sdk-java-cdb</artifactId>
+            <version>3.1.1318</version>
+        </dependency>
     </dependencies>
 
 </project>

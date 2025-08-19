@@ -34,7 +34,8 @@ public class SelectFieldInfoGenerator implements FieldInfoGenerator{
                 List.of(selectField.dependsOn()),
                 selectField.required(),
                 List.of(selectField.conditions()),
-                selectField.type()
+                selectField.type(),
+                selectField.placeholder()
         );
 
         return new FieldInfo(type, key, label, description, detail);
