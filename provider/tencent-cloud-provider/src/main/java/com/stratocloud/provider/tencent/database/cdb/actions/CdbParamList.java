@@ -52,7 +52,7 @@ public class CdbParamList implements DynamicForm {
         if(Utils.isEmpty(params))
             return new UpgradeEngineVersionParams[0];
 
-        List<ParamInfo> result = new ArrayList<>();
+        List<UpgradeEngineVersionParams> result = new ArrayList<>();
 
         for (String key : params.keySet()) {
             Object value = params.get(key);
@@ -65,7 +65,7 @@ public class CdbParamList implements DynamicForm {
             if (Utils.isBlank(s))
                 continue;
 
-            ParamInfo paramInfo = new ParamInfo();
+            UpgradeEngineVersionParams paramInfo = new UpgradeEngineVersionParams();
             paramInfo.setName(key);
             paramInfo.setValue(s);
 
