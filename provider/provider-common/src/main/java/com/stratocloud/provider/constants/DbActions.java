@@ -14,4 +14,9 @@ public class DbActions {
             "解除隔离",
             403
     );
+    public static final ResourceAction UPGRADE_VERSION = new ResourceAction(
+            "UPGRADE_VERSION",
+            "升级版本",
+            404
+    );
 }

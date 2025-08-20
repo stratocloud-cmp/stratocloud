@@ -244,7 +244,7 @@ public class TencentCdbHandler extends AbstractResourceHandler {
         double timeAmount;
         ChronoUnit timeUnit;
 
-        if(Objects.equals(cdb.getPayType(), 0L)){
+        if(CdbUtil.isPrepaid(cdb)){
             request.setPayType("PRE_PAID");
             request.setPeriod(1L);
 

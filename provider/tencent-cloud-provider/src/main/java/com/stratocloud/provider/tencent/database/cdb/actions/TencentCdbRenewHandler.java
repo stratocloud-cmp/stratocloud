@@ -13,14 +13,19 @@ import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.common.TencentCloudClient;
+import com.stratocloud.provider.tencent.database.cdb.CdbInstanceRole;
+import com.stratocloud.provider.tencent.database.cdb.CdbUtil;
 import com.stratocloud.provider.tencent.database.cdb.TencentCdbHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.JSON;
+import com.tencentcloudapi.cdb.v20170320.models.DescribeDBPriceRequest;
+import com.tencentcloudapi.cdb.v20170320.models.DescribeDBPriceResponse;
 import com.tencentcloudapi.cdb.v20170320.models.InstanceInfo;
 import com.tencentcloudapi.cdb.v20170320.models.RenewDBInstanceRequest;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Component
@@ -120,7 +125,7 @@ public class TencentCdbRenewHandler implements ResourceActionHandler {
         InstanceInfo instanceInfo = cdbHandler.describeCdb(account, resource.getExternalId()).orElseThrow(
                 () -> new StratoException("云数据库不存在")
         );
-        if(!input.isModifyPayType() && Objects.equals(instanceInfo.getPayType(), 1L))
+        if(!input.isModifyPayType() && !CdbUtil.isPrepaid(instanceInfo))
             throw new BadCommandException("未允许将按量计费实例转换为包年包月实例");
     }
 
@@ -144,5 +149,52 @@ public class TencentCdbRenewHandler implements ResourceActionHandler {
         private Long timeSpan;
         @BooleanField(label = "自动续费")
         private boolean autoRenew;
+    }
+
+    @Override
+    public ResourceCost getActionCost(Resource resource, Map<String, Object> parameters) {
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
+        TencentCloudProvider provider = (TencentCloudProvider) cdbHandler.getProvider();
+        TencentCloudClient client = provider.buildClient(account);
+
+        Optional<InstanceInfo> instanceInfo = cdbHandler.describeCdb(account, resource.getExternalId());
+
+        if(instanceInfo.isEmpty())
+            return ResourceCost.ZERO;
+
+        RenewInput input = JSON.convert(parameters, RenewInput.class);
+        InstanceInfo cdb = instanceInfo.get();
+
+        DescribeDBPriceRequest request = new DescribeDBPriceRequest();
+
+        if(input.getTimeSpan() == null)
+            return ResourceCost.ZERO;
+
+        double timeAmount = input.getTimeSpan();
+        ChronoUnit timeUnit = ChronoUnit.MONTHS;
+
+        request.setPayType("PRE_PAID");
+        request.setPeriod(input.getTimeSpan());
+
+        request.setGoodsNum(1L);
+
+        request.setZone(cdb.getZone());
+        request.setInstanceRole(CdbInstanceRole.fromLong(cdb.getInstanceType()).name());
+        request.setInstanceNodes(cdb.getInstanceNodes());
+
+        request.setDeviceType(cdb.getDeviceType());
+        request.setDiskType(cdb.getDiskType());
+        request.setMemory(cdb.getMemory());
+        request.setVolume(cdb.getVolume());
+        request.setCpu(cdb.getCpu());
+
+        DescribeDBPriceResponse response = client.describeCdbPrice(request);
+
+        Long price = response.getPrice();
+
+        if(price == null)
+            return ResourceCost.ZERO;
+
+        return new ResourceCost(price/100.0, timeAmount, timeUnit);
     }
 }

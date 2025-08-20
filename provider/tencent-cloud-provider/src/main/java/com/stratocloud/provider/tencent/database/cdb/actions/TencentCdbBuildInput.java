@@ -8,10 +8,7 @@ import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.common.TencentCloudClient;
 import com.stratocloud.provider.tencent.common.TencentCloudRegion;
-import com.stratocloud.provider.tencent.database.cdb.CdbArchitecture;
-import com.stratocloud.provider.tencent.database.cdb.CdbDeviceType;
-import com.stratocloud.provider.tencent.database.cdb.CdbInstanceRole;
-import com.stratocloud.provider.tencent.database.cdb.CdbRegionAndInstanceId;
+import com.stratocloud.provider.tencent.database.cdb.*;
 import com.stratocloud.utils.Utils;
 import com.tencentcloudapi.cdb.v20170320.models.*;
 import lombok.Data;
@@ -165,6 +162,23 @@ public class TencentCdbBuildInput implements ResourceActionInput {
     private Long port;
 
     @SelectField(
+            label = "数据复制方式",
+            options = {
+                    "0",
+                    "1",
+                    "2"
+            },
+            optionNames = {
+                    "异步复制",
+                    "半同步复制",
+                    "强同步复制"
+            },
+            defaultValues = "1",
+            conditions = "this.architecture !== 'ONE_NODE'"
+    )
+    private Long protectMode;
+
+    @SelectField(
             label = "参数模板",
             options = {
                     "HIGH_STABILITY",
@@ -259,28 +273,13 @@ public class TencentCdbBuildInput implements ResourceActionInput {
 
         formMetaData = DynamicFormHelper.changeNestedFormFieldMetaData(
                 formMetaData, "params", CdbParamList.getFormMetaData(
-                        provider, account, "HIGH_STABILITY", "InnoDB", "5.7"
+                        client, "HIGH_STABILITY", "InnoDB", "5.7"
                 )
         );
 
         return formMetaData;
     }
 
-
-    private static String getSellConfigName(CdbSellConfig sellConfig) {
-        CdbDeviceType deviceType = CdbDeviceType.fromString(sellConfig.getDeviceType());
-
-        String diskDescription =
-                deviceType == CdbDeviceType.ECONOMICAL ? " 硬盘大小:%sGB".formatted(sellConfig.getVolumeMax()) : "";
-
-        return "实例类型:%s CPU:%s核 内存:%sMB 最大IOPS:%s 引擎类型:%s".formatted(
-                deviceType == CdbDeviceType.UNKNOWN ? sellConfig.getDeviceType() : deviceType.getLabel(),
-                sellConfig.getCpu(),
-                sellConfig.getMemory(),
-                sellConfig.getIops(),
-                sellConfig.getEngineType()
-        ) + diskDescription;
-    }
 
     private static DynamicFormMetaData changeSellConfigOptions(DynamicFormMetaData formMetaData,
                                                                CdbZoneDataResult dataResult){
@@ -302,23 +301,12 @@ public class TencentCdbBuildInput implements ResourceActionInput {
             }
         }
 
-        formMetaData = changeSellConfigOptions(formMetaData, "economicalSellConfigId", economicalConfigs);
-        formMetaData = changeSellConfigOptions(formMetaData, "multiNodesSellConfigId", multiNodeConfigs);
-        formMetaData = changeSellConfigOptions(formMetaData, "oneNodeSellConfigId", oneNodeConfigs);
-        formMetaData = changeSellConfigOptions(formMetaData, "clusterSellConfigId", clusterConfigs);
+        formMetaData = CdbUtil.changeSellConfigOptions(formMetaData, "economicalSellConfigId", economicalConfigs);
+        formMetaData = CdbUtil.changeSellConfigOptions(formMetaData, "multiNodesSellConfigId", multiNodeConfigs);
+        formMetaData = CdbUtil.changeSellConfigOptions(formMetaData, "oneNodeSellConfigId", oneNodeConfigs);
+        formMetaData = CdbUtil.changeSellConfigOptions(formMetaData, "clusterSellConfigId", clusterConfigs);
 
         return formMetaData;
-    }
-
-    private static DynamicFormMetaData changeSellConfigOptions(DynamicFormMetaData formMetaData,
-                                                               String key,
-                                                               List<CdbSellConfig> sellConfigs){
-        return DynamicFormHelper.changeOptions(
-                formMetaData,
-                key,
-                sellConfigs.stream().map(c -> c.getId().toString()).toList(),
-                sellConfigs.stream().map(TencentCdbBuildInput::getSellConfigName).toList()
-        );
     }
 
     @JsonIgnore

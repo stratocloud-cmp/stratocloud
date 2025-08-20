@@ -9,6 +9,7 @@ import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.common.TencentCloudClient;
+import com.stratocloud.provider.tencent.database.cdb.CdbUtil;
 import com.stratocloud.provider.tencent.database.cdb.TencentCdbHandler;
 import com.stratocloud.resource.*;
 import com.tencentcloudapi.cdb.v20170320.models.InstanceInfo;
@@ -80,7 +81,7 @@ public class TencentCdbRemoveIsolationHandler implements ResourceActionHandler {
         InstanceInfo instanceInfo = cdbHandler.describeCdb(account, resource.getExternalId()).orElseThrow(
                 () -> new StratoException("云数据库不存在")
         );
-        if(Objects.equals(instanceInfo.getPayType(), 0L))
+        if(CdbUtil.isPrepaid(instanceInfo))
             throw new BadCommandException("包年包月实例请选择续费操作");
     }
 }

@@ -1,9 +1,8 @@
 package com.stratocloud.provider.tencent.database.cdb.actions;
 
-import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.form.*;
 import com.stratocloud.form.info.*;
-import com.stratocloud.provider.tencent.TencentCloudProvider;
+import com.stratocloud.provider.tencent.common.TencentCloudClient;
 import com.stratocloud.utils.Utils;
 import com.tencentcloudapi.cdb.v20170320.models.*;
 import lombok.Data;
@@ -49,8 +48,34 @@ public class CdbParamList implements DynamicForm {
         return result.toArray(ParamInfo[]::new);
     }
 
-    public static DynamicFormMetaData getFormMetaData(TencentCloudProvider provider,
-                                                      ExternalAccount account,
+    public static UpgradeEngineVersionParams[] getUpgradeParamInfoList(Map<String, Object> params){
+        if(Utils.isEmpty(params))
+            return new UpgradeEngineVersionParams[0];
+
+        List<ParamInfo> result = new ArrayList<>();
+
+        for (String key : params.keySet()) {
+            Object value = params.get(key);
+
+            if (value == null)
+                continue;
+
+            String s = String.valueOf(value);
+
+            if (Utils.isBlank(s))
+                continue;
+
+            ParamInfo paramInfo = new ParamInfo();
+            paramInfo.setName(key);
+            paramInfo.setValue(s);
+
+            result.add(paramInfo);
+        }
+
+        return result.toArray(UpgradeEngineVersionParams[]::new);
+    }
+
+    public static DynamicFormMetaData getFormMetaData(TencentCloudClient client,
                                                       String templateType,
                                                       String engineType,
                                                       String engineVersion) {
@@ -61,7 +86,7 @@ public class CdbParamList implements DynamicForm {
         request.setEngineType(engineType);
         request.setEngineVersion(engineVersion);
 
-        DescribeDefaultParamsResponse response = provider.buildClient(account).describeCdbDefaultParams(request);
+        DescribeDefaultParamsResponse response = client.describeCdbDefaultParams(request);
 
         if(response.getItems() == null)
             return new DynamicFormMetaData(CdbParamList.class.getSimpleName(), fieldInfoList);

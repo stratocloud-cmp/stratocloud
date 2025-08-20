@@ -669,7 +669,11 @@ public class ResourceServiceImpl implements ResourceService {
             Resource resource = repository.findResource(resourceId);
             ResourceActionHandler actionHandler = resource.getActionHandler(actionId);
 
-            sum = sum.add(actionHandler.getActionCost(resource, parameters));
+            try {
+                sum = sum.add(actionHandler.getActionCost(resource, parameters));
+            }catch (Exception e){
+                log.debug("Cannot perform price inquiry: {}.", e.getMessage(), e);
+            }
         }
 
         RunActionsPriceInquiryResponse response = new RunActionsPriceInquiryResponse();

@@ -2228,4 +2228,79 @@ public class TencentCloudClientImpl implements TencentCloudClient{
     public DescribeDBPriceResponse describeCdbPrice(DescribeDBPriceRequest request){
         return tryInvoke(() -> buildCdbClient().DescribeDBPrice(request));
     }
+
+    @Override
+    public UpgradeDBInstanceResponse upgradeCdb(UpgradeDBInstanceRequest request){
+        UpgradeDBInstanceResponse response = tryInvoke(() -> buildCdbClient().UpgradeDBInstance(request));
+
+        log.info("Tencent upgrade CDB instance request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+
+        return response;
+    }
+
+    @Override
+    public InquiryPriceUpgradeInstancesResponse inquiryPriceUpgradeCdb(InquiryPriceUpgradeInstancesRequest request){
+        return tryInvoke(() -> buildCdbClient().InquiryPriceUpgradeInstances(request));
+    }
+
+    @Override
+    public Optional<DescribeAsyncRequestInfoResponse> describeCdbAsyncRequest(String asyncRequestId){
+        DescribeAsyncRequestInfoRequest request = new DescribeAsyncRequestInfoRequest();
+        request.setAsyncRequestId(asyncRequestId);
+        try {
+            DescribeAsyncRequestInfoResponse response = tryInvoke(
+                    () -> buildCdbClient().DescribeAsyncRequestInfo(request)
+            );
+            log.info("Tencent CDB async request: Status={}. Info={}. ID={}.",
+                    response.getStatus(), response.getInfo(), asyncRequestId);
+            return Optional.of(response);
+        }catch (ExternalResourceNotFoundException e){
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public void modifyCdbName(String instanceId, String instanceName) {
+        ModifyDBInstanceNameRequest request = new ModifyDBInstanceNameRequest();
+        request.setInstanceId(instanceId);
+        request.setInstanceName(instanceName);
+        ModifyDBInstanceNameResponse response = tryInvoke(() -> buildCdbClient().ModifyDBInstanceName(request));
+
+        log.info("Tencent modify CDB instance name request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void modifyCdbProtectMode(String instanceId, Long protectMode) {
+        ModifyProtectModeRequest request = new ModifyProtectModeRequest();
+        request.setInstanceId(instanceId);
+        request.setProtectMode(protectMode);
+
+        ModifyProtectModeResponse response = tryInvoke(() -> buildCdbClient().ModifyProtectMode(request));
+
+        log.info("Tencent modify CDB protect mode request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void modifyCdbAutoRenewFlag(String instanceId, Long autoRenew) {
+        ModifyAutoRenewFlagRequest request = new ModifyAutoRenewFlagRequest();
+        request.setInstanceIds(new String[]{instanceId});
+        request.setAutoRenew(autoRenew);
+        ModifyAutoRenewFlagResponse response = tryInvoke(() -> buildCdbClient().ModifyAutoRenewFlag(request));
+
+        log.info("Tencent modify CDB auto renew flag request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public UpgradeDBInstanceEngineVersionResponse upgradeCdbEngineVersion(UpgradeDBInstanceEngineVersionRequest request) {
+        var response = tryInvoke(() -> buildCdbClient().UpgradeDBInstanceEngineVersion(request));
+
+        log.info("Tencent upgrade CDB engine version request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+
+        return response;
+    }
 }

@@ -342,4 +342,18 @@ public interface TencentCloudClient {
     DescribeDefaultParamsResponse describeCdbDefaultParams(DescribeDefaultParamsRequest request);
 
     DescribeDBPriceResponse describeCdbPrice(DescribeDBPriceRequest request);
+
+    UpgradeDBInstanceResponse upgradeCdb(UpgradeDBInstanceRequest request);
+
+    InquiryPriceUpgradeInstancesResponse inquiryPriceUpgradeCdb(InquiryPriceUpgradeInstancesRequest request);
+
+    Optional<DescribeAsyncRequestInfoResponse> describeCdbAsyncRequest(String asyncRequestId);
+
+    void modifyCdbName(String instanceId, String instanceName);
+
+    void modifyCdbProtectMode(String instanceId, Long protectMode);
+
+    void modifyCdbAutoRenewFlag(String instanceId, Long autoRenew);
+
+    UpgradeDBInstanceEngineVersionResponse upgradeCdbEngineVersion(UpgradeDBInstanceEngineVersionRequest request);
 }
