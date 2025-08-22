@@ -19,4 +19,23 @@ public class DbActions {
             "升级版本",
             404
     );
+    public static final ResourceAction MODIFY_TIME_WINDOW = new ResourceAction(
+            "MODIFY_TIME_WINDOW",
+            "更新维护窗口",
+            405
+    );
+    public static final ResourceAction MODIFY_EXPAND_STRATEGY = new ResourceAction(
+            "MODIFY_EXPAND_STRATEGY",
+            "弹性扩容",
+            406
+    );
+
+
+
+    public static final ResourceAction OPEN_DMC = new ResourceAction(
+            "OPEN_DMC",
+            "DMC控制台",
+            420
+    );
+
 }

@@ -22,6 +22,8 @@ public @interface DateTimeField {
 
     boolean dateOnly() default false;
 
+    boolean timeOnly() default false;
+
     boolean required() default true;
 
 

@@ -16,4 +16,12 @@ public record MetricGroup(String id, String name) {
     public static final MetricGroup NETWORK_METRICS = new MetricGroup(
             "NetworkMetrics", "网络监控"
     );
+
+    public static final MetricGroup RESOURCE_METRICS = new MetricGroup(
+            "ResourceMetrics", "资源监控"
+    );
+
+    public static final MetricGroup ENGINE_METRICS = new MetricGroup(
+            "EngineMetrics", "引擎监控"
+    );
 }

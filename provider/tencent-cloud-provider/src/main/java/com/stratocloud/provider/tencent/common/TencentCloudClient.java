@@ -356,4 +356,23 @@ public interface TencentCloudClient {
     void modifyCdbAutoRenewFlag(String instanceId, Long autoRenew);
 
     UpgradeDBInstanceEngineVersionResponse upgradeCdbEngineVersion(UpgradeDBInstanceEngineVersionRequest request);
+
+    DescribeTimeWindowResponse describeCdbTimeWindow(String instanceId);
+
+    void clearTimeWindow(String instanceId);
+
+    void addTimeWindow(AddTimeWindowRequest request);
+
+    List<AccountInfo> describeCdbAccounts(String instanceId);
+
+
+    void modifyCdbPassword(ModifyAccountPasswordRequest request);
+
+    DescribeCPUExpandStrategyInfoResponse describeCdbCpuExpandStrategy(String instanceId);
+
+    void startCdbCpuExpand(StartCpuExpandRequest request);
+
+    void stopCdbCpuExpand(String instanceId);
+
+
 }

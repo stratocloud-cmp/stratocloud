@@ -2303,4 +2303,105 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
         return response;
     }
+
+    @Override
+    public DescribeTimeWindowResponse describeCdbTimeWindow(String instanceId){
+        DescribeTimeWindowRequest request = new DescribeTimeWindowRequest();
+        request.setInstanceId(instanceId);
+        return tryInvoke(() -> buildCdbClient().DescribeTimeWindow(request));
+    }
+
+    @Override
+    public void clearTimeWindow(String instanceId){
+        DeleteTimeWindowRequest request = new DeleteTimeWindowRequest();
+        request.setInstanceId(instanceId);
+        tryInvoke(() -> buildCdbClient().DeleteTimeWindow(request));
+    }
+
+    @Override
+    public void addTimeWindow(AddTimeWindowRequest request){
+        var response = tryInvoke(() -> buildCdbClient().AddTimeWindow(request));
+
+        log.info("Tencent add CDB time window request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public List<AccountInfo> describeCdbAccounts(String instanceId){
+        DescribeAccountsRequest request = new DescribeAccountsRequest();
+        request.setInstanceId(instanceId);
+        return queryAll(
+                () -> buildCdbClient().DescribeAccounts(request),
+                DescribeAccountsResponse::getItems,
+                DescribeAccountsResponse::getTotalCount,
+                request::setOffset,
+                request::setLimit
+        );
+    }
+
+    @Override
+    public void modifyCdbPassword(ModifyAccountPasswordRequest request){
+        var response = tryInvoke(() -> buildCdbClient().ModifyAccountPassword(request));
+
+        log.info("Tencent modify CDB password request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public DescribeCPUExpandStrategyInfoResponse describeCdbCpuExpandStrategy(String instanceId){
+        DescribeCPUExpandStrategyInfoRequest request = new DescribeCPUExpandStrategyInfoRequest();
+        request.setInstanceId(instanceId);
+        return tryInvoke(() -> buildCdbClient().DescribeCPUExpandStrategyInfo(request));
+    }
+
+    @Override
+    public void startCdbCpuExpand(StartCpuExpandRequest request) {
+        StartCpuExpandResponse response = tryInvoke(() -> buildCdbClient().StartCpuExpand(request));
+
+        log.info("Tencent start CDB cpu expand request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public void stopCdbCpuExpand(String instanceId) {
+        StopCpuExpandRequest request = new StopCpuExpandRequest();
+        request.setInstanceId(instanceId);
+        StopCpuExpandResponse response = tryInvoke(() -> buildCdbClient().StopCpuExpand(request));
+
+        log.info("Tencent stop CDB cpu expand request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+
+        waitForCdbTask(response.getAsyncRequestId());
+    }
+
+    private void waitForCdbTask(String asyncRequestId) {
+        int count = 0;
+
+        while (count < 30) {
+            Optional<DescribeAsyncRequestInfoResponse> response = describeCdbAsyncRequest(asyncRequestId);
+            if(response.isEmpty())
+                return;
+
+            String status = response.get().getStatus();
+
+            count++;
+
+            switch (status){
+                case "SUCCESS" -> {
+                    log.info("Tencent cdb task {} succeeded.", asyncRequestId);
+                    return;
+                }
+                case "FAILED", "KILLED", "REMOVED", "PAUSED" -> {
+                    log.error("Tencent cdb task {} failed.", asyncRequestId);
+                    return;
+                }
+                case "INITIAL", "RUNNING" -> log.warn("Tencent cdb task {} is still running.", asyncRequestId);
+                default -> log.error("Unknown cdb task status {}.", status);
+            }
+
+            SleepUtil.sleep(10);
+        }
+
+        log.error("Waited too long for tencent cdb task {}, there might be a problem.", asyncRequestId);
+    }
 }

@@ -31,6 +31,7 @@ public class DateTimeFieldInfoGenerator implements FieldInfoGenerator{
                 dateTimeField.allowFutureTime(),
                 dateTimeField.isRange(),
                 dateTimeField.dateOnly(),
+                dateTimeField.timeOnly(),
                 dateTimeField.required(),
                 List.of(dateTimeField.conditions()),
                 dateTimeField.placeHolder()

@@ -227,7 +227,7 @@ public class DynamicFormHelper {
                         fieldDetail = inputFieldDetail;
                     }
                 } else if(fieldInfo.detail() instanceof NumberFieldDetail numberFieldDetail){
-                    int defaultValue;
+                    Integer defaultValue;
                     if(o instanceof Integer i){
                         defaultValue = i;
                     } else if(o instanceof Long l){

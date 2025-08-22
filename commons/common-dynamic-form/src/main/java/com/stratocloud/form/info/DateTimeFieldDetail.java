@@ -7,6 +7,7 @@ public record DateTimeFieldDetail(List<LocalDateTime> defaultValues,
                                   boolean allowFutureTime,
                                   boolean isRange,
                                   boolean dateOnly,
+                                  boolean timeOnly,
                                   boolean required,
                                   List<String> conditions,
                                   String placeholder) implements FieldDetail {

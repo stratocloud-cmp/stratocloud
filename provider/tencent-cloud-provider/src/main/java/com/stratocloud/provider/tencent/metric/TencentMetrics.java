@@ -6,6 +6,7 @@ import com.stratocloud.resource.monitor.MetricType;
 import com.stratocloud.resource.monitor.MetricValueType;
 
 import java.util.List;
+import java.util.Set;
 
 public class TencentMetrics {
     public static final Metric CPU_USAGE = new Metric(
@@ -389,5 +390,138 @@ public class TencentMetrics {
             MetricValueType.VALUE,
             false,
             List.of(3600, 86400)
+    );
+
+    public static final Metric CDB_CPU_UTIL = new Metric(
+            "QCE/CDB",
+            "CpuUseRate",
+            "CPU利用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Metric CDB_MEMORY_UTIL = new Metric(
+            "QCE/CDB",
+            "MemoryUseRate",
+            "内存利用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Metric CDB_MEMORY_USE = new Metric(
+            "QCE/CDB",
+            "MemoryUse",
+            "内存占用",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Metric CDB_DISK_UTIL = new Metric(
+            "QCE/CDB",
+            "VolumeRate",
+            "磁盘利用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Metric CDB_REAL_CAPACITY = new Metric(
+            "QCE/CDB",
+            "RealCapacity",
+            "磁盘使用空间",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Metric CDB_CAPACITY = new Metric(
+            "QCE/CDB",
+            "Capacity",
+            "磁盘占用空间",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Metric CDB_IOPS = new Metric(
+            "QCE/CDB",
+            "Iops",
+            "IO 每秒请求量",
+            "count/s",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Metric CDB_IOPS_UTIL = new Metric(
+            "QCE/CDB",
+            "IopsUseRate",
+            "IOPS 利用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Metric CDB_BYTES_SENT = new Metric(
+            "QCE/CDB",
+            "BytesSent",
+            "内网出流量",
+            "Bytes/s",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Metric CDB_BYTES_RECEIVED = new Metric(
+            "QCE/CDB",
+            "BytesReceived",
+            "内网入流量",
+            "Bytes/s",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Set<Metric> CDB_METRICS = Set.of(
+            CDB_CPU_UTIL,
+            CDB_MEMORY_UTIL,
+            CDB_MEMORY_USE,
+            CDB_REAL_CAPACITY,
+            CDB_DISK_UTIL,
+            CDB_CAPACITY,
+            CDB_IOPS,
+            CDB_IOPS_UTIL,
+            CDB_BYTES_SENT,
+            CDB_BYTES_RECEIVED
     );
 }

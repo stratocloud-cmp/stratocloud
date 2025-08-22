@@ -257,11 +257,11 @@ public class ResourceCategories {
     );
 
 
-    public static final ResourceCategory CLOUD_RELATIONAL_DATABASE = new ResourceCategory(
+    public static final ResourceCategory RELATIONAL_DB_INSTANCE = new ResourceCategory(
             ResourceCategoryGroups.CLOUD_DB_RELATED,
-            "CLOUD_RELATIONAL_DATABASE",
+            "RELATIONAL_DB_INSTANCE",
             "关系型数据库",
-            "relational-db",
+            "rdb-instance",
             251
     );
 

@@ -37,4 +37,8 @@ public class TencentTimeUtil {
                 TimeUtil.BEIJING_ZONE_ID.getRules().getOffset(LocalDateTime.now())
         );
     }
+
+    public static Long toEpochSeconds(LocalDateTime localDateTime) {
+        return localDateTime.atZone(TimeUtil.BEIJING_ZONE_ID).toEpochSecond();
+    }
 }

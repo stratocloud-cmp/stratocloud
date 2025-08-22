@@ -46,12 +46,12 @@ public class TencentCdbHandler extends AbstractResourceHandler {
 
     @Override
     public String getResourceTypeName() {
-        return "腾讯云MySQL云数据库";
+        return "腾讯云MySQL实例";
     }
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.CLOUD_RELATIONAL_DATABASE;
+        return ResourceCategories.RELATIONAL_DB_INSTANCE;
     }
 
     @Override
@@ -125,6 +125,14 @@ public class TencentCdbHandler extends AbstractResourceHandler {
                 cdb.getVip()
         );
         resource.addOrUpdateRuntimeProperty(vipProperty);
+
+        RuntimeProperty portProperty = RuntimeProperty.ofDisplayInList(
+                "port",
+                "端口",
+                String.valueOf(cdb.getVport()),
+                String.valueOf(cdb.getVport())
+        );
+        resource.addOrUpdateRuntimeProperty(portProperty);
 
         String sellConfigSummary = "%s-%s核%sMB/%sGB".formatted(
                 CdbDeviceType.fromString(cdb.getDeviceType()).getLabel(),

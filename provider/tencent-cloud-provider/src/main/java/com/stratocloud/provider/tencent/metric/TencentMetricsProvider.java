@@ -26,6 +26,7 @@ import com.stratocloud.resource.monitor.*;
 import com.stratocloud.utils.TimeUtil;
 import com.stratocloud.utils.Utils;
 import com.tencentcloudapi.cbs.v20170312.models.Disk;
+import com.tencentcloudapi.cdb.v20170320.models.InstanceInfo;
 import com.tencentcloudapi.monitor.v20180724.models.*;
 import com.tencentcloudapi.vpc.v20170312.models.Address;
 import org.springframework.stereotype.Component;
@@ -34,6 +35,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Component
 public class TencentMetricsProvider implements MetricsProvider {
@@ -51,7 +53,8 @@ public class TencentMetricsProvider implements MetricsProvider {
                 WAN_IN_TRAFFIC, WAN_OUT_TRAFFIC, WAN_IN_PKG, WAN_OUT_PKG,
                 VIP_OUT_TRAFFIC, VIP_IN_TRAFFIC,
                 BUCKET_STD_STORAGE, BUCKET_MAZ_STD_STORAGE, BUCKET_IA_STORAGE, BUCKET_MAZ_IA_STORAGE,
-                BUCKET_ARC_STORAGE, BUCKET_MAZ_ARC_STORAGE, BUCKET_DEEP_ARC_STORAGE
+                BUCKET_ARC_STORAGE, BUCKET_MAZ_ARC_STORAGE, BUCKET_DEEP_ARC_STORAGE,
+                CDB_CPU_UTIL, CDB_MEMORY_UTIL, CDB_MEMORY_USE, CDB_DISK_UTIL
         );
     }
 
@@ -88,6 +91,26 @@ public class TencentMetricsProvider implements MetricsProvider {
                         )
                 )
         );
+    }
+
+    private static List<MetricObject> getCdbMetricObjects(Resource resource){
+        if(Utils.isBlank(resource.getExternalId()))
+            return List.of();
+
+        TencentCloudClient client = getClient(resource);
+        Optional<InstanceInfo> cdb = client.describeCdbInstance(resource.getExternalId());
+
+        if(cdb.isEmpty())
+            return List.of();
+
+        return Stream.of("1", "2", "3", "4").map(
+                instanceType -> new MetricObject(
+                        List.of(
+                                new MetricDimension("InstanceId", resource.getExternalId()),
+                                new MetricDimension("InstanceType", instanceType)
+                        )
+                )
+        ).toList();
     }
 
     private static List<MetricObject> getBucketMetricObjects(Resource resource) {
@@ -217,6 +240,8 @@ public class TencentMetricsProvider implements MetricsProvider {
                             getDimensionValue(
                                     dataPoint.getDimensions(),
                                     supportedMetric.displayDimensionName()
+                            ).map(
+                                    v -> translateDimensionValue(supportedMetric, v)
                             ).orElse(metric.metricName()),
                             null,
                             points
@@ -226,6 +251,23 @@ public class TencentMetricsProvider implements MetricsProvider {
         }
 
         return new MetricData(supportedMetric.metric(), sequences);
+    }
+
+    private String translateDimensionValue(SupportedMetric supportedMetric, String value) {
+        if(TencentMetrics.CDB_METRICS.contains(supportedMetric.metric())){
+            if(Utils.isBlank(value))
+                return value;
+
+            return switch (value){
+                case "1" -> "主机";
+                case "2" -> "从机";
+                case "3" -> "只读实例";
+                case "4" -> "第二从机";
+                default -> value;
+            };
+        } else {
+            return value;
+        }
     }
 
     @Override
@@ -239,6 +281,7 @@ public class TencentMetricsProvider implements MetricsProvider {
                 TencentMetrics.VIP_OUT_TRAFFIC, "out"
         );
     }
+
 
     private static Optional<String> getDimensionValue(Dimension[] dimensions, String dimensionName){
         if(Utils.isEmpty(dimensions))
@@ -677,5 +720,43 @@ public class TencentMetricsProvider implements MetricsProvider {
     );
 
 
+    public static final SupportedMetric CDB_CPU_UTIL = new SupportedMetric(
+            TencentMetrics.CDB_CPU_UTIL,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
 
+    public static final SupportedMetric CDB_MEMORY_UTIL = new SupportedMetric(
+            TencentMetrics.CDB_MEMORY_UTIL,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_MEMORY_USE = new SupportedMetric(
+            TencentMetrics.CDB_MEMORY_USE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_DISK_UTIL = new SupportedMetric(
+            TencentMetrics.CDB_DISK_UTIL,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
 }
