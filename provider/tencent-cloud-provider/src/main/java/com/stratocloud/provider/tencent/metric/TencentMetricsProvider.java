@@ -15,6 +15,8 @@ import com.stratocloud.provider.tencent.common.TencentTimeUtil;
 import com.stratocloud.provider.tencent.cos.session.CosSession;
 import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
 import com.stratocloud.provider.tencent.cos.session.CosSessionManager;
+import com.stratocloud.provider.tencent.database.cdb.TencentCdbHandler;
+import com.stratocloud.provider.tencent.database.pg.TencentPgHandler;
 import com.stratocloud.provider.tencent.instance.TencentInstanceUtil;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.alert.AlertStatus;
@@ -54,7 +56,30 @@ public class TencentMetricsProvider implements MetricsProvider {
                 VIP_OUT_TRAFFIC, VIP_IN_TRAFFIC,
                 BUCKET_STD_STORAGE, BUCKET_MAZ_STD_STORAGE, BUCKET_IA_STORAGE, BUCKET_MAZ_IA_STORAGE,
                 BUCKET_ARC_STORAGE, BUCKET_MAZ_ARC_STORAGE, BUCKET_DEEP_ARC_STORAGE,
-                CDB_CPU_UTIL, CDB_MEMORY_UTIL, CDB_MEMORY_USE, CDB_DISK_UTIL
+                CDB_CPU_UTIL, CDB_MEMORY_UTIL, CDB_MEMORY_USE, CDB_DISK_UTIL,
+                CDB_REAL_CAPACITY, CDB_CAPACITY, CDB_IOPS, CDB_IOPS_UTIL, CDB_BYTES_SENT, CDB_BYTES_RECEIVED,
+
+                CDB_QPS, CDB_TPS, CDB_CONNECTION_USE_RATE, CDB_MAX_CONNECTIONS, CDB_THREADS_CONNECTED, CDB_SLOW_QUERIES,
+                CDB_SELECT_SCAN, CDB_SELECT_COUNT, CDB_COM_UPDATE, CDB_COM_DELETE, CDB_COM_REPLACE, CDB_COM_INSERT,
+                CDB_QUERIES, CDB_QUERY_RATE, CDB_TMP_TABLES, CDB_TABLE_LOCKS_WAITED,
+
+                CDB_INNODB_CACHE_HIT_RATE, CDB_INNODB_CACHE_USE_RATE, CDB_INNODB_OS_FILE_READS, CDB_INNODB_OS_FILE_WRITES,
+                CDB_INNODB_OS_FSYNCS, CDB_INNODB_NUM_OPEN_FILES, CDB_KEY_CACHE_HIT_RATE, CDB_KEY_CACHE_USE_RATE,
+
+                CDB_SLAVE_IO_RUNNING, CDB_SLAVE_SQL_RUNNING, CDB_MASTER_SLAVE_DISTANCE, CDB_SECONDS_BEHIND_MASTER,
+
+                PG_CPU_UTIL, PG_MEMORY_UTIL, PG_DISK_UTIL, PG_MEMORY_USE, PG_REAL_CAPACITY,
+                PG_QPS, PG_CONNECTIONS, PG_CALLS, PG_READ_CALLS, PG_WRITE_CALLS, PG_OTHER_CALLS,
+                PG_HIT_PERCENT, PG_SQL_RUNTIME_AVG, PG_SQL_RUNTIME_MAX, PG_SQL_RUNTIME_MIN,
+                PG_REMAIN_XID, PG_XLOG_DIFF, PG_SLOW_QUERY_COUNT, PG_FLUSH_LATENCY,
+                PG_XLOG_DIFF_TIME, PG_SLAVE_APPLY_DELAY, PG_REPLAY_LAG, PG_ACTIVE_CONNS,
+                PG_IDLE_CONNS, PG_LONG_QUERY, PG_LONG_XACT, PG_IDLE_IN_XACT, PG_LONG_IDLE_IN_XACT,
+                PG_WAITING, PG_LONG_WAITING, PG_2PC, PG_LONG_2PC, PG_NEW_CONNS_IN_5S,
+                PG_TPS, PG_XACT_COMMIT, PG_XACT_ROLLBACK, PG_TUP_DELETED, PG_TUP_INSERTED,
+                PG_TUP_UPDATED, PG_TUP_FETCHED, PG_TUP_RETURNED, PG_DEAD_LOCKS,
+                PG_LOG_FILE_SIZE, PG_DATA_FILE_SIZE, PG_TEMP_FILE_SIZE,
+                PG_THROUGHPUT, PG_THROUGHPUT_READ, PG_THROUGHPUT_WRITE,
+                PG_CONN_UTIL, PG_CLUSTER_IN_FLOW, PG_CLUSTER_OUT_FLOW
         );
     }
 
@@ -75,6 +100,18 @@ public class TencentMetricsProvider implements MetricsProvider {
             }else {
                 return List.of();
             }
+        }
+
+        if(resource.getResourceHandler() instanceof TencentCdbHandler){
+            return MetricsProvider.super.getSupportedMetrics(resource).stream().filter(
+                    m -> TencentMetrics.CDB_METRICS.contains(m.metric())
+            ).toList();
+        }
+
+        if(resource.getResourceHandler() instanceof TencentPgHandler){
+            return MetricsProvider.super.getSupportedMetrics(resource).stream().filter(
+                    m -> TencentMetrics.PG_METRICS.contains(m.metric())
+            ).toList();
         }
 
         return MetricsProvider.super.getSupportedMetrics(resource);
@@ -111,6 +148,19 @@ public class TencentMetricsProvider implements MetricsProvider {
                         )
                 )
         ).toList();
+    }
+
+    private static List<MetricObject> getPgMetricObjects(Resource resource){
+        if(Utils.isBlank(resource.getExternalId()))
+            return List.of();
+
+        return List.of(
+                new MetricObject(
+                        List.of(
+                                new MetricDimension("resourceId", resource.getExternalId())
+                        )
+                )
+        );
     }
 
     private static List<MetricObject> getBucketMetricObjects(Resource resource) {
@@ -272,13 +322,19 @@ public class TencentMetricsProvider implements MetricsProvider {
 
     @Override
     public Map<Metric, String> getShortMetricNames() {
-        return Map.of(
-                TencentMetrics.CPU_USAGE, "cpu",
-                TencentMetrics.MEM_USAGE, "mem",
-                TencentMetrics.DISK_READ_TRAFFIC, "r",
-                TencentMetrics.DISK_WRITE_TRAFFIC, "w",
-                TencentMetrics.VIP_IN_TRAFFIC, "in",
-                TencentMetrics.VIP_OUT_TRAFFIC, "out"
+        return Map.ofEntries(
+                Map.entry(TencentMetrics.CPU_USAGE, "cpu"),
+                Map.entry(TencentMetrics.MEM_USAGE, "mem"),
+                Map.entry(TencentMetrics.DISK_READ_TRAFFIC, "r"),
+                Map.entry(TencentMetrics.DISK_WRITE_TRAFFIC, "w"),
+                Map.entry(TencentMetrics.VIP_IN_TRAFFIC, "in"),
+                Map.entry(TencentMetrics.VIP_OUT_TRAFFIC, "out"),
+                Map.entry(TencentMetrics.CDB_CPU_UTIL, "cpu"),
+                Map.entry(TencentMetrics.CDB_MEMORY_UTIL, "mem"),
+                Map.entry(TencentMetrics.CDB_DISK_UTIL, "disk"),
+                Map.entry(TencentMetrics.PG_CPU_UTIL, "cpu"),
+                Map.entry(TencentMetrics.PG_MEMORY_UTIL, "mem"),
+                Map.entry(TencentMetrics.PG_DISK_UTIL, "disk")
         );
     }
 
@@ -726,7 +782,7 @@ public class TencentMetricsProvider implements MetricsProvider {
             TencentMetricsProvider::getCdbMetricObjects,
             Optional.empty(),
             Optional.empty(),
-            false,
+            true,
             ResourceCategories.RELATIONAL_DB_INSTANCE
     );
 
@@ -736,7 +792,7 @@ public class TencentMetricsProvider implements MetricsProvider {
             TencentMetricsProvider::getCdbMetricObjects,
             Optional.empty(),
             Optional.empty(),
-            false,
+            true,
             ResourceCategories.RELATIONAL_DB_INSTANCE
     );
 
@@ -756,7 +812,807 @@ public class TencentMetricsProvider implements MetricsProvider {
             TencentMetricsProvider::getCdbMetricObjects,
             Optional.empty(),
             Optional.empty(),
+            true,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_REAL_CAPACITY = new SupportedMetric(
+            TencentMetrics.CDB_REAL_CAPACITY,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
             false,
             ResourceCategories.RELATIONAL_DB_INSTANCE
     );
+
+    public static final SupportedMetric CDB_CAPACITY = new SupportedMetric(
+            TencentMetrics.CDB_CAPACITY,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_IOPS = new SupportedMetric(
+            TencentMetrics.CDB_IOPS,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_IOPS_UTIL = new SupportedMetric(
+            TencentMetrics.CDB_IOPS_UTIL,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+
+
+    public static final SupportedMetric CDB_BYTES_SENT = new SupportedMetric(
+            TencentMetrics.CDB_BYTES_SENT,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_BYTES_RECEIVED = new SupportedMetric(
+            TencentMetrics.CDB_BYTES_RECEIVED,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_QPS = new SupportedMetric(
+            TencentMetrics.CDB_QPS,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_TPS = new SupportedMetric(
+            TencentMetrics.CDB_TPS,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_CONNECTION_USE_RATE = new SupportedMetric(
+            TencentMetrics.CDB_CONNECTION_USE_RATE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_MAX_CONNECTIONS = new SupportedMetric(
+            TencentMetrics.CDB_MAX_CONNECTIONS,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_THREADS_CONNECTED = new SupportedMetric(
+            TencentMetrics.CDB_THREADS_CONNECTED,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_SLOW_QUERIES = new SupportedMetric(
+            TencentMetrics.CDB_SLOW_QUERIES,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_SELECT_SCAN = new SupportedMetric(
+            TencentMetrics.CDB_SELECT_SCAN,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_SELECT_COUNT = new SupportedMetric(
+            TencentMetrics.CDB_SELECT_COUNT,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_COM_UPDATE = new SupportedMetric(
+            TencentMetrics.CDB_COM_UPDATE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_COM_DELETE = new SupportedMetric(
+            TencentMetrics.CDB_COM_DELETE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_COM_INSERT = new SupportedMetric(
+            TencentMetrics.CDB_COM_INSERT,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_COM_REPLACE = new SupportedMetric(
+            TencentMetrics.CDB_COM_REPLACE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_QUERIES = new SupportedMetric(
+            TencentMetrics.CDB_QUERIES,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_QUERY_RATE = new SupportedMetric(
+            TencentMetrics.CDB_QUERY_RATE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_TMP_TABLES = new SupportedMetric(
+            TencentMetrics.CDB_TMP_TABLES,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric CDB_TABLE_LOCKS_WAITED = new SupportedMetric(
+            TencentMetrics.CDB_TABLE_LOCKS_WAITED,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+
+    public static final SupportedMetric CDB_INNODB_CACHE_HIT_RATE = new SupportedMetric(
+            TencentMetrics.CDB_INNODB_CACHE_HIT_RATE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric CDB_INNODB_CACHE_USE_RATE = new SupportedMetric(
+            TencentMetrics.CDB_INNODB_CACHE_USE_RATE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric CDB_INNODB_OS_FILE_READS = new SupportedMetric(
+            TencentMetrics.CDB_INNODB_OS_FILE_READS,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric CDB_INNODB_OS_FILE_WRITES = new SupportedMetric(
+            TencentMetrics.CDB_INNODB_OS_FILE_WRITES,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric CDB_INNODB_OS_FSYNCS = new SupportedMetric(
+            TencentMetrics.CDB_INNODB_OS_FSYNCS,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric CDB_INNODB_NUM_OPEN_FILES = new SupportedMetric(
+            TencentMetrics.CDB_INNODB_NUM_OPEN_FILES,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric CDB_KEY_CACHE_HIT_RATE = new SupportedMetric(
+            TencentMetrics.CDB_KEY_CACHE_HIT_RATE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric CDB_KEY_CACHE_USE_RATE = new SupportedMetric(
+            TencentMetrics.CDB_KEY_CACHE_USE_RATE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+
+    public static final SupportedMetric CDB_SLAVE_IO_RUNNING = new SupportedMetric(
+            TencentMetrics.CDB_SLAVE_IO_RUNNING,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric CDB_SLAVE_SQL_RUNNING = new SupportedMetric(
+            TencentMetrics.CDB_SLAVE_SQL_RUNNING,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric CDB_MASTER_SLAVE_DISTANCE = new SupportedMetric(
+            TencentMetrics.CDB_MASTER_SLAVE_DISTANCE,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric CDB_SECONDS_BEHIND_MASTER = new SupportedMetric(
+            TencentMetrics.CDB_SECONDS_BEHIND_MASTER,
+            "InstanceType",
+            TencentMetricsProvider::getCdbMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+
+
+    public static final SupportedMetric PG_CPU_UTIL = new SupportedMetric(
+            TencentMetrics.PG_CPU_UTIL,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric PG_MEMORY_UTIL = new SupportedMetric(
+            TencentMetrics.PG_MEMORY_UTIL,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric PG_DISK_UTIL = new SupportedMetric(
+            TencentMetrics.PG_DISK_UTIL,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric PG_MEMORY_USE = new SupportedMetric(
+            TencentMetrics.PG_MEMORY_USE,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_REAL_CAPACITY = new SupportedMetric(
+            TencentMetrics.PG_REAL_CAPACITY,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_QPS = new SupportedMetric(
+            TencentMetrics.PG_QPS,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_CONNECTIONS = new SupportedMetric(
+            TencentMetrics.PG_CONNECTIONS,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_CALLS = new SupportedMetric(
+            TencentMetrics.PG_CALLS,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_READ_CALLS = new SupportedMetric(
+            TencentMetrics.PG_READ_CALLS,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_WRITE_CALLS = new SupportedMetric(
+            TencentMetrics.PG_WRITE_CALLS,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_OTHER_CALLS = new SupportedMetric(
+            TencentMetrics.PG_OTHER_CALLS,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_HIT_PERCENT = new SupportedMetric(
+            TencentMetrics.PG_HIT_PERCENT,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_SQL_RUNTIME_AVG = new SupportedMetric(
+            TencentMetrics.PG_SQL_RUNTIME_AVG,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_SQL_RUNTIME_MAX = new SupportedMetric(
+            TencentMetrics.PG_SQL_RUNTIME_MAX,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_SQL_RUNTIME_MIN = new SupportedMetric(
+            TencentMetrics.PG_SQL_RUNTIME_MIN,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_REMAIN_XID = new SupportedMetric(
+            TencentMetrics.PG_REMAIN_XID,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_XLOG_DIFF = new SupportedMetric(
+            TencentMetrics.PG_XLOG_DIFF,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_SLOW_QUERY_COUNT = new SupportedMetric(
+            TencentMetrics.PG_SLOW_QUERY_COUNT,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_FLUSH_LATENCY = new SupportedMetric(
+            TencentMetrics.PG_FLUSH_LATENCY,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_XLOG_DIFF_TIME = new SupportedMetric(
+            TencentMetrics.PG_XLOG_DIFF_TIME,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_SLAVE_APPLY_DELAY = new SupportedMetric(
+            TencentMetrics.PG_SLAVE_APPLY_DELAY,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_REPLAY_LAG = new SupportedMetric(
+            TencentMetrics.PG_REPLAY_LAG,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_ACTIVE_CONNS = new SupportedMetric(
+            TencentMetrics.PG_ACTIVE_CONNS,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_IDLE_CONNS = new SupportedMetric(
+            TencentMetrics.PG_IDLE_CONNS,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_LONG_QUERY = new SupportedMetric(
+            TencentMetrics.PG_LONG_QUERY,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_LONG_XACT = new SupportedMetric(
+            TencentMetrics.PG_LONG_XACT,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_IDLE_IN_XACT = new SupportedMetric(
+            TencentMetrics.PG_IDLE_IN_XACT,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_LONG_IDLE_IN_XACT = new SupportedMetric(
+            TencentMetrics.PG_LONG_IDLE_IN_XACT,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_WAITING = new SupportedMetric(
+            TencentMetrics.PG_WAITING,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_LONG_WAITING = new SupportedMetric(
+            TencentMetrics.PG_LONG_WAITING,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_2PC = new SupportedMetric(
+            TencentMetrics.PG_2PC,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_LONG_2PC = new SupportedMetric(
+            TencentMetrics.PG_LONG_2PC,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_NEW_CONNS_IN_5S = new SupportedMetric(
+            TencentMetrics.PG_NEW_CONNS_IN_5S,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_TPS = new SupportedMetric(
+            TencentMetrics.PG_TPS,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_XACT_COMMIT = new SupportedMetric(
+            TencentMetrics.PG_XACT_COMMIT,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_XACT_ROLLBACK = new SupportedMetric(
+            TencentMetrics.PG_XACT_ROLLBACK,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_TUP_DELETED = new SupportedMetric(
+            TencentMetrics.PG_TUP_DELETED,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_TUP_INSERTED = new SupportedMetric(
+            TencentMetrics.PG_TUP_INSERTED,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_TUP_UPDATED = new SupportedMetric(
+            TencentMetrics.PG_TUP_UPDATED,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_TUP_FETCHED = new SupportedMetric(
+            TencentMetrics.PG_TUP_FETCHED,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_TUP_RETURNED = new SupportedMetric(
+            TencentMetrics.PG_TUP_RETURNED,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_DEAD_LOCKS = new SupportedMetric(
+            TencentMetrics.PG_DEAD_LOCKS,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_LOG_FILE_SIZE = new SupportedMetric(
+            TencentMetrics.PG_LOG_FILE_SIZE,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_DATA_FILE_SIZE = new SupportedMetric(
+            TencentMetrics.PG_DATA_FILE_SIZE,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_TEMP_FILE_SIZE = new SupportedMetric(
+            TencentMetrics.PG_TEMP_FILE_SIZE,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_THROUGHPUT = new SupportedMetric(
+            TencentMetrics.PG_THROUGHPUT,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_THROUGHPUT_READ = new SupportedMetric(
+            TencentMetrics.PG_THROUGHPUT_READ,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_THROUGHPUT_WRITE = new SupportedMetric(
+            TencentMetrics.PG_THROUGHPUT_WRITE,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_CONN_UTIL = new SupportedMetric(
+            TencentMetrics.PG_CONN_UTIL,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_CLUSTER_IN_FLOW = new SupportedMetric(
+            TencentMetrics.PG_CLUSTER_IN_FLOW,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric PG_CLUSTER_OUT_FLOW = new SupportedMetric(
+            TencentMetrics.PG_CLUSTER_OUT_FLOW,
+            "resourceId",
+            TencentMetricsProvider::getPgMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
 }

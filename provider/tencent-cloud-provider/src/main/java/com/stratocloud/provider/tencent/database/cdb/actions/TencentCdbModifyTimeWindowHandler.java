@@ -96,8 +96,8 @@ public class TencentCdbModifyTimeWindowHandler implements ResourceActionHandler 
 
         AddTimeWindowRequest request = input.getAddRequest(resource.getExternalId());
 
-        client.clearTimeWindow(resource.getExternalId());
-        client.addTimeWindow(request);
+        client.clearCdbTimeWindow(resource.getExternalId());
+        client.addCdbTimeWindow(request);
     }
 
     @Override

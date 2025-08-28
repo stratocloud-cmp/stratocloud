@@ -178,6 +178,7 @@ public class CdbParamList implements DynamicForm {
                                 defaultValue,
                                 min,
                                 max,
+                                1,
                                 false,
                                 List.of(),
                                 param.getName()

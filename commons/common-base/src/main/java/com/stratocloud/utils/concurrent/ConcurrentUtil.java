@@ -61,7 +61,7 @@ public class ConcurrentUtil implements SelfMonitorTarget {
     }
 
 
-    private static Runnable wrapWithContext(Runnable runnable){
+    public static Runnable wrapWithContext(Runnable runnable){
         if(!CallContext.exists()){
             return runnable;
         }

@@ -2,6 +2,7 @@ package com.stratocloud.provider.tencent.common;
 
 import com.stratocloud.provider.constants.SecurityGroupPolicyDirection;
 import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
+import com.stratocloud.provider.tencent.database.pg.util.PgInstanceClass;
 import com.stratocloud.provider.tencent.flavor.TencentFlavorId;
 import com.stratocloud.provider.tencent.lb.backend.TencentBackend;
 import com.stratocloud.provider.tencent.lb.backend.TencentInstanceBackendId;
@@ -15,6 +16,8 @@ import com.tencentcloudapi.cam.v20190116.models.GetUserAppIdResponse;
 import com.tencentcloudapi.cbs.v20170312.models.Snapshot;
 import com.tencentcloudapi.cbs.v20170312.models.*;
 import com.tencentcloudapi.cdb.v20170320.models.*;
+import com.tencentcloudapi.cdb.v20170320.models.AccountInfo;
+import com.tencentcloudapi.cdb.v20170320.models.DescribeDBInstancesRequest;
 import com.tencentcloudapi.clb.v20180317.models.*;
 import com.tencentcloudapi.cloudaudit.v20190319.models.Event;
 import com.tencentcloudapi.cvm.v20170312.models.Image;
@@ -23,6 +26,7 @@ import com.tencentcloudapi.cvm.v20170312.models.*;
 import com.tencentcloudapi.monitor.v20180724.models.AlarmHistory;
 import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataRequest;
 import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataResponse;
+import com.tencentcloudapi.postgres.v20170312.models.*;
 import com.tencentcloudapi.ssl.v20191205.models.ApplyCertificateRequest;
 import com.tencentcloudapi.ssl.v20191205.models.Certificates;
 import com.tencentcloudapi.ssl.v20191205.models.CreateCertificateRequest;
@@ -319,6 +323,8 @@ public interface TencentCloudClient {
 
     String createCdbHourInstance(CreateDBInstanceHourRequest request);
 
+    RestartDBInstancesResponse restartCdbInstance(String instanceId);
+
     void isolateCdbInstance(String instanceId);
 
     void offlineCdbInstance(String instanceId);
@@ -359,9 +365,9 @@ public interface TencentCloudClient {
 
     DescribeTimeWindowResponse describeCdbTimeWindow(String instanceId);
 
-    void clearTimeWindow(String instanceId);
+    void clearCdbTimeWindow(String instanceId);
 
-    void addTimeWindow(AddTimeWindowRequest request);
+    void addCdbTimeWindow(AddTimeWindowRequest request);
 
     List<AccountInfo> describeCdbAccounts(String instanceId);
 
@@ -375,4 +381,60 @@ public interface TencentCloudClient {
     void stopCdbCpuExpand(String instanceId);
 
 
+    List<DBInstance> describePgInstances(com.tencentcloudapi.postgres.v20170312.models.DescribeDBInstancesRequest request);
+
+    Optional<DBInstance> describePgInstance(String instanceId);
+
+    String createPgInstance(CreateInstancesRequest request);
+
+    RestartDBInstanceResponse restartPgInstance(String instanceId);
+
+    void isolatePgInstance(String instanceId);
+
+    void destroyPgInstance(String instanceId);
+
+    void removePgInstanceIsolation(DisIsolateDBInstancesRequest request);
+
+    void renewPgInstance(RenewInstanceRequest request);
+
+    List<com.tencentcloudapi.postgres.v20170312.models.ZoneInfo> describePgZones();
+
+    List<com.tencentcloudapi.postgres.v20170312.models.ZoneInfo> describeAvailablePgZones();
+
+    List<Version> describePgVersions();
+
+    Optional<Version> describePgVersion(String kernelVersion);
+
+    List<PgInstanceClass> describePgClasses();
+
+
+    Optional<PgInstanceClass> describePgClass(String specCode);
+
+    List<com.tencentcloudapi.postgres.v20170312.models.SecurityGroup> describePgSecurityGroups(String instanceId);
+
+    void associatePgSecurityGroup(String instanceId, String securityGroupId);
+
+    void disassociatePgSecurityGroup(String instanceId, String securityGroupId);
+
+    InquiryPriceCreateDBInstancesResponse describePgPrice(InquiryPriceCreateDBInstancesRequest request);
+
+    InquiryPriceRenewDBInstanceResponse describePgRenewPrice(InquiryPriceRenewDBInstanceRequest request);
+
+    InquiryPriceUpgradeDBInstanceResponse describePgUpgradePrice(InquiryPriceUpgradeDBInstanceRequest request);
+
+    void modifyPgSpec(ModifyDBInstanceSpecRequest request);
+
+    Optional<TaskSet> describePgTask(Long taskId);
+
+    void modifyPgName(String instanceId, String instanceName);
+
+    void modifyPgAutoRenewFlag(String instanceId, Long autoRenewFlag);
+
+    void upgradePgEngineMajorVersion(UpgradeDBInstanceMajorVersionRequest request);
+
+    void upgradePgEngineKernelVersion(UpgradeDBInstanceKernelVersionRequest request);
+
+    List<com.tencentcloudapi.postgres.v20170312.models.AccountInfo> describePgAccounts(String instanceId);
+
+    void modifyPgPassword(ResetAccountPasswordRequest request);
 }

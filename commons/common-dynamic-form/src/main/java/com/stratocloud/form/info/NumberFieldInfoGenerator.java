@@ -28,6 +28,7 @@ public class NumberFieldInfoGenerator implements FieldInfoGenerator{
                 Utils.isNotEmpty(numberField.defaultValue())?numberField.defaultValue()[0]:null,
                 numberField.min(),
                 numberField.max(),
+                numberField.step(),
                 numberField.required(),
                 List.of(numberField.conditions()),
                 numberField.placeHolder()

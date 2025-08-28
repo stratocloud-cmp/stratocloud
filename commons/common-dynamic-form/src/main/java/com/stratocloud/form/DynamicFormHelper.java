@@ -250,6 +250,7 @@ public class DynamicFormHelper {
                             defaultValue,
                             numberFieldDetail.min(),
                             numberFieldDetail.max(),
+                            numberFieldDetail.step(),
                             numberFieldDetail.required(),
                             numberFieldDetail.conditions(),
                             numberFieldDetail.placeholder()

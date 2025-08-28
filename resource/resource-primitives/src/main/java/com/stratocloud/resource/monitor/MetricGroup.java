@@ -24,4 +24,8 @@ public record MetricGroup(String id, String name) {
     public static final MetricGroup ENGINE_METRICS = new MetricGroup(
             "EngineMetrics", "引擎监控"
     );
+
+    public static final MetricGroup DEPLOYMENT_METRICS = new MetricGroup(
+            "DeploymentMetrics", "部署监控"
+    );
 }

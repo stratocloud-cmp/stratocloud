@@ -260,9 +260,17 @@ public class ResourceCategories {
     public static final ResourceCategory RELATIONAL_DB_INSTANCE = new ResourceCategory(
             ResourceCategoryGroups.CLOUD_DB_RELATED,
             "RELATIONAL_DB_INSTANCE",
-            "关系型数据库",
+            "关系型实例",
             "rdb-instance",
             251
+    );
+
+    public static final ResourceCategory DB_INSTANCE_FLAVOR = new ResourceCategory(
+            ResourceCategoryGroups.CLOUD_DB_RELATED,
+            "DB_INSTANCE_FLAVOR",
+            "实例规格",
+            "db-instance-flavor",
+            255
     );
 
     public static final ResourceCategory INSTANCE_SNAPSHOT = new ResourceCategory(

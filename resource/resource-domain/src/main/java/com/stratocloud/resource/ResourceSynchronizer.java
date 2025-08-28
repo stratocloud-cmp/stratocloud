@@ -140,7 +140,7 @@ public class ResourceSynchronizer {
                 continue;
 
             for (Relationship relationship : entry.getValue()) {
-                if(relationship != latest.get()) {
+                if(relationship != latest.get() && Objects.equals(relationship.getType(), latest.get().getType())) {
                     log.warn("Duplicated requirement detected, disconnecting...");
                     relationship.onDisconnected();
                 }

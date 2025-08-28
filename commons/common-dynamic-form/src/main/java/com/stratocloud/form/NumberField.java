@@ -19,6 +19,8 @@ public @interface NumberField {
     int min() default 0;
     int max() default Integer.MAX_VALUE;
 
+    int step() default 1;
+
     boolean required() default true;
 
 

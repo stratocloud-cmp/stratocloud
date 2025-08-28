@@ -1,9 +1,7 @@
 package com.stratocloud.provider.tencent.database.cdb.actions;
 
 import com.stratocloud.account.ExternalAccount;
-import com.stratocloud.exceptions.BadCommandException;
-import com.stratocloud.exceptions.StratoException;
-import com.stratocloud.provider.constants.DbActions;
+import com.stratocloud.job.TaskContext;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
@@ -12,20 +10,20 @@ import com.stratocloud.provider.tencent.common.TencentCloudClient;
 import com.stratocloud.provider.tencent.database.cdb.CdbUtil;
 import com.stratocloud.provider.tencent.database.cdb.TencentCdbHandler;
 import com.stratocloud.resource.*;
-import com.stratocloud.utils.concurrent.SleepUtil;
-import com.tencentcloudapi.cdb.v20170320.models.InstanceInfo;
-import lombok.extern.slf4j.Slf4j;
+import com.tencentcloudapi.cdb.v20170320.models.RestartDBInstancesResponse;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
-@Slf4j
 @Component
-public class TencentCdbRemoveIsolationHandler implements ResourceActionHandler {
+public class TencentCdbRestartHandler implements ResourceActionHandler {
 
     private final TencentCdbHandler cdbHandler;
 
-    public TencentCdbRemoveIsolationHandler(TencentCdbHandler cdbHandler) {
+    public TencentCdbRestartHandler(TencentCdbHandler cdbHandler) {
         this.cdbHandler = cdbHandler;
     }
 
@@ -36,22 +34,22 @@ public class TencentCdbRemoveIsolationHandler implements ResourceActionHandler {
 
     @Override
     public ResourceAction getAction() {
-        return DbActions.REMOVE_ISOLATION;
+        return ResourceActions.RESTART;
     }
 
     @Override
     public String getTaskName() {
-        return "解隔离云数据库";
+        return "云数据库重启";
     }
 
     @Override
     public Set<ResourceState> getAllowedStates() {
-        return Set.of(ResourceState.SHUTDOWN);
+        return Set.of(ResourceState.STARTED);
     }
 
     @Override
     public Optional<ResourceState> getTransitionState() {
-        return Optional.of(ResourceState.STARTING);
+        return Optional.of(ResourceState.RESTARTING);
     }
 
     @Override
@@ -61,24 +59,18 @@ public class TencentCdbRemoveIsolationHandler implements ResourceActionHandler {
 
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         TencentCloudProvider provider = (TencentCloudProvider) cdbHandler.getProvider();
+        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         TencentCloudClient client = provider.buildClient(account);
 
-        client.releaseIsolatedHourInstance(resource.getExternalId());
+        RestartDBInstancesResponse response = client.restartCdbInstance(resource.getExternalId());
+
+        TaskContext.setExternalTaskId(response.getAsyncRequestId());
     }
 
     @Override
     public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        Optional<ExternalResource> cdb = cdbHandler.describeExternalResource(account, resource.getExternalId());
-
-        if(cdb.isPresent() && cdb.get().state() == ResourceState.SHUTDOWN){
-            log.warn("CDB is not started yet.");
-            SleepUtil.sleep(30);
-        }
-
-        return ResourceActionResult.finished();
+        return CdbUtil.checkAsyncRequestResult(resource);
     }
 
     @Override
@@ -88,11 +80,6 @@ public class TencentCdbRemoveIsolationHandler implements ResourceActionHandler {
 
     @Override
     public void validatePrecondition(Resource resource, Map<String, Object> parameters) {
-        ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        InstanceInfo instanceInfo = cdbHandler.describeCdb(account, resource.getExternalId()).orElseThrow(
-                () -> new StratoException("云数据库不存在")
-        );
-        if(CdbUtil.isPrepaid(instanceInfo))
-            throw new BadCommandException("包年包月实例请选择续费操作");
+
     }
 }

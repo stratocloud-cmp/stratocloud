@@ -8,6 +8,7 @@ import com.stratocloud.exceptions.ProviderConnectionException;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.provider.constants.SecurityGroupPolicyDirection;
 import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
+import com.stratocloud.provider.tencent.database.pg.util.PgInstanceClass;
 import com.stratocloud.provider.tencent.flavor.TencentFlavorId;
 import com.stratocloud.provider.tencent.lb.backend.TencentBackend;
 import com.stratocloud.provider.tencent.lb.backend.TencentInstanceBackendId;
@@ -17,6 +18,7 @@ import com.stratocloud.provider.tencent.lb.listener.TencentListenerId;
 import com.stratocloud.provider.tencent.lb.rule.TencentL7Rule;
 import com.stratocloud.provider.tencent.lb.rule.TencentL7RuleId;
 import com.stratocloud.provider.tencent.securitygroup.policy.TencentSecurityGroupPolicyId;
+import com.stratocloud.utils.Assert;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.TimeUtil;
 import com.stratocloud.utils.Utils;
@@ -30,9 +32,16 @@ import com.tencentcloudapi.cbs.v20170312.CbsClient;
 import com.tencentcloudapi.cbs.v20170312.models.Snapshot;
 import com.tencentcloudapi.cbs.v20170312.models.*;
 import com.tencentcloudapi.cdb.v20170320.CdbClient;
-import com.tencentcloudapi.cdb.v20170320.models.*;
+import com.tencentcloudapi.cdb.v20170320.models.AccountInfo;
 import com.tencentcloudapi.cdb.v20170320.models.AssociateSecurityGroupsRequest;
+import com.tencentcloudapi.cdb.v20170320.models.DescribeAccountsRequest;
+import com.tencentcloudapi.cdb.v20170320.models.DescribeAccountsResponse;
+import com.tencentcloudapi.cdb.v20170320.models.DescribeDBInstancesRequest;
+import com.tencentcloudapi.cdb.v20170320.models.DescribeDBInstancesResponse;
 import com.tencentcloudapi.cdb.v20170320.models.DisassociateSecurityGroupsRequest;
+import com.tencentcloudapi.cdb.v20170320.models.ModifyDBInstanceNameRequest;
+import com.tencentcloudapi.cdb.v20170320.models.ModifyDBInstanceNameResponse;
+import com.tencentcloudapi.cdb.v20170320.models.*;
 import com.tencentcloudapi.clb.v20180317.ClbClient;
 import com.tencentcloudapi.clb.v20180317.models.*;
 import com.tencentcloudapi.cloudaudit.v20190319.CloudauditClient;
@@ -48,6 +57,7 @@ import com.tencentcloudapi.common.profile.Language;
 import com.tencentcloudapi.cvm.v20170312.CvmClient;
 import com.tencentcloudapi.cvm.v20170312.models.DescribeRegionsRequest;
 import com.tencentcloudapi.cvm.v20170312.models.DescribeRegionsResponse;
+import com.tencentcloudapi.cvm.v20170312.models.DescribeZonesRequest;
 import com.tencentcloudapi.cvm.v20170312.models.Filter;
 import com.tencentcloudapi.cvm.v20170312.models.Image;
 import com.tencentcloudapi.cvm.v20170312.models.Instance;
@@ -56,6 +66,12 @@ import com.tencentcloudapi.cvm.v20170312.models.ZoneInfo;
 import com.tencentcloudapi.cvm.v20170312.models.*;
 import com.tencentcloudapi.monitor.v20180724.MonitorClient;
 import com.tencentcloudapi.monitor.v20180724.models.*;
+import com.tencentcloudapi.postgres.v20170312.PostgresClient;
+import com.tencentcloudapi.postgres.v20170312.models.DescribeTasksRequest;
+import com.tencentcloudapi.postgres.v20170312.models.DescribeTasksResponse;
+import com.tencentcloudapi.postgres.v20170312.models.DescribeZonesResponse;
+import com.tencentcloudapi.postgres.v20170312.models.ModifyDBInstanceSecurityGroupsRequest;
+import com.tencentcloudapi.postgres.v20170312.models.*;
 import com.tencentcloudapi.ssl.v20191205.SslClient;
 import com.tencentcloudapi.ssl.v20191205.models.*;
 import com.tencentcloudapi.tag.v20180813.TagClient;
@@ -66,8 +82,8 @@ import com.tencentcloudapi.tag.v20180813.models.Project;
 import com.tencentcloudapi.tat.v20201028.TatClient;
 import com.tencentcloudapi.tat.v20201028.models.*;
 import com.tencentcloudapi.vpc.v20170312.VpcClient;
-import com.tencentcloudapi.vpc.v20170312.models.*;
 import com.tencentcloudapi.vpc.v20170312.models.SecurityGroup;
+import com.tencentcloudapi.vpc.v20170312.models.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -75,6 +91,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class TencentCloudClientImpl implements TencentCloudClient{
@@ -194,6 +211,10 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
     private CdbClient buildCdbClient(){
         return new CdbClient(credential, region, createClientProfile());
+    }
+
+    private PostgresClient buildPgClient(){
+        return new PostgresClient(credential, region, createClientProfile());
     }
 
     private CloudauditClient buildAuditClient(){
@@ -2099,6 +2120,16 @@ public class TencentCloudClientImpl implements TencentCloudClient{
     }
 
     @Override
+    public RestartDBInstancesResponse restartCdbInstance(String instanceId){
+        RestartDBInstancesRequest request = new RestartDBInstancesRequest();
+        request.setInstanceIds(new String[]{instanceId});
+        RestartDBInstancesResponse response = tryInvoke(() -> buildCdbClient().RestartDBInstances(request));
+        log.info("Tencent restart CDB instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+        return response;
+    }
+
+    @Override
     public void isolateCdbInstance(String instanceId){
         IsolateDBInstanceRequest request = new IsolateDBInstanceRequest();
         request.setInstanceId(instanceId);
@@ -2312,14 +2343,14 @@ public class TencentCloudClientImpl implements TencentCloudClient{
     }
 
     @Override
-    public void clearTimeWindow(String instanceId){
+    public void clearCdbTimeWindow(String instanceId){
         DeleteTimeWindowRequest request = new DeleteTimeWindowRequest();
         request.setInstanceId(instanceId);
         tryInvoke(() -> buildCdbClient().DeleteTimeWindow(request));
     }
 
     @Override
-    public void addTimeWindow(AddTimeWindowRequest request){
+    public void addCdbTimeWindow(AddTimeWindowRequest request){
         var response = tryInvoke(() -> buildCdbClient().AddTimeWindow(request));
 
         log.info("Tencent add CDB time window request sent. InstanceId={}. RequestId={}.",
@@ -2403,5 +2434,427 @@ public class TencentCloudClientImpl implements TencentCloudClient{
         }
 
         log.error("Waited too long for tencent cdb task {}, there might be a problem.", asyncRequestId);
+    }
+
+
+    @Override
+    public List<DBInstance> describePgInstances(com.tencentcloudapi.postgres.v20170312.models.DescribeDBInstancesRequest request){
+        return queryAll(
+                () -> buildPgClient().DescribeDBInstances(request),
+                com.tencentcloudapi.postgres.v20170312.models.DescribeDBInstancesResponse::getDBInstanceSet,
+                com.tencentcloudapi.postgres.v20170312.models.DescribeDBInstancesResponse::getTotalCount,
+                request::setOffset,
+                request::setLimit
+        );
+    }
+
+    @Override
+    public Optional<DBInstance> describePgInstance(String instanceId){
+        var request = new com.tencentcloudapi.postgres.v20170312.models.DescribeDBInstancesRequest();
+        var filter = new com.tencentcloudapi.postgres.v20170312.models.Filter();
+        filter.setName("db-instance-id");
+        filter.setValues(new String[]{instanceId});
+        request.setFilters(new com.tencentcloudapi.postgres.v20170312.models.Filter[]{filter});
+        return describePgInstances(request).stream().findAny();
+    }
+
+    @Override
+    public String createPgInstance(CreateInstancesRequest request){
+        if(request.getInstanceCount() != null && request.getInstanceCount() > 1)
+            throw new StratoException("Do not create multiple pg instances via this api");
+
+        CreateInstancesResponse response = tryInvoke(() -> buildPgClient().CreateInstances(request));
+        String instanceId = getPgInstanceIdFromResponse(response);
+
+        log.info("Tencent create PG instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+
+        return instanceId;
+    }
+
+    private String getPgInstanceIdFromResponse(CreateInstancesResponse response) {
+        String[] instanceIdSet = response.getDBInstanceIdSet();
+
+        String instanceId;
+
+        if(Utils.isEmpty(instanceIdSet)) {
+            String[] dealNames = response.getDealNames();
+            if(Utils.isEmpty(dealNames)){
+                String message  = "Tencent create PostgreSQL instance request sent " +
+                        "but neither of InstanceIdSet or DealNames was returned by server. " +
+                        "RequestId=%s.".formatted(response.getRequestId());
+                throw new StratoException(message);
+            }else {
+                log.warn("Tencent create PostgreSQL instance request sent but InstanceIdSet is empty, " +
+                        "trying to find order by DealNames: {}.", JSON.toJsonString(dealNames));
+                DescribeOrdersRequest ordersRequest = new DescribeOrdersRequest();
+                ordersRequest.setDealNames(dealNames);
+                PgDeal[] deals = tryInvoke(() -> buildPgClient().DescribeOrders(ordersRequest)).getDeals();
+
+                if(Utils.isEmpty(deals) || Utils.isEmpty(deals[0].getDBInstanceIdSet()))
+                    throw new StratoException(
+                            "Cannot find ID of the PostgreSQL instance which is just created. DealNames=%s.".formatted(
+                                    JSON.toJsonString(dealNames)
+                            )
+                    );
+
+                instanceId = deals[0].getDBInstanceIdSet()[0];
+            }
+        }else {
+            instanceId = instanceIdSet[0];
+        }
+        return instanceId;
+    }
+
+    @Override
+    public RestartDBInstanceResponse restartPgInstance(String instanceId){
+        RestartDBInstanceRequest request = new RestartDBInstanceRequest();
+        request.setDBInstanceId(instanceId);
+        RestartDBInstanceResponse response = tryInvoke(() -> buildPgClient().RestartDBInstance(request));
+
+        log.info("Tencent restart PG instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+
+        return response;
+    }
+
+    @Override
+    public void isolatePgInstance(String instanceId){
+        IsolateDBInstancesRequest request = new IsolateDBInstancesRequest();
+        request.setDBInstanceIdSet(new String[]{instanceId});
+        IsolateDBInstancesResponse response = tryInvoke(() -> buildPgClient().IsolateDBInstances(request));
+        log.info("Tencent isolate PG instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void destroyPgInstance(String instanceId){
+        DestroyDBInstanceRequest request = new DestroyDBInstanceRequest();
+        request.setDBInstanceId(instanceId);
+        DestroyDBInstanceResponse response = tryInvoke(() -> buildPgClient().DestroyDBInstance(request));
+        log.info("Tencent destroy PG instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void removePgInstanceIsolation(DisIsolateDBInstancesRequest request){
+        Assert.isTrue(Utils.length(request.getDBInstanceIdSet())==1, "Specify 1 pg instance id");
+
+        DisIsolateDBInstancesResponse response = tryInvoke(() -> buildPgClient().DisIsolateDBInstances(request));
+        log.info("Tencent remove PG isolation request sent. InstanceId={}. RequestId={}.",
+                request.getDBInstanceIdSet()[0], response.getRequestId());
+    }
+
+    @Override
+    public void renewPgInstance(RenewInstanceRequest request){
+        RenewInstanceResponse response = tryInvoke(() -> buildPgClient().RenewInstance(request));
+
+        log.info("Tencent renew PG instance request sent. InstanceId={}. RequestId={}.",
+                request.getDBInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public List<com.tencentcloudapi.postgres.v20170312.models.ZoneInfo> describePgZones(){
+        DescribeZonesResponse response = CacheUtil.queryWithCache(
+                cacheService,
+                buildCacheKey("PostgresZones"),
+                3000L,
+                this::doDescribePgZones,
+                new DescribeZonesResponse()
+        );
+        return Utils.isEmpty(response.getZoneSet()) ? List.of() : List.of(response.getZoneSet());
+    }
+
+    @Override
+    public List<com.tencentcloudapi.postgres.v20170312.models.ZoneInfo> describeAvailablePgZones(){
+        Set<String> regionZones = describeZones().stream().map(ZoneInfo::getZone).collect(Collectors.toSet());
+        return describePgZones().stream().filter(
+                z -> Objects.equals(z.getZoneState(), "AVAILABLE") ||
+                        Objects.equals(z.getZoneState(), "SUPPORTMODIFYONLY")
+        ).filter(
+                z -> regionZones.contains(z.getZone())
+        ).toList();
+    }
+
+    private DescribeZonesResponse doDescribePgZones() {
+        return tryInvoke(
+                () -> buildPgClient().DescribeZones(
+                        new com.tencentcloudapi.postgres.v20170312.models.DescribeZonesRequest()
+                )
+        );
+    }
+
+    @Override
+    public List<Version> describePgVersions(){
+        DescribeDBVersionsResponse response = CacheUtil.queryWithCache(
+                cacheService,
+                buildCacheKey("PostgresVersions"),
+                3000L,
+                this::doDescribePgVersions,
+                new DescribeDBVersionsResponse()
+        );
+
+        return Utils.isEmpty(response.getVersionSet()) ? List.of() : List.of(response.getVersionSet());
+    }
+
+    private List<Version> describeAvailablePgVersions(){
+        return describePgVersions().stream().filter(
+                v -> Objects.equals(v.getStatus(), "AVAILABLE")
+        ).toList();
+    }
+
+    @Override
+    public Optional<Version> describePgVersion(String kernelVersion){
+        return describePgVersions().stream().filter(
+                v -> Objects.equals(v.getDBKernelVersion(), kernelVersion)
+        ).findAny();
+    }
+
+    private DescribeDBVersionsResponse doDescribePgVersions() {
+        return tryInvoke(
+                () -> buildPgClient().DescribeDBVersions(new DescribeDBVersionsRequest())
+        );
+    }
+
+    @Override
+    public synchronized List<PgInstanceClass> describePgClasses() {
+        return CacheUtil.queryWithCache(
+                cacheService,
+                buildCacheKey("PostgresClasses"),
+                3000L,
+                this::doDescribePgClasses,
+                new ArrayList<>()
+        );
+    }
+
+    @Override
+    public Optional<PgInstanceClass> describePgClass(String specCode){
+        return describePgClasses().stream().filter(
+                c -> Objects.equals(specCode, c.detail().getSpecCode())
+        ).findAny();
+    }
+
+    private List<PgInstanceClass> doDescribePgClasses() {
+        var zones = describeAvailablePgZones();
+
+        List<Version> versions = describeAvailablePgVersions();
+
+        Map<String, List<Version>> versionsMap = versions.stream().collect(
+                Collectors.groupingBy(
+                        v -> v.getDBEngine() + v.getDBMajorVersion()
+                )
+        );
+
+        Map<String, PgInstanceClass> classMap = new HashMap<>();
+
+        for (String key : versionsMap.keySet()) {
+            List<Version> versionList = versionsMap.get(key);
+
+            if(Utils.isEmpty(versionList))
+                continue;
+
+            Version exampleVersion = versionList.get(0);
+            String dbEngine = exampleVersion.getDBEngine();
+            String dbMajorVersion = exampleVersion.getDBMajorVersion();
+
+            for (var zone : zones) {
+                DescribeClassesRequest request = new DescribeClassesRequest();
+                request.setZone(zone.getZone());
+                request.setDBEngine(dbEngine);
+                request.setDBMajorVersion(dbMajorVersion);
+
+                DescribeClassesResponse response;
+                try {
+                    response = tryInvoke(() -> buildPgClient().DescribeClasses(request));
+                }catch (Exception e){
+                    log.warn("Failed to retrieve pg classes by request: {}.",
+                            JSON.toJsonString(request), e);
+                    continue;
+                }
+
+
+                if(Utils.isEmpty(response.getClassInfoSet()))
+                    continue;
+
+                for (ClassInfo classInfo : response.getClassInfoSet()) {
+                    PgInstanceClass instanceClass = classMap.computeIfAbsent(
+                            classInfo.getSpecCode(),
+                            k -> new PgInstanceClass(
+                                    classInfo,
+                                    new HashSet<>(),
+                                    new HashSet<>()
+                            )
+                    );
+                    instanceClass.supportedZones().add(zone.getZone());
+                    instanceClass.supportedVersions().addAll(versionList);
+                }
+            }
+        }
+
+        Comparator<PgInstanceClass> comparator = Comparator.comparingLong(
+                c -> c.detail().getCPU()
+        );
+        comparator = comparator.thenComparing(c -> c.detail().getMemory());
+        return new ArrayList<>(classMap.values().stream().sorted(comparator).toList());
+    }
+
+
+    @Override
+    public List<com.tencentcloudapi.postgres.v20170312.models.SecurityGroup> describePgSecurityGroups(String instanceId){
+        DescribeDBInstanceSecurityGroupsRequest request = new DescribeDBInstanceSecurityGroupsRequest();
+        request.setDBInstanceId(instanceId);
+
+        try {
+            var response = tryInvoke(() -> buildPgClient().DescribeDBInstanceSecurityGroups(request));
+
+            return Utils.isEmpty(response.getSecurityGroupSet()) ? List.of() : List.of(response.getSecurityGroupSet());
+        }catch (ExternalResourceNotFoundException e){
+            log.warn(e.toString());
+            return List.of();
+        }
+    }
+
+    @Override
+    public void associatePgSecurityGroup(String instanceId, String securityGroupId){
+        Set<String> currentSecurityGroupIds = describePgSecurityGroups(instanceId).stream().map(
+                com.tencentcloudapi.postgres.v20170312.models.SecurityGroup::getSecurityGroupId
+        ).collect(Collectors.toSet());
+
+        if(currentSecurityGroupIds.contains(securityGroupId))
+            return;
+
+        List<String> expectedSecurityGroupIds = new ArrayList<>(currentSecurityGroupIds);
+        expectedSecurityGroupIds.add(securityGroupId);
+
+        ModifyDBInstanceSecurityGroupsRequest request = new ModifyDBInstanceSecurityGroupsRequest();
+        request.setDBInstanceId(instanceId);
+        request.setSecurityGroupIdSet(expectedSecurityGroupIds.toArray(String[]::new));
+
+        var response = tryInvoke(() -> buildPgClient().ModifyDBInstanceSecurityGroups(request));
+
+        log.info("Tencent associate PG security group request sent. InstanceId={}. RequestId={}.",
+                request.getDBInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public void disassociatePgSecurityGroup(String instanceId, String securityGroupId){
+        Set<String> currentSecurityGroupIds = describePgSecurityGroups(instanceId).stream().map(
+                com.tencentcloudapi.postgres.v20170312.models.SecurityGroup::getSecurityGroupId
+        ).collect(Collectors.toSet());
+
+        if(!currentSecurityGroupIds.contains(securityGroupId))
+            return;
+
+        List<String> expectedSecurityGroupIds = new ArrayList<>(currentSecurityGroupIds);
+        expectedSecurityGroupIds.remove(securityGroupId);
+
+        ModifyDBInstanceSecurityGroupsRequest request = new ModifyDBInstanceSecurityGroupsRequest();
+        request.setDBInstanceId(instanceId);
+        request.setSecurityGroupIdSet(expectedSecurityGroupIds.toArray(String[]::new));
+
+        var response = tryInvoke(() -> buildPgClient().ModifyDBInstanceSecurityGroups(request));
+
+        log.info("Tencent disassociate PG security group request sent. InstanceId={}. RequestId={}.",
+                request.getDBInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public InquiryPriceCreateDBInstancesResponse describePgPrice(InquiryPriceCreateDBInstancesRequest request){
+        return tryInvoke(() -> buildPgClient().InquiryPriceCreateDBInstances(request));
+    }
+
+    @Override
+    public InquiryPriceRenewDBInstanceResponse describePgRenewPrice(InquiryPriceRenewDBInstanceRequest request){
+        return tryInvoke(() -> buildPgClient().InquiryPriceRenewDBInstance(request));
+    }
+
+    @Override
+    public InquiryPriceUpgradeDBInstanceResponse describePgUpgradePrice(InquiryPriceUpgradeDBInstanceRequest request){
+        return tryInvoke(() -> buildPgClient().InquiryPriceUpgradeDBInstance(request));
+    }
+
+    @Override
+    public void modifyPgSpec(ModifyDBInstanceSpecRequest request){
+        ModifyDBInstanceSpecResponse response = tryInvoke(() -> buildPgClient().ModifyDBInstanceSpec(request));
+
+        log.info("Tencent modify PG spec request sent. InstanceId={}. RequestId={}.",
+                request.getDBInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public Optional<TaskSet> describePgTask(Long taskId){
+        DescribeTasksRequest request = new DescribeTasksRequest();
+        request.setTaskId(taskId);
+
+        try {
+            DescribeTasksResponse response = tryInvoke(() -> buildPgClient().DescribeTasks(request));
+
+            if(Utils.isEmpty(response.getTaskSet()))
+                return Optional.empty();
+
+            return Optional.of(response.getTaskSet()[0]);
+        }catch (ExternalResourceNotFoundException e){
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public void modifyPgName(String instanceId, String instanceName){
+        var request = new com.tencentcloudapi.postgres.v20170312.models.ModifyDBInstanceNameRequest();
+        request.setDBInstanceId(instanceId);
+        request.setInstanceName(instanceName);
+
+        var response = tryInvoke(() -> buildPgClient().ModifyDBInstanceName(request));
+
+        log.info("Tencent modify PG name request sent. InstanceId={}. RequestId={}.",
+                request.getDBInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public void modifyPgAutoRenewFlag(String instanceId, Long autoRenewFlag){
+        SetAutoRenewFlagRequest request = new SetAutoRenewFlagRequest();
+        request.setDBInstanceIdSet(new String[]{instanceId});
+        request.setAutoRenewFlag(autoRenewFlag);
+
+        SetAutoRenewFlagResponse response = tryInvoke(() -> buildPgClient().SetAutoRenewFlag(request));
+        log.info("Tencent modify PG auto renew flag request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void upgradePgEngineMajorVersion(UpgradeDBInstanceMajorVersionRequest request){
+        var response = tryInvoke(() -> buildPgClient().UpgradeDBInstanceMajorVersion(request));
+
+        log.info("Tencent upgrade PG major version request sent. InstanceId={}. RequestId={}.",
+                request.getDBInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public void upgradePgEngineKernelVersion(UpgradeDBInstanceKernelVersionRequest request){
+        var response = tryInvoke(() -> buildPgClient().UpgradeDBInstanceKernelVersion(request));
+
+        log.info("Tencent upgrade PG kernel version request sent. InstanceId={}. RequestId={}.",
+                request.getDBInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public List<com.tencentcloudapi.postgres.v20170312.models.AccountInfo> describePgAccounts(String instanceId){
+        var request = new com.tencentcloudapi.postgres.v20170312.models.DescribeAccountsRequest();
+        request.setDBInstanceId(instanceId);
+        return queryAll(
+                () -> buildPgClient().DescribeAccounts(request),
+                com.tencentcloudapi.postgres.v20170312.models.DescribeAccountsResponse::getDetails,
+                com.tencentcloudapi.postgres.v20170312.models.DescribeAccountsResponse::getTotalCount,
+                request::setOffset,
+                request::setLimit
+        );
+    }
+
+    @Override
+    public void modifyPgPassword(ResetAccountPasswordRequest request){
+        ResetAccountPasswordResponse response = tryInvoke(() -> buildPgClient().ResetAccountPassword(request));
+
+        log.info("Tencent reset PG password request sent. InstanceId={}. RequestId={}.",
+                request.getDBInstanceId(), response.getRequestId());
     }
 }
