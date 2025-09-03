@@ -18,6 +18,7 @@ import com.stratocloud.provider.tencent.cos.session.CosSessionManager;
 import com.stratocloud.provider.tencent.database.cdb.TencentCdbHandler;
 import com.stratocloud.provider.tencent.database.pg.TencentPgHandler;
 import com.stratocloud.provider.tencent.instance.TencentInstanceUtil;
+import com.stratocloud.provider.tencent.redis.TencentRedisHandler;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.alert.AlertStatus;
 import com.stratocloud.resource.alert.ExternalAlertHistory;
@@ -79,7 +80,9 @@ public class TencentMetricsProvider implements MetricsProvider {
                 PG_TUP_UPDATED, PG_TUP_FETCHED, PG_TUP_RETURNED, PG_DEAD_LOCKS,
                 PG_LOG_FILE_SIZE, PG_DATA_FILE_SIZE, PG_TEMP_FILE_SIZE,
                 PG_THROUGHPUT, PG_THROUGHPUT_READ, PG_THROUGHPUT_WRITE,
-                PG_CONN_UTIL, PG_CLUSTER_IN_FLOW, PG_CLUSTER_OUT_FLOW
+                PG_CONN_UTIL, PG_CLUSTER_IN_FLOW, PG_CLUSTER_OUT_FLOW,
+
+                REDIS_CPU_UTIL, REDIS_MEMORY_UTIL, REDIS_MEMORY_USE
         );
     }
 
@@ -111,6 +114,12 @@ public class TencentMetricsProvider implements MetricsProvider {
         if(resource.getResourceHandler() instanceof TencentPgHandler){
             return MetricsProvider.super.getSupportedMetrics(resource).stream().filter(
                     m -> TencentMetrics.PG_METRICS.contains(m.metric())
+            ).toList();
+        }
+
+        if(resource.getResourceHandler() instanceof TencentRedisHandler){
+            return MetricsProvider.super.getSupportedMetrics(resource).stream().filter(
+                    m -> TencentMetrics.REDIS_METRICS.contains(m.metric())
             ).toList();
         }
 
@@ -158,6 +167,19 @@ public class TencentMetricsProvider implements MetricsProvider {
                 new MetricObject(
                         List.of(
                                 new MetricDimension("resourceId", resource.getExternalId())
+                        )
+                )
+        );
+    }
+
+    private static List<MetricObject> getRedisMetricObjects(Resource resource){
+        if(Utils.isBlank(resource.getExternalId()))
+            return List.of();
+
+        return List.of(
+                new MetricObject(
+                        List.of(
+                                new MetricDimension("instanceid", resource.getExternalId())
                         )
                 )
         );
@@ -334,7 +356,9 @@ public class TencentMetricsProvider implements MetricsProvider {
                 Map.entry(TencentMetrics.CDB_DISK_UTIL, "disk"),
                 Map.entry(TencentMetrics.PG_CPU_UTIL, "cpu"),
                 Map.entry(TencentMetrics.PG_MEMORY_UTIL, "mem"),
-                Map.entry(TencentMetrics.PG_DISK_UTIL, "disk")
+                Map.entry(TencentMetrics.PG_DISK_UTIL, "disk"),
+                Map.entry(TencentMetrics.REDIS_CPU_UTIL, "cpu"),
+                Map.entry(TencentMetrics.REDIS_MEMORY_UTIL, "mem")
         );
     }
 
@@ -1615,4 +1639,34 @@ public class TencentMetricsProvider implements MetricsProvider {
             ResourceCategories.RELATIONAL_DB_INSTANCE
     );
 
+
+    public static final SupportedMetric REDIS_CPU_UTIL = new SupportedMetric(
+            TencentMetrics.REDIS_CPU_UTIL,
+            "instanceid",
+            TencentMetricsProvider::getRedisMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.NOSQL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric REDIS_MEMORY_UTIL = new SupportedMetric(
+            TencentMetrics.REDIS_MEMORY_UTIL,
+            "instanceid",
+            TencentMetricsProvider::getRedisMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.NOSQL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric REDIS_MEMORY_USE = new SupportedMetric(
+            TencentMetrics.REDIS_MEMORY_USE,
+            "instanceid",
+            TencentMetricsProvider::getRedisMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.NOSQL_DB_INSTANCE
+    );
 }

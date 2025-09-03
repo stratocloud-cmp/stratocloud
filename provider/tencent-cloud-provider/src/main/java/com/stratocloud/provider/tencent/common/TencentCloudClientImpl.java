@@ -2,10 +2,7 @@ package com.stratocloud.provider.tencent.common;
 
 import com.stratocloud.cache.CacheService;
 import com.stratocloud.cache.CacheUtil;
-import com.stratocloud.exceptions.ExternalAccountInvalidException;
-import com.stratocloud.exceptions.ExternalResourceNotFoundException;
-import com.stratocloud.exceptions.ProviderConnectionException;
-import com.stratocloud.exceptions.StratoException;
+import com.stratocloud.exceptions.*;
 import com.stratocloud.provider.constants.SecurityGroupPolicyDirection;
 import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
 import com.stratocloud.provider.tencent.database.pg.util.PgInstanceClass;
@@ -17,6 +14,7 @@ import com.stratocloud.provider.tencent.lb.listener.TencentListener;
 import com.stratocloud.provider.tencent.lb.listener.TencentListenerId;
 import com.stratocloud.provider.tencent.lb.rule.TencentL7Rule;
 import com.stratocloud.provider.tencent.lb.rule.TencentL7RuleId;
+import com.stratocloud.provider.tencent.redis.RedisUtil;
 import com.stratocloud.provider.tencent.securitygroup.policy.TencentSecurityGroupPolicyId;
 import com.stratocloud.utils.Assert;
 import com.stratocloud.utils.JSON;
@@ -38,6 +36,8 @@ import com.tencentcloudapi.cdb.v20170320.models.DescribeAccountsRequest;
 import com.tencentcloudapi.cdb.v20170320.models.DescribeAccountsResponse;
 import com.tencentcloudapi.cdb.v20170320.models.DescribeDBInstancesRequest;
 import com.tencentcloudapi.cdb.v20170320.models.DescribeDBInstancesResponse;
+import com.tencentcloudapi.cdb.v20170320.models.DescribeDBSecurityGroupsRequest;
+import com.tencentcloudapi.cdb.v20170320.models.DescribeDBSecurityGroupsResponse;
 import com.tencentcloudapi.cdb.v20170320.models.DisassociateSecurityGroupsRequest;
 import com.tencentcloudapi.cdb.v20170320.models.ModifyDBInstanceNameRequest;
 import com.tencentcloudapi.cdb.v20170320.models.ModifyDBInstanceNameResponse;
@@ -55,6 +55,8 @@ import com.tencentcloudapi.common.exception.TencentCloudSDKException;
 import com.tencentcloudapi.common.profile.ClientProfile;
 import com.tencentcloudapi.common.profile.Language;
 import com.tencentcloudapi.cvm.v20170312.CvmClient;
+import com.tencentcloudapi.cvm.v20170312.models.DescribeInstancesRequest;
+import com.tencentcloudapi.cvm.v20170312.models.DescribeInstancesResponse;
 import com.tencentcloudapi.cvm.v20170312.models.DescribeRegionsRequest;
 import com.tencentcloudapi.cvm.v20170312.models.DescribeRegionsResponse;
 import com.tencentcloudapi.cvm.v20170312.models.DescribeZonesRequest;
@@ -67,11 +69,20 @@ import com.tencentcloudapi.cvm.v20170312.models.*;
 import com.tencentcloudapi.monitor.v20180724.MonitorClient;
 import com.tencentcloudapi.monitor.v20180724.models.*;
 import com.tencentcloudapi.postgres.v20170312.PostgresClient;
+import com.tencentcloudapi.postgres.v20170312.models.CreateInstancesRequest;
+import com.tencentcloudapi.postgres.v20170312.models.CreateInstancesResponse;
 import com.tencentcloudapi.postgres.v20170312.models.DescribeTasksRequest;
 import com.tencentcloudapi.postgres.v20170312.models.DescribeTasksResponse;
 import com.tencentcloudapi.postgres.v20170312.models.DescribeZonesResponse;
 import com.tencentcloudapi.postgres.v20170312.models.ModifyDBInstanceSecurityGroupsRequest;
 import com.tencentcloudapi.postgres.v20170312.models.*;
+import com.tencentcloudapi.postgres.v20170312.models.RenewInstanceRequest;
+import com.tencentcloudapi.postgres.v20170312.models.RenewInstanceResponse;
+import com.tencentcloudapi.redis.v20180412.RedisClient;
+import com.tencentcloudapi.redis.v20180412.models.*;
+import com.tencentcloudapi.redis.v20180412.models.DescribeTaskInfoRequest;
+import com.tencentcloudapi.redis.v20180412.models.DescribeTaskInfoResponse;
+import com.tencentcloudapi.redis.v20180412.models.ResetPasswordRequest;
 import com.tencentcloudapi.ssl.v20191205.SslClient;
 import com.tencentcloudapi.ssl.v20191205.models.*;
 import com.tencentcloudapi.tag.v20180813.TagClient;
@@ -215,6 +226,10 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
     private PostgresClient buildPgClient(){
         return new PostgresClient(credential, region, createClientProfile());
+    }
+
+    private RedisClient buildRedisClient(){
+        return new RedisClient(credential, region, createClientProfile());
     }
 
     private CloudauditClient buildAuditClient(){
@@ -2715,7 +2730,7 @@ public class TencentCloudClientImpl implements TencentCloudClient{
     }
 
     @Override
-    public void associatePgSecurityGroup(String instanceId, String securityGroupId){
+    public synchronized void associatePgSecurityGroup(String instanceId, String securityGroupId){
         Set<String> currentSecurityGroupIds = describePgSecurityGroups(instanceId).stream().map(
                 com.tencentcloudapi.postgres.v20170312.models.SecurityGroup::getSecurityGroupId
         ).collect(Collectors.toSet());
@@ -2737,7 +2752,7 @@ public class TencentCloudClientImpl implements TencentCloudClient{
     }
 
     @Override
-    public void disassociatePgSecurityGroup(String instanceId, String securityGroupId){
+    public synchronized void disassociatePgSecurityGroup(String instanceId, String securityGroupId){
         Set<String> currentSecurityGroupIds = describePgSecurityGroups(instanceId).stream().map(
                 com.tencentcloudapi.postgres.v20170312.models.SecurityGroup::getSecurityGroupId
         ).collect(Collectors.toSet());
@@ -2747,6 +2762,9 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
         List<String> expectedSecurityGroupIds = new ArrayList<>(currentSecurityGroupIds);
         expectedSecurityGroupIds.remove(securityGroupId);
+
+        if(expectedSecurityGroupIds.isEmpty())
+            return;
 
         ModifyDBInstanceSecurityGroupsRequest request = new ModifyDBInstanceSecurityGroupsRequest();
         request.setDBInstanceId(instanceId);
@@ -2856,5 +2874,280 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
         log.info("Tencent reset PG password request sent. InstanceId={}. RequestId={}.",
                 request.getDBInstanceId(), response.getRequestId());
+    }
+
+
+    @Override
+    public List<ZoneCapacityConf> describeRedisZoneConfigs(){
+        return CacheUtil.queryWithCache(
+                cacheService,
+                buildCacheKey("RedisZoneConfigs"),
+                3000L,
+                this::doDescribeZoneConfigs,
+                new ArrayList<>()
+        );
+    }
+
+    private List<ZoneCapacityConf> doDescribeZoneConfigs() {
+        DescribeProductInfoRequest request = new DescribeProductInfoRequest();
+        DescribeProductInfoResponse response = tryInvoke(() -> buildRedisClient().DescribeProductInfo(request));
+        RegionConf[] regionSet = response.getRegionSet();
+
+        List<ZoneCapacityConf> result = new ArrayList<>();
+
+        if(Utils.isNotEmpty(regionSet)){
+            for (RegionConf regionConf : regionSet) {
+                if(!Objects.equals(regionConf.getRegionId(), region))
+                    continue;
+
+                if(Utils.isEmpty(regionConf.getZoneSet()))
+                    continue;
+
+                result.addAll(List.of(regionConf.getZoneSet()));
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<InstanceSet> describeRedisInstances(com.tencentcloudapi.redis.v20180412.models.DescribeInstancesRequest request){
+        return queryAll(
+                () -> buildRedisClient().DescribeInstances(request),
+                com.tencentcloudapi.redis.v20180412.models.DescribeInstancesResponse::getInstanceSet,
+                com.tencentcloudapi.redis.v20180412.models.DescribeInstancesResponse::getTotalCount,
+                request::setOffset,
+                request::setLimit
+        );
+    }
+
+    @Override
+    public Optional<InstanceSet> describeRedisInstance(String instanceId){
+        var request = new com.tencentcloudapi.redis.v20180412.models.DescribeInstancesRequest();
+        request.setInstanceId(instanceId);
+        return describeRedisInstances(request).stream().findAny();
+    }
+
+    @Override
+    public String createRedisInstance(com.tencentcloudapi.redis.v20180412.models.CreateInstancesRequest request){
+        if(request.getGoodsNum() != null && request.getGoodsNum()>1)
+            throw new StratoException("Do not create multiple redis instances via this method.");
+
+        var response = tryInvoke(() -> buildRedisClient().CreateInstances(request));
+
+        if(Utils.isEmpty(response.getInstanceIds()))
+            return null;
+
+        log.info("Tencent create redis instance request sent. InstanceId={}. RequestId={}.",
+                response.getInstanceIds()[0], response.getRequestId());
+
+        return response.getInstanceIds()[0];
+    }
+
+    @Override
+    public String isolateRedisInstance(String instanceId){
+        InstanceSet redis = describeRedisInstance(instanceId).orElseThrow(
+                () -> new StratoException("Redis instance not found")
+        );
+
+        if(RedisUtil.isPrepaid(redis)){
+            DestroyPrepaidInstanceRequest request = new DestroyPrepaidInstanceRequest();
+            request.setInstanceId(instanceId);
+            DestroyPrepaidInstanceResponse response = tryInvoke(
+                    () -> buildRedisClient().DestroyPrepaidInstance(request)
+            );
+            log.info("Tencent isolate redis pre-paid instance request sent. InstanceId={}. RequestId={}.",
+                    instanceId, response.getRequestId());
+            return response.getDealId();
+        }else {
+            DestroyPostpaidInstanceRequest request = new DestroyPostpaidInstanceRequest();
+            request.setInstanceId(instanceId);
+            DestroyPostpaidInstanceResponse response = tryInvoke(
+                    () -> buildRedisClient().DestroyPostpaidInstance(request)
+            );
+            log.info("Tencent isolate redis post-paid instance request sent. InstanceId={}. RequestId={}.",
+                    instanceId, response.getRequestId());
+            return String.valueOf(response.getTaskId());
+        }
+    }
+
+    @Override
+    public String cleanUpRedisInstance(String instanceId){
+        CleanUpInstanceRequest request = new CleanUpInstanceRequest();
+        request.setInstanceId(instanceId);
+        CleanUpInstanceResponse response = tryInvoke(() -> buildRedisClient().CleanUpInstance(request));
+        log.info("Tencent clean up redis instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+        return String.valueOf(response.getTaskId());
+    }
+
+    @Override
+    public Optional<DescribeTaskInfoResponse> describeRedisTask(Long taskId){
+        DescribeTaskInfoRequest request = new DescribeTaskInfoRequest();
+        request.setTaskId(taskId);
+
+        try {
+            DescribeTaskInfoResponse response = tryInvoke(() -> buildRedisClient().DescribeTaskInfo(request));
+            return Optional.of(response);
+        }catch (ExternalResourceNotFoundException e){
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<TradeDealDetail> describeRedisDeal(String dealId){
+        DescribeInstanceDealDetailRequest request = new DescribeInstanceDealDetailRequest();
+        request.setDealIds(new String[]{dealId});
+        try {
+            var response = tryInvoke(
+                    () -> buildRedisClient().DescribeInstanceDealDetail(request)
+            );
+            if(Utils.isEmpty(response.getDealDetails()))
+                return Optional.empty();
+
+            return Optional.of(response.getDealDetails()[0]);
+        }catch (ExternalResourceNotFoundException e){
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public InquiryPriceCreateInstanceResponse describeRedisPrice(InquiryPriceCreateInstanceRequest request){
+        return tryInvoke(() -> buildRedisClient().InquiryPriceCreateInstance(request));
+    }
+
+    @Override
+    public synchronized void associateRedisSecurityGroup(String instanceId, String securityGroupId) {
+        ensureRedisInstanceNotInProcess(instanceId);
+
+        if(checkRedisSecurityGroup(instanceId, securityGroupId, true))
+            return;
+
+        var request = new com.tencentcloudapi.redis.v20180412.models.AssociateSecurityGroupsRequest();
+        request.setProduct("redis");
+        request.setInstanceIds(new String[]{instanceId});
+        request.setSecurityGroupId(securityGroupId);
+        var response = tryInvoke(
+                () -> buildRedisClient().AssociateSecurityGroups(request)
+        );
+
+        log.info("Tencent associate redis security group request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    private boolean checkRedisSecurityGroup(String instanceId, String securityGroupId, boolean exist) {
+        boolean matched = describeRedisSecurityGroups(instanceId).stream().anyMatch(
+                s -> Objects.equals(securityGroupId, s.getSecurityGroupId())
+        );
+        return exist == matched;
+    }
+
+    private void ensureRedisInstanceNotInProcess(String instanceId) {
+        Long status = 1L;
+        int count = 0;
+        while (Objects.equals(status, 1L) && count++ < 5){
+            Optional<InstanceSet> instanceSet = describeRedisInstance(instanceId);
+
+            if(instanceSet.isEmpty())
+                return;
+
+            status = instanceSet.get().getStatus();
+
+            if(Objects.equals(status, 1L))
+                SleepUtil.sleep(5);
+        }
+    }
+
+    @Override
+    public synchronized void disassociateRedisSecurityGroup(String instanceId, String securityGroupId) {
+        ensureRedisInstanceNotInProcess(instanceId);
+        if(checkRedisSecurityGroup(instanceId, securityGroupId, false))
+            return;
+
+        var request = new com.tencentcloudapi.redis.v20180412.models.DisassociateSecurityGroupsRequest();
+        request.setProduct("redis");
+        request.setInstanceIds(new String[]{instanceId});
+        request.setSecurityGroupId(securityGroupId);
+        var response = tryInvoke(
+                () -> buildRedisClient().DisassociateSecurityGroups(
+                        request
+                )
+        );
+
+        log.info("Tencent disassociate redis security group request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public List<com.tencentcloudapi.redis.v20180412.models.SecurityGroup> describeRedisSecurityGroups(String instanceId) {
+        var request = new com.tencentcloudapi.redis.v20180412.models.DescribeDBSecurityGroupsRequest();
+        request.setProduct("redis");
+        request.setInstanceId(instanceId);
+
+        var response = tryInvoke(() -> buildRedisClient().DescribeDBSecurityGroups(request));
+
+        if(Utils.isEmpty(response.getGroups()))
+            return List.of();
+
+        return List.of(response.getGroups());
+    }
+
+    @Override
+    public void removeRedisInstanceIsolation(StartupInstanceRequest request) {
+        StartupInstanceResponse response = tryInvoke(() -> buildRedisClient().StartupInstance(request));
+
+        log.info("Tencent startup redis instance request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public void modifyRedisInstanceName(String instanceId, String newName) {
+        ModifyInstanceRequest request = new ModifyInstanceRequest();
+        request.setOperation("rename");
+        request.setInstanceIds(new String[]{instanceId});
+        request.setInstanceNames(new String[]{newName});
+
+        ModifyInstanceResponse response = tryInvoke(() -> buildRedisClient().ModifyInstance(request));
+        log.info("Tencent modify redis instance name request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void modifyRedisAutoRenewFlag(String instanceId, Long autoRenewFlag) {
+        ModifyInstanceRequest request = new ModifyInstanceRequest();
+        request.setOperation("modifyAutoRenew");
+        request.setInstanceIds(new String[]{instanceId});
+        request.setAutoRenews(new Long[]{autoRenewFlag});
+
+        ModifyInstanceResponse response = tryInvoke(() -> buildRedisClient().ModifyInstance(request));
+        log.info("Tencent modify redis auto renew flag request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void renewRedisInstance(com.tencentcloudapi.redis.v20180412.models.RenewInstanceRequest request) {
+        var response = tryInvoke(() -> buildRedisClient().RenewInstance(request));
+        log.info("Tencent renew redis instance request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public void modifyRedisPassword(ResetPasswordRequest request) {
+        var response = tryInvoke(() -> buildRedisClient().ResetPassword(request));
+        log.info("Tencent reset redis password request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public void upgradeRedisInstance(UpgradeInstanceRequest request) {
+        UpgradeInstanceResponse response = tryInvoke(() -> buildRedisClient().UpgradeInstance(request));
+
+        log.info("Tencent upgrade redis instance request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public InquiryPriceUpgradeInstanceResponse describeRedisUpgradePrice(InquiryPriceUpgradeInstanceRequest request){
+        return tryInvoke(() -> buildRedisClient().InquiryPriceUpgradeInstance(request));
     }
 }

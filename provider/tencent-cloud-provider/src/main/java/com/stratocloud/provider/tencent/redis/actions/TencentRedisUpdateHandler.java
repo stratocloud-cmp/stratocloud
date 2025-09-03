@@ -1,4 +1,4 @@
-package com.stratocloud.provider.tencent.database.pg.actions;
+package com.stratocloud.provider.tencent.redis.actions;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
@@ -12,29 +12,29 @@ import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.common.TencentCloudClient;
-import com.stratocloud.provider.tencent.database.pg.util.PgUtil;
-import com.stratocloud.provider.tencent.database.pg.TencentPgHandler;
+import com.stratocloud.provider.tencent.redis.RedisUtil;
+import com.stratocloud.provider.tencent.redis.TencentRedisHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
-import com.tencentcloudapi.postgres.v20170312.models.DBInstance;
+import com.tencentcloudapi.redis.v20180412.models.InstanceSet;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 @Component
-public class TencentPgUpdateHandler implements ResourceActionHandler {
+public class TencentRedisUpdateHandler implements ResourceActionHandler {
 
-    private final TencentPgHandler pgHandler;
+    private final TencentRedisHandler redisHandler;
 
-    public TencentPgUpdateHandler(TencentPgHandler pgHandler) {
-        this.pgHandler = pgHandler;
+    public TencentRedisUpdateHandler(TencentRedisHandler redisHandler) {
+        this.redisHandler = redisHandler;
     }
 
     @Override
     public ResourceHandler getResourceHandler() {
-        return pgHandler;
+        return redisHandler;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class TencentPgUpdateHandler implements ResourceActionHandler {
 
     @Override
     public String getTaskName() {
-        return "更新云数据库基本信息";
+        return "更新Redis实例基本信息";
     }
 
     @Override
@@ -66,15 +66,15 @@ public class TencentPgUpdateHandler implements ResourceActionHandler {
     public Optional<DynamicFormMetaData> getDirectInputClassDynamicFormMetaData(Resource resource) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
 
-        var pg = pgHandler.describePg(account, resource.getExternalId());
+        var redis = redisHandler.describeRedis(account, resource.getExternalId());
 
-        if(pg.isEmpty())
+        if(redis.isEmpty())
             return Optional.empty();
 
         UpdateInput input = new UpdateInput();
-        input.setPrepaid(PgUtil.isPrepaid(pg.get()));
-        input.setInstanceName(pg.get().getDBInstanceName());
-        input.setAutoRenewFlag(pg.get().getAutoRenew());
+        input.setPrepaid(RedisUtil.isPrepaid(redis.get()));
+        input.setInstanceName(redis.get().getInstanceName());
+        input.setAutoRenewFlag(redis.get().getAutoRenewFlag());
 
         DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(UpdateInput.class);
         formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
@@ -85,22 +85,22 @@ public class TencentPgUpdateHandler implements ResourceActionHandler {
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        TencentCloudProvider provider = (TencentCloudProvider) pgHandler.getProvider();
+        TencentCloudProvider provider = (TencentCloudProvider) redisHandler.getProvider();
         TencentCloudClient client = provider.buildClient(account);
 
         UpdateInput input = JSON.convert(parameters, UpdateInput.class);
 
-        DBInstance pg = pgHandler.describePg(account, resource.getExternalId()).orElseThrow(
+        InstanceSet instance = redisHandler.describeRedis(account, resource.getExternalId()).orElseThrow(
                 () -> new StratoException("PG instance not found")
         );
 
         String newName = input.getInstanceName();
-        if(Utils.isNotBlank(newName) && !Objects.equals(newName, pg.getDBInstanceName()))
-            client.modifyPgName(pg.getDBInstanceId(), newName);
+        if(Utils.isNotBlank(newName) && !Objects.equals(newName, instance.getInstanceName()))
+            client.modifyRedisInstanceName(instance.getInstanceId(), newName);
 
         Long autoRenewFlag = input.getAutoRenewFlag();
-        if(input.isPrepaid() && autoRenewFlag != null && !Objects.equals(autoRenewFlag, pg.getAutoRenew()))
-            client.modifyPgAutoRenewFlag(pg.getDBInstanceId(), autoRenewFlag);
+        if(input.isPrepaid() && autoRenewFlag != null && !Objects.equals(autoRenewFlag, instance.getAutoRenewFlag()))
+            client.modifyRedisAutoRenewFlag(instance.getInstanceId(), autoRenewFlag);
     }
 
     @Override
@@ -128,13 +128,11 @@ public class TencentPgUpdateHandler implements ResourceActionHandler {
                 label = "是否自动续费",
                 options = {
                         "0",
-                        "1",
-                        "2"
+                        "1"
                 },
                 optionNames = {
                         "手动续费",
-                        "自动续费",
-                        "不续费"
+                        "自动续费"
                 },
                 defaultValues = "0",
                 conditions = "this.prepaid === true"

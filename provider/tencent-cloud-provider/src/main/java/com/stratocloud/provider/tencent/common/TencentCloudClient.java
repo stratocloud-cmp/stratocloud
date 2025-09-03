@@ -20,6 +20,7 @@ import com.tencentcloudapi.cdb.v20170320.models.AccountInfo;
 import com.tencentcloudapi.cdb.v20170320.models.DescribeDBInstancesRequest;
 import com.tencentcloudapi.clb.v20180317.models.*;
 import com.tencentcloudapi.cloudaudit.v20190319.models.Event;
+import com.tencentcloudapi.cvm.v20170312.models.DescribeInstancesRequest;
 import com.tencentcloudapi.cvm.v20170312.models.Image;
 import com.tencentcloudapi.cvm.v20170312.models.ZoneInfo;
 import com.tencentcloudapi.cvm.v20170312.models.*;
@@ -27,6 +28,10 @@ import com.tencentcloudapi.monitor.v20180724.models.AlarmHistory;
 import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataRequest;
 import com.tencentcloudapi.monitor.v20180724.models.GetMonitorDataResponse;
 import com.tencentcloudapi.postgres.v20170312.models.*;
+import com.tencentcloudapi.postgres.v20170312.models.CreateInstancesRequest;
+import com.tencentcloudapi.postgres.v20170312.models.RenewInstanceRequest;
+import com.tencentcloudapi.redis.v20180412.models.*;
+import com.tencentcloudapi.redis.v20180412.models.ResetPasswordRequest;
 import com.tencentcloudapi.ssl.v20191205.models.ApplyCertificateRequest;
 import com.tencentcloudapi.ssl.v20191205.models.Certificates;
 import com.tencentcloudapi.ssl.v20191205.models.CreateCertificateRequest;
@@ -437,4 +442,42 @@ public interface TencentCloudClient {
     List<com.tencentcloudapi.postgres.v20170312.models.AccountInfo> describePgAccounts(String instanceId);
 
     void modifyPgPassword(ResetAccountPasswordRequest request);
+
+    List<ZoneCapacityConf> describeRedisZoneConfigs();
+
+    List<InstanceSet> describeRedisInstances(com.tencentcloudapi.redis.v20180412.models.DescribeInstancesRequest request);
+
+    Optional<InstanceSet> describeRedisInstance(String instanceId);
+
+    String createRedisInstance(com.tencentcloudapi.redis.v20180412.models.CreateInstancesRequest request);
+
+    String isolateRedisInstance(String instanceId);
+
+    String cleanUpRedisInstance(String instanceId);
+
+    Optional<com.tencentcloudapi.redis.v20180412.models.DescribeTaskInfoResponse> describeRedisTask(Long taskId);
+
+    Optional<TradeDealDetail> describeRedisDeal(String dealId);
+
+    InquiryPriceCreateInstanceResponse describeRedisPrice(InquiryPriceCreateInstanceRequest request);
+
+    void associateRedisSecurityGroup(String instanceId, String securityGroupId);
+
+    void disassociateRedisSecurityGroup(String instanceId, String securityGroupId);
+
+    List<com.tencentcloudapi.redis.v20180412.models.SecurityGroup> describeRedisSecurityGroups(String instanceId);
+
+    void removeRedisInstanceIsolation(StartupInstanceRequest request);
+
+    void modifyRedisInstanceName(String instanceId, String newName);
+
+    void modifyRedisAutoRenewFlag(String instanceId, Long autoRenewFlag);
+
+    void renewRedisInstance(com.tencentcloudapi.redis.v20180412.models.RenewInstanceRequest request);
+
+    void modifyRedisPassword(ResetPasswordRequest request);
+
+    void upgradeRedisInstance(UpgradeInstanceRequest request);
+
+    InquiryPriceUpgradeInstanceResponse describeRedisUpgradePrice(InquiryPriceUpgradeInstanceRequest request);
 }

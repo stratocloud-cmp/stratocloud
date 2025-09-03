@@ -265,6 +265,14 @@ public class ResourceCategories {
             251
     );
 
+    public static final ResourceCategory NOSQL_DB_INSTANCE = new ResourceCategory(
+            ResourceCategoryGroups.CLOUD_DB_RELATED,
+            "NOSQL_DB_INSTANCE",
+            "非关系型实例",
+            "nosql-instance",
+            252
+    );
+
     public static final ResourceCategory DB_INSTANCE_FLAVOR = new ResourceCategory(
             ResourceCategoryGroups.CLOUD_DB_RELATED,
             "DB_INSTANCE_FLAVOR",

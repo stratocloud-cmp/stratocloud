@@ -1525,5 +1525,43 @@ public class TencentMetrics {
     );
 
 
+    public static final Metric REDIS_CPU_UTIL = new Metric(
+            "QCE/REDIS_MEM",
+            "CpuUtil",
+            "CPU利用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
 
+    public static final Metric REDIS_MEMORY_UTIL = new Metric(
+            "QCE/REDIS_MEM",
+            "MemUtil",
+            "内存利用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            true,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Metric REDIS_MEMORY_USE = new Metric(
+            "QCE/REDIS_MEM",
+            "MemUsed",
+            "内存占用",
+            "MB",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.VALUE,
+            false,
+            List.of(5, 60, 300, 3600, 86400)
+    );
+
+    public static final Set<Metric> REDIS_METRICS = Set.of(
+            REDIS_CPU_UTIL, REDIS_MEMORY_UTIL, REDIS_MEMORY_USE
+    );
 }

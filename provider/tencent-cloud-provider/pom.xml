@@ -106,6 +106,12 @@
             <artifactId>tencentcloud-sdk-java-postgres</artifactId>
             <version>3.1.1324</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.tencentcloudapi</groupId>
+            <artifactId>tencentcloud-sdk-java-redis</artifactId>
+            <version>3.1.1329</version>
+        </dependency>
     </dependencies>
 
 </project>
