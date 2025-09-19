@@ -36,5 +36,7 @@ public class ResourceCategoryGroups {
     );
 
 
-
+    public static final ResourceCategoryGroup CLOUD_MQ_RELATED = new ResourceCategoryGroup(
+            "CLOUD_MQ_RELATED", "云消息队列"
+    );
 }

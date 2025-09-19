@@ -2,7 +2,10 @@ package com.stratocloud.provider.tencent.common;
 
 import com.stratocloud.cache.CacheService;
 import com.stratocloud.cache.CacheUtil;
-import com.stratocloud.exceptions.*;
+import com.stratocloud.exceptions.ExternalAccountInvalidException;
+import com.stratocloud.exceptions.ExternalResourceNotFoundException;
+import com.stratocloud.exceptions.ProviderConnectionException;
+import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.provider.constants.SecurityGroupPolicyDirection;
 import com.stratocloud.provider.tencent.cos.session.CosSessionKey;
 import com.stratocloud.provider.tencent.database.pg.util.PgInstanceClass;
@@ -42,8 +45,11 @@ import com.tencentcloudapi.cdb.v20170320.models.DisassociateSecurityGroupsReques
 import com.tencentcloudapi.cdb.v20170320.models.ModifyDBInstanceNameRequest;
 import com.tencentcloudapi.cdb.v20170320.models.ModifyDBInstanceNameResponse;
 import com.tencentcloudapi.cdb.v20170320.models.*;
+import com.tencentcloudapi.ckafka.v20190819.CkafkaClient;
+import com.tencentcloudapi.ckafka.v20190819.models.*;
 import com.tencentcloudapi.clb.v20180317.ClbClient;
 import com.tencentcloudapi.clb.v20180317.models.*;
+import com.tencentcloudapi.clb.v20180317.models.DescribeTaskStatusRequest;
 import com.tencentcloudapi.cloudaudit.v20190319.CloudauditClient;
 import com.tencentcloudapi.cloudaudit.v20190319.models.DescribeEventsRequest;
 import com.tencentcloudapi.cloudaudit.v20190319.models.DescribeEventsResponse;
@@ -75,14 +81,17 @@ import com.tencentcloudapi.postgres.v20170312.models.DescribeTasksRequest;
 import com.tencentcloudapi.postgres.v20170312.models.DescribeTasksResponse;
 import com.tencentcloudapi.postgres.v20170312.models.DescribeZonesResponse;
 import com.tencentcloudapi.postgres.v20170312.models.ModifyDBInstanceSecurityGroupsRequest;
-import com.tencentcloudapi.postgres.v20170312.models.*;
 import com.tencentcloudapi.postgres.v20170312.models.RenewInstanceRequest;
 import com.tencentcloudapi.postgres.v20170312.models.RenewInstanceResponse;
+import com.tencentcloudapi.postgres.v20170312.models.*;
 import com.tencentcloudapi.redis.v20180412.RedisClient;
-import com.tencentcloudapi.redis.v20180412.models.*;
 import com.tencentcloudapi.redis.v20180412.models.DescribeTaskInfoRequest;
 import com.tencentcloudapi.redis.v20180412.models.DescribeTaskInfoResponse;
+import com.tencentcloudapi.redis.v20180412.models.ModifyInstanceRequest;
+import com.tencentcloudapi.redis.v20180412.models.ModifyInstanceResponse;
 import com.tencentcloudapi.redis.v20180412.models.ResetPasswordRequest;
+import com.tencentcloudapi.redis.v20180412.models.*;
+import com.tencentcloudapi.region.v20220627.RegionClient;
 import com.tencentcloudapi.ssl.v20191205.SslClient;
 import com.tencentcloudapi.ssl.v20191205.models.*;
 import com.tencentcloudapi.tag.v20180813.TagClient;
@@ -92,6 +101,8 @@ import com.tencentcloudapi.tag.v20180813.models.DescribeProjectsResponse;
 import com.tencentcloudapi.tag.v20180813.models.Project;
 import com.tencentcloudapi.tat.v20201028.TatClient;
 import com.tencentcloudapi.tat.v20201028.models.*;
+import com.tencentcloudapi.trocket.v20230308.TrocketClient;
+import com.tencentcloudapi.trocket.v20230308.models.*;
 import com.tencentcloudapi.vpc.v20170312.VpcClient;
 import com.tencentcloudapi.vpc.v20170312.models.SecurityGroup;
 import com.tencentcloudapi.vpc.v20170312.models.*;
@@ -230,6 +241,18 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
     private RedisClient buildRedisClient(){
         return new RedisClient(credential, region, createClientProfile());
+    }
+
+    private CkafkaClient buildKafkaClient(){
+        return new CkafkaClient(credential, region, createClientProfile());
+    }
+
+    private TrocketClient buildTrocketClient(){
+        return new TrocketClient(credential, region, createClientProfile());
+    }
+
+    private RegionClient buildRegionClient(){
+        return new RegionClient(credential, region, createClientProfile());
     }
 
     private CloudauditClient buildAuditClient(){
@@ -3149,5 +3172,214 @@ public class TencentCloudClientImpl implements TencentCloudClient{
     @Override
     public InquiryPriceUpgradeInstanceResponse describeRedisUpgradePrice(InquiryPriceUpgradeInstanceRequest request){
         return tryInvoke(() -> buildRedisClient().InquiryPriceUpgradeInstance(request));
+    }
+
+    @Override
+    public List<com.tencentcloudapi.ckafka.v20190819.models.ZoneInfo> describeKafkaZones(){
+        DescribeCkafkaZoneRequest request = new DescribeCkafkaZoneRequest();
+        DescribeCkafkaZoneResponse zoneResponse = tryInvoke(() -> buildKafkaClient().DescribeCkafkaZone(request));
+
+        if(zoneResponse.getResult() == null || Utils.isEmpty(zoneResponse.getResult().getZoneList()))
+            return new ArrayList<>();
+
+        return new ArrayList<>(
+                List.of(zoneResponse.getResult().getZoneList())
+        );
+    }
+
+    @Override
+    public Optional<com.tencentcloudapi.ckafka.v20190819.models.ZoneInfo> describeKafkaZone(String zoneId) {
+        return describeKafkaZones().stream().filter(
+                z -> Objects.equals(z.getZoneId(), zoneId)
+        ).findAny();
+    }
+
+    @Override
+    public List<InstanceDetail> describeKafkaInstances(DescribeInstancesDetailRequest request){
+        return queryAll(
+                () -> buildKafkaClient().DescribeInstancesDetail(request),
+                resp -> resp == null ?
+                        new InstanceDetail[0] : resp.getResult().getInstanceList(),
+                resp -> resp == null ?
+                        0L : resp.getResult().getTotalCount(),
+                request::setOffset,
+                request::setLimit
+        );
+    }
+
+    @Override
+    public Optional<InstanceDetail> describeKafkaInstance(String instanceId){
+        DescribeInstancesDetailRequest request = new DescribeInstancesDetailRequest();
+        request.setInstanceId(instanceId);
+        return describeKafkaInstances(request).stream().findAny();
+    }
+
+    @Override
+    public String createKafkaPostpaidInstance(CreatePostPaidInstanceRequest request) {
+        CreatePostPaidInstanceResponse response = tryInvoke(() -> buildKafkaClient().CreatePostPaidInstance(request));
+
+        String instanceId = response.getResult().getData().getInstanceId();
+        log.info("Tencent create kafka postpaid instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+
+        return instanceId;
+    }
+
+    @Override
+    public String createKafkaPrepaidInstance(CreateInstancePreRequest request) {
+        CreateInstancePreResponse response = tryInvoke(() -> buildKafkaClient().CreateInstancePre(request));
+
+        String instanceId = response.getResult().getData().getInstanceId();
+        log.info("Tencent create kafka prepaid instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+
+        return instanceId;
+    }
+
+    @Override
+    public void destroyKafkaPostpaidInstance(String instanceId){
+        DeleteInstancePostRequest request = new DeleteInstancePostRequest();
+        request.setInstanceId(instanceId);
+
+        DeleteInstancePostResponse response = tryInvoke(() -> buildKafkaClient().DeleteInstancePost(request));
+
+        log.info("Tencent destroy kafka postpaid instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void destroyKafkaPrepaidInstance(String instanceId){
+        DeleteInstancePreRequest request = new DeleteInstancePreRequest();
+        request.setInstanceId(instanceId);
+
+        DeleteInstancePreResponse response = tryInvoke(() -> buildKafkaClient().DeleteInstancePre(request));
+
+        log.info("Tencent destroy kafka prepaid instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void modifyKafkaAttributes(ModifyInstanceAttributesRequest request){
+        var response = tryInvoke(() -> buildKafkaClient().ModifyInstanceAttributes(request));
+
+        log.info("Tencent modify kafka instance attributes request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
+    }
+
+    @Override
+    public Optional<InstanceAttributesResponse> describeKafkaAttributes(String instanceId){
+        DescribeInstanceAttributesRequest request = new DescribeInstanceAttributesRequest();
+        request.setInstanceId(instanceId);
+        try {
+            var response = tryInvoke(() -> buildKafkaClient().DescribeInstanceAttributes(request));
+            return Optional.ofNullable(response.getResult());
+        }catch (ExternalResourceNotFoundException e){
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public InquireCkafkaPriceResponse describeKafkaPrice(InquireCkafkaPriceRequest request) {
+        return tryInvoke(() -> buildKafkaClient().InquireCkafkaPrice(request));
+    }
+
+    @Override
+    public List<com.tencentcloudapi.region.v20220627.models.ZoneInfo> describeRocketZones(){
+        var request = new com.tencentcloudapi.region.v20220627.models.DescribeZonesRequest();
+        request.setProduct("trocket");
+
+        var response = tryInvoke(() -> buildRegionClient().DescribeZones(request));
+
+        if(Utils.isEmpty(response.getZoneSet()))
+            return List.of();
+
+        return List.of(response.getZoneSet());
+    }
+
+    @Override
+    public Optional<com.tencentcloudapi.region.v20220627.models.ZoneInfo> describeRocketZone(String zoneId){
+        return describeRocketZones().stream().filter(
+                z -> Objects.equals(zoneId, z.getZoneId())
+        ).findAny();
+    }
+
+    @Override
+    public List<ProductSKU> describeRocketSkuList(){
+        var response = tryInvoke(() -> buildTrocketClient().DescribeProductSKUs(new DescribeProductSKUsRequest()));
+
+        if(response.getData() == null)
+            return new ArrayList<>();
+
+        return new ArrayList<>(List.of(response.getData()));
+    }
+
+    @Override
+    public Optional<ProductSKU> describeRocketSku(String skuCode){
+        return describeRocketSkuList().stream().filter(
+                sku -> Objects.equals(skuCode, sku.getSkuCode())
+        ).findAny();
+    }
+
+    @Override
+    public List<InstanceItem> describeRocketInstances(DescribeInstanceListRequest request){
+        return queryAll(
+                () -> buildTrocketClient().DescribeInstanceList(request),
+                DescribeInstanceListResponse::getData,
+                DescribeInstanceListResponse::getTotalCount,
+                request::setOffset,
+                request::setLimit
+        );
+    }
+
+    @Override
+    public Optional<InstanceItem> describeRocketInstance(String instanceId){
+        DescribeInstanceListRequest request = new DescribeInstanceListRequest();
+        var filter = new com.tencentcloudapi.trocket.v20230308.models.Filter();
+        filter.setName("InstanceId");
+        filter.setValues(new String[]{instanceId});
+        request.setFilters(new com.tencentcloudapi.trocket.v20230308.models.Filter[]{
+                filter
+        });
+        return describeRocketInstances(request).stream().findAny();
+    }
+
+    @Override
+    public Optional<DescribeInstanceResponse> describeRocketInstanceDetail(String instanceId){
+        try {
+            DescribeInstanceRequest request = new DescribeInstanceRequest();
+            request.setInstanceId(instanceId);
+            DescribeInstanceResponse response = tryInvoke(() -> buildTrocketClient().DescribeInstance(request));
+            return Optional.of(response);
+        }catch (ExternalResourceNotFoundException e){
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public String createRocketInstance(CreateInstanceRequest request){
+        CreateInstanceResponse response = tryInvoke(() -> buildTrocketClient().CreateInstance(request));
+
+        log.info("Tencent create rocketmq instance request sent. InstanceId={}. RequestId={}.",
+                response.getInstanceId(), response.getRequestId());
+
+        return response.getInstanceId();
+    }
+
+    @Override
+    public void destroyRocketInstance(String instanceId){
+        DeleteInstanceRequest request = new DeleteInstanceRequest();
+        request.setInstanceId(instanceId);
+        DeleteInstanceResponse response = tryInvoke(() -> buildTrocketClient().DeleteInstance(request));
+
+        log.info("Tencent delete rocketmq instance request sent. InstanceId={}. RequestId={}.",
+                instanceId, response.getRequestId());
+    }
+
+    @Override
+    public void modifyRocketInstance(com.tencentcloudapi.trocket.v20230308.models.ModifyInstanceRequest request){
+        var response = tryInvoke(() -> buildTrocketClient().ModifyInstance(request));
+
+        log.info("Tencent modify rocketmq instance request sent. InstanceId={}. RequestId={}.",
+                request.getInstanceId(), response.getRequestId());
     }
 }

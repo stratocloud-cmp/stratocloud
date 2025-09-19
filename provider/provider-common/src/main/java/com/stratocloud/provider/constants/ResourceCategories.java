@@ -281,6 +281,22 @@ public class ResourceCategories {
             255
     );
 
+    public static final ResourceCategory MQ_INSTANCE = new ResourceCategory(
+            ResourceCategoryGroups.CLOUD_MQ_RELATED,
+            "MQ_INSTANCE",
+            "消息队列实例",
+            "mq-instance",
+            261
+    );
+
+    public static final ResourceCategory MQ_ZONE = new ResourceCategory(
+            ResourceCategoryGroups.CLOUD_MQ_RELATED,
+            "MQ_ZONE",
+            "消息队列可用区",
+            "mq-zone",
+            262
+    );
+
     public static final ResourceCategory INSTANCE_SNAPSHOT = new ResourceCategory(
             ResourceCategoryGroups.COMPUTE_INSTANCE_RELATED,
             "INSTANCE_SNAPSHOT",

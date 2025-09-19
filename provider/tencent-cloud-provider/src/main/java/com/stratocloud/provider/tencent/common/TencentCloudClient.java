@@ -18,10 +18,12 @@ import com.tencentcloudapi.cbs.v20170312.models.*;
 import com.tencentcloudapi.cdb.v20170320.models.*;
 import com.tencentcloudapi.cdb.v20170320.models.AccountInfo;
 import com.tencentcloudapi.cdb.v20170320.models.DescribeDBInstancesRequest;
+import com.tencentcloudapi.ckafka.v20190819.models.*;
 import com.tencentcloudapi.clb.v20180317.models.*;
 import com.tencentcloudapi.cloudaudit.v20190319.models.Event;
 import com.tencentcloudapi.cvm.v20170312.models.DescribeInstancesRequest;
 import com.tencentcloudapi.cvm.v20170312.models.Image;
+import com.tencentcloudapi.cvm.v20170312.models.Instance;
 import com.tencentcloudapi.cvm.v20170312.models.ZoneInfo;
 import com.tencentcloudapi.cvm.v20170312.models.*;
 import com.tencentcloudapi.monitor.v20180724.models.AlarmHistory;
@@ -37,6 +39,7 @@ import com.tencentcloudapi.ssl.v20191205.models.Certificates;
 import com.tencentcloudapi.ssl.v20191205.models.CreateCertificateRequest;
 import com.tencentcloudapi.ssl.v20191205.models.DescribeCertificatesRequest;
 import com.tencentcloudapi.tat.v20201028.models.*;
+import com.tencentcloudapi.trocket.v20230308.models.*;
 import com.tencentcloudapi.vpc.v20170312.models.*;
 import com.tencentcloudapi.vpc.v20170312.models.SecurityGroup;
 
@@ -480,4 +483,47 @@ public interface TencentCloudClient {
     void upgradeRedisInstance(UpgradeInstanceRequest request);
 
     InquiryPriceUpgradeInstanceResponse describeRedisUpgradePrice(InquiryPriceUpgradeInstanceRequest request);
+
+    List<com.tencentcloudapi.ckafka.v20190819.models.ZoneInfo> describeKafkaZones();
+
+    Optional<com.tencentcloudapi.ckafka.v20190819.models.ZoneInfo> describeKafkaZone(String zoneId);
+
+    List<InstanceDetail> describeKafkaInstances(DescribeInstancesDetailRequest request);
+
+    Optional<InstanceDetail> describeKafkaInstance(String instanceId);
+
+    String createKafkaPostpaidInstance(CreatePostPaidInstanceRequest request);
+
+    String createKafkaPrepaidInstance(CreateInstancePreRequest request);
+
+    void destroyKafkaPostpaidInstance(String instanceId);
+
+    void destroyKafkaPrepaidInstance(String instanceId);
+
+    void modifyKafkaAttributes(ModifyInstanceAttributesRequest request);
+
+    Optional<InstanceAttributesResponse> describeKafkaAttributes(String instanceId);
+
+    InquireCkafkaPriceResponse describeKafkaPrice(InquireCkafkaPriceRequest request);
+
+
+    List<com.tencentcloudapi.region.v20220627.models.ZoneInfo> describeRocketZones();
+
+    Optional<com.tencentcloudapi.region.v20220627.models.ZoneInfo> describeRocketZone(String zoneId);
+
+    List<ProductSKU> describeRocketSkuList();
+
+    Optional<ProductSKU> describeRocketSku(String skuCode);
+
+    List<InstanceItem> describeRocketInstances(DescribeInstanceListRequest request);
+
+    Optional<InstanceItem> describeRocketInstance(String instanceId);
+
+    Optional<DescribeInstanceResponse> describeRocketInstanceDetail(String instanceId);
+
+    String createRocketInstance(CreateInstanceRequest request);
+
+    void destroyRocketInstance(String instanceId);
+
+    void modifyRocketInstance(com.tencentcloudapi.trocket.v20230308.models.ModifyInstanceRequest request);
 }

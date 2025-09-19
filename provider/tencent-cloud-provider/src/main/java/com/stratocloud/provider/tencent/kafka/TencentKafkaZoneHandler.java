@@ -1,18 +1,15 @@
-package com.stratocloud.provider.tencent.zone;
+package com.stratocloud.provider.tencent.kafka;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.ExternalResourceNotFoundException;
 import com.stratocloud.provider.AbstractResourceHandler;
 import com.stratocloud.provider.Provider;
 import com.stratocloud.provider.constants.ResourceCategories;
-import com.stratocloud.provider.constants.TagEntries;
 import com.stratocloud.provider.tencent.TencentCloudProvider;
 import com.stratocloud.provider.tencent.common.TencentCloudClient;
-import com.stratocloud.provider.tencent.common.TencentCloudRegion;
 import com.stratocloud.resource.*;
-import com.stratocloud.tag.Tag;
 import com.stratocloud.utils.Utils;
-import com.tencentcloudapi.cvm.v20170312.models.ZoneInfo;
+import com.tencentcloudapi.ckafka.v20190819.models.ZoneInfo;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,11 +17,11 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class TencentZoneHandler extends AbstractResourceHandler {
+public class TencentKafkaZoneHandler extends AbstractResourceHandler {
 
     private final TencentCloudProvider provider;
 
-    public TencentZoneHandler(TencentCloudProvider provider) {
+    public TencentKafkaZoneHandler(TencentCloudProvider provider) {
         this.provider = provider;
     }
 
@@ -36,26 +33,21 @@ public class TencentZoneHandler extends AbstractResourceHandler {
 
     @Override
     public String getResourceTypeId() {
-        return "TENCENT_CLOUD_ZONE";
+        return "TENCENT_CLOUD_KAFKA_ZONE";
     }
 
     @Override
     public String getResourceTypeName() {
-        return "腾讯云可用区";
+        return "腾讯云Kafka可用区";
     }
 
     @Override
     public ResourceCategory getResourceCategory() {
-        return ResourceCategories.ZONE;
+        return ResourceCategories.MQ_ZONE;
     }
 
     @Override
     public boolean isInfrastructure() {
-        return true;
-    }
-
-    @Override
-    public boolean isSharedRequirementTarget() {
         return true;
     }
 
@@ -71,13 +63,13 @@ public class TencentZoneHandler extends AbstractResourceHandler {
             return Optional.empty();
 
         TencentCloudClient client = provider.buildClient(account);
-        return client.describeZone(externalId);
+        return client.describeKafkaZone(externalId);
     }
 
     public ExternalResource toExternalResource(ExternalAccount account, ZoneInfo zone) {
         ResourceState zoneState = ResourceState.AVAILABLE;
 
-        if("UNAVAILABLE".equals(zone.getZoneState()))
+        if("true".equals(zone.getSoldOut()))
             zoneState = ResourceState.UNAVAILABLE;
 
         return new ExternalResource(
@@ -85,7 +77,7 @@ public class TencentZoneHandler extends AbstractResourceHandler {
                 account.getId(),
                 getResourceCategory().id(),
                 getResourceTypeId(),
-                zone.getZone(),
+                zone.getZoneId(),
                 zone.getZoneName(),
                 zoneState
         );
@@ -94,22 +86,7 @@ public class TencentZoneHandler extends AbstractResourceHandler {
     @Override
     public List<ExternalResource> describeExternalResources(ExternalAccount account, Map<String, Object> queryArgs) {
         TencentCloudClient client = provider.buildClient(account);
-        return client.describeZones().stream().map(zone -> toExternalResource(account, zone)).toList();
-    }
-
-
-    @Override
-    public List<Tag> describeExternalTags(ExternalAccount account, ExternalResource externalResource) {
-        TencentCloudClient client = provider.buildClient(account);
-        Optional<TencentCloudRegion> region = TencentCloudRegion.fromId(client.getRegion());
-
-        Tag regionTag = region.map(
-                r -> new Tag(TagEntries.REGION, r.getId(), r.getName(), r.ordinal())
-        ).orElseGet(
-                () -> new Tag(TagEntries.REGION, client.getRegion(), client.getRegion(), 100)
-        );
-
-        return List.of(regionTag);
+        return client.describeKafkaZones().stream().map(zone -> toExternalResource(account, zone)).toList();
     }
 
     @Override
@@ -121,6 +98,9 @@ public class TencentZoneHandler extends AbstractResourceHandler {
         );
 
         resource.updateByExternal(zone);
+
+        if(zone.state() == ResourceState.UNAVAILABLE)
+            resource.markRecycled(false);
     }
 
     @Override
