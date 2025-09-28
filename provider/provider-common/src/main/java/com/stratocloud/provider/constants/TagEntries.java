@@ -13,4 +13,9 @@ public class TagEntries {
 
     public static final TagEntry REGION = new TagEntry("REGION", "地域");
 
+    public static final TagEntry DB_FLAVOR_FAMILY = new TagEntry("DB_FLAVOR_FAMILY", "数据库规格族");
+
+    public static final TagEntry DB_FLAVOR_SERIES = new TagEntry("DB_FLAVOR_SERIES", "数据库规格系列");
+
+    public static final TagEntry DB_ENGINE = new TagEntry("DB_ENGINE", "数据库引擎");
 }

@@ -214,7 +214,7 @@ public class AliyunFlavorHandler extends AbstractResourceHandler {
 
         if(flavor.detail().getGPUMemorySize() != null){
             RuntimeProperty gpuMemoryProperty = RuntimeProperty.ofDisplayInList(
-                    "gpiMemory",
+                    "gpuMemory",
                     "GPU显存(GB)",
                     String.valueOf(flavor.detail().getGPUMemorySize()),
                     String.valueOf(flavor.detail().getGPUMemorySize())

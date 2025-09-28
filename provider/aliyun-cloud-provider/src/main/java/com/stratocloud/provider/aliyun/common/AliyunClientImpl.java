@@ -37,6 +37,7 @@ public class AliyunClientImpl implements AliyunClient {
         c.setAccessKeyId(properties.getAccessKeyId());
         c.setAccessKeySecret(properties.getAccessKeySecret());
         c.setRegionId(properties.getRegion());
+        c.setReadTimeout(30 * 1000);
         return c;
     }
 
@@ -90,5 +91,10 @@ public class AliyunClientImpl implements AliyunClient {
     @Override
     public AliyunOssService oss(){
         return new AliyunOssServiceImpl(config);
+    }
+
+    @Override
+    public AliyunRdsService rds(){
+        return new AliyunRdsServiceImpl(cacheService, config);
     }
 }

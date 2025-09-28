@@ -1,8 +1,6 @@
 package com.stratocloud.utils;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
@@ -35,5 +33,15 @@ public class TimeUtil {
         return Instant.ofEpochMilli(epochMillis).atZone(BEIJING_ZONE_ID).withZoneSameInstant(
                 ZoneId.systemDefault()
         ).toLocalDateTime();
+    }
+
+    public static String toUtcTime(String localTime) {
+        return LocalTime.parse(localTime).atDate(
+                LocalDate.now()
+        ).atZone(
+                ZoneId.systemDefault()
+        ).withZoneSameInstant(
+                UTC_ZONE_ID
+        ).toLocalDateTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"));
     }
 }

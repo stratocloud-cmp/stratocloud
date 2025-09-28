@@ -22,4 +22,16 @@ public class TagFactory {
     public static Tag buildCpuArchTag(CpuArch cpuArch) {
         return new Tag(TagEntries.CPU_ARCH, cpuArch.name(), cpuArch.name(), 0);
     }
+
+    public static Tag buildDbFlavorFamilyTag(String familyId, String familyName, int index){
+        return new Tag(TagEntries.DB_FLAVOR_FAMILY, familyId, familyName, index);
+    }
+
+    public static Tag buildDbFlavorSeriesTag(String seriesId, String seriesName, int index){
+        return new Tag(TagEntries.DB_FLAVOR_SERIES, seriesId, seriesName, index);
+    }
+
+    public static Tag buildDbEngineTag(String engineId, String engineName, int index){
+        return new Tag(TagEntries.DB_ENGINE, engineId, engineName, index);
+    }
 }
