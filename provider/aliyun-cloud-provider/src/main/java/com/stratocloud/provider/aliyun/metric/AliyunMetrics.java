@@ -344,4 +344,39 @@ public class AliyunMetrics {
     );
 
 
+    public static final Metric RDS_CPU_USAGE = new Metric(
+            "acs_rds_dashboard",
+            "CpuUsage",
+            "CPU利用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.AVG,
+            true,
+            List.of(60)
+    );
+
+    public static final Metric RDS_MEMORY_USAGE = new Metric(
+            "acs_rds_dashboard",
+            "MemoryUsage",
+            "内存利用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.AVG,
+            true,
+            List.of(60)
+    );
+
+    public static final Metric RDS_DISK_USAGE = new Metric(
+            "acs_rds_dashboard",
+            "DiskUsage",
+            "磁盘利用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.AVG,
+            true,
+            List.of(60)
+    );
 }

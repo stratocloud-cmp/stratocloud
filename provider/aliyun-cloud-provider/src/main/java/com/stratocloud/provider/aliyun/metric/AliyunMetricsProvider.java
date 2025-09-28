@@ -42,11 +42,25 @@ public class AliyunMetricsProvider implements MetricsProvider {
                 DISK_WRITE_BPS,DISK_WRITE_BPS_UTIL,DISK_WRITE_IOPS,DISK_WRITE_IOPS_UTIL,
                 INTRANET_IN_RATE,INTRANET_IN_RATE_UTIL,INTRANET_OUT_RATE,INTRANET_OUT_RATE_UTIL,
                 ECS_EIP_OUT_RATE,ECS_EIP_IN_RATE,EIP_OUT_RATE,EIP_IN_RATE,
-                BUCKET_STORAGE
+                BUCKET_STORAGE,
+                RDS_CPU_USAGE, RDS_MEMORY_USAGE, RDS_DISK_USAGE
         );
     }
 
     private static List<MetricObject> getInstanceMetricObjects(Resource resource) {
+        if(Utils.isBlank(resource.getExternalId()))
+            return List.of();
+
+        return List.of(
+                new MetricObject(
+                        List.of(
+                                new MetricDimension("instanceId", resource.getExternalId())
+                        )
+                )
+        );
+    }
+
+    private static List<MetricObject> getRdsInstanceMetricObjects(Resource resource) {
         if(Utils.isBlank(resource.getExternalId()))
             return List.of();
 
@@ -239,7 +253,10 @@ public class AliyunMetricsProvider implements MetricsProvider {
                 AliyunMetrics.EIP_OUT_RATE, "out",
                 AliyunMetrics.PER_DISK_READ_BPS, "r",
                 AliyunMetrics.PER_DISK_WRITE_BPS, "w",
-                AliyunMetrics.BUCKET_STORAGE, "total"
+                AliyunMetrics.BUCKET_STORAGE, "total",
+                AliyunMetrics.RDS_CPU_USAGE, "cpu",
+                AliyunMetrics.RDS_MEMORY_USAGE, "mem",
+                AliyunMetrics.RDS_DISK_USAGE, "disk"
         );
     }
 
@@ -635,4 +652,33 @@ public class AliyunMetricsProvider implements MetricsProvider {
     );
 
 
+    public static final SupportedMetric RDS_CPU_USAGE = new SupportedMetric(
+            AliyunMetrics.RDS_CPU_USAGE,
+            "instanceId",
+            AliyunMetricsProvider::getRdsInstanceMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric RDS_MEMORY_USAGE = new SupportedMetric(
+            AliyunMetrics.RDS_MEMORY_USAGE,
+            "instanceId",
+            AliyunMetricsProvider::getRdsInstanceMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+
+    public static final SupportedMetric RDS_DISK_USAGE = new SupportedMetric(
+            AliyunMetrics.RDS_DISK_USAGE,
+            "instanceId",
+            AliyunMetricsProvider::getRdsInstanceMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
 }

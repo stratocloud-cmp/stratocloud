@@ -211,6 +211,17 @@ public class AliyunRdsServiceImpl extends AliyunAbstractService implements Aliyu
     }
 
     @Override
+    public void restartInstance(String instanceId) {
+        RestartDBInstanceRequest request = new RestartDBInstanceRequest();
+        request.setDBInstanceId(instanceId);
+
+        var body = tryInvoke(() -> buildClient().restartDBInstance(request)).getBody();
+
+        log.info("Aliyun restart rds instance request sent. InstanceId={}. RequestId={}.",
+                request.getDBInstanceId(), body.getRequestId());
+    }
+
+    @Override
     public void deleteInstance(String instanceId, String backupKeepPolicy){
         DeleteDBInstanceRequest request = new DeleteDBInstanceRequest();
         request.setDBInstanceId(instanceId);

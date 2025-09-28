@@ -31,6 +31,8 @@ public interface AliyunRdsService {
 
     void stopInstance(String instanceId);
 
+    void restartInstance(String instanceId);
+
     void deleteInstance(String instanceId, String backupKeepPolicy);
 
     void destroyInstance(String instanceId);
