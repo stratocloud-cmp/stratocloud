@@ -28,7 +28,7 @@ public class AliyunRdsToSubnetHandler implements EssentialRequirementHandler {
 
     @Override
     public String getRelationshipTypeId() {
-        return "ALIYUN_RDS_TO_SUBNET_HANDLER";
+        return "ALIYUN_RDS_TO_SUBNET_RELATIONSHIP";
     }
 
     @Override

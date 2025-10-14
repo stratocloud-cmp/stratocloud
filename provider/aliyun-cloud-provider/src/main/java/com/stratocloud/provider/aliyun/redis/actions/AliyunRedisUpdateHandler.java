@@ -1,34 +1,32 @@
-package com.stratocloud.provider.tencent.redis.actions;
+package com.stratocloud.provider.aliyun.redis.actions;
 
+import com.aliyun.r_kvstore20150101.models.ModifyInstanceAttributeRequest;
 import com.stratocloud.account.ExternalAccount;
-import com.stratocloud.exceptions.StratoException;
-import com.stratocloud.form.BooleanField;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.InputField;
-import com.stratocloud.form.SelectField;
 import com.stratocloud.form.info.DynamicFormMetaData;
+import com.stratocloud.provider.aliyun.AliyunCloudProvider;
+import com.stratocloud.provider.aliyun.common.AliyunClient;
+import com.stratocloud.provider.aliyun.redis.AliyunRedisHandler;
 import com.stratocloud.provider.resource.ResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
-import com.stratocloud.provider.tencent.TencentCloudProvider;
-import com.stratocloud.provider.tencent.common.TencentCloudClient;
-import com.stratocloud.provider.tencent.redis.RedisUtil;
-import com.stratocloud.provider.tencent.redis.TencentRedisHandler;
 import com.stratocloud.resource.*;
 import com.stratocloud.utils.JSON;
-import com.stratocloud.utils.Utils;
-import com.tencentcloudapi.redis.v20180412.models.InstanceSet;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @Component
-public class TencentRedisUpdateHandler implements ResourceActionHandler {
+public class AliyunRedisUpdateHandler implements ResourceActionHandler {
 
-    private final TencentRedisHandler redisHandler;
+    private final AliyunRedisHandler redisHandler;
 
-    public TencentRedisUpdateHandler(TencentRedisHandler redisHandler) {
+    public AliyunRedisUpdateHandler(AliyunRedisHandler redisHandler) {
         this.redisHandler = redisHandler;
     }
 
@@ -72,9 +70,7 @@ public class TencentRedisUpdateHandler implements ResourceActionHandler {
             return Optional.empty();
 
         UpdateInput input = new UpdateInput();
-        input.setPrepaid(RedisUtil.isPrepaid(redis.get()));
-        input.setInstanceName(redis.get().getInstanceName());
-        input.setAutoRenewFlag(redis.get().getAutoRenewFlag());
+        input.setInstanceName(redis.get().detail().getInstanceName());
 
         DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(UpdateInput.class);
         formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, input);
@@ -85,22 +81,17 @@ public class TencentRedisUpdateHandler implements ResourceActionHandler {
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        TencentCloudProvider provider = (TencentCloudProvider) redisHandler.getProvider();
-        TencentCloudClient client = provider.buildClient(account);
+        AliyunCloudProvider provider = (AliyunCloudProvider) redisHandler.getProvider();
+        AliyunClient client = provider.buildClient(account);
 
         UpdateInput input = JSON.convert(parameters, UpdateInput.class);
 
-        InstanceSet instance = redisHandler.describeRedis(account, resource.getExternalId()).orElseThrow(
-                () -> new StratoException("Redis instance not found")
-        );
 
-        String newName = input.getInstanceName();
-        if(Utils.isNotBlank(newName) && !Objects.equals(newName, instance.getInstanceName()))
-            client.modifyRedisInstanceName(instance.getInstanceId(), newName);
+        ModifyInstanceAttributeRequest request = new ModifyInstanceAttributeRequest();
+        request.setInstanceId(resource.getExternalId());
+        request.setInstanceName(input.getInstanceName());
 
-        Long autoRenewFlag = input.getAutoRenewFlag();
-        if(input.isPrepaid() && autoRenewFlag != null && !Objects.equals(autoRenewFlag, instance.getAutoRenewFlag()))
-            client.modifyRedisAutoRenewFlag(instance.getInstanceId(), autoRenewFlag);
+        client.tair().modifyInstance(request);
     }
 
     @Override
@@ -120,23 +111,7 @@ public class TencentRedisUpdateHandler implements ResourceActionHandler {
 
     @Data
     public static class UpdateInput implements ResourceActionInput {
-        @BooleanField(label = "是否预付费", conditions = "false")
-        private boolean prepaid;
         @InputField(label = "实例名称")
         private String instanceName;
-        @SelectField(
-                label = "是否自动续费",
-                options = {
-                        "0",
-                        "1"
-                },
-                optionNames = {
-                        "手动续费",
-                        "自动续费"
-                },
-                defaultValues = "0",
-                conditions = "this.prepaid === true"
-        )
-        private Long autoRenewFlag;
     }
 }

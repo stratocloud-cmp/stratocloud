@@ -97,4 +97,9 @@ public class AliyunClientImpl implements AliyunClient {
     public AliyunRdsService rds(){
         return new AliyunRdsServiceImpl(cacheService, config);
     }
+
+    @Override
+    public AliyunTairService tair(){
+        return new AliyunTairServiceImpl(cacheService, config);
+    }
 }

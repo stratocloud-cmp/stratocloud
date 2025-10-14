@@ -49,7 +49,7 @@ public class AliyunRdsHandler extends AbstractResourceHandler {
 
     @Override
     public String getResourceTypeId() {
-        return "ALIYUN_CLOUD_CDB";
+        return "ALIYUN_RDS";
     }
 
     @Override

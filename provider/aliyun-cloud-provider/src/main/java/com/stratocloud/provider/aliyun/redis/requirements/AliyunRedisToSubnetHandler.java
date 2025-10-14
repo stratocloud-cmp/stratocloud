@@ -1,9 +1,9 @@
-package com.stratocloud.provider.aliyun.rds.requirements;
+package com.stratocloud.provider.aliyun.redis.requirements;
 
 import com.stratocloud.account.ExternalAccount;
-import com.stratocloud.provider.aliyun.rds.AliyunRdsHandler;
-import com.stratocloud.provider.aliyun.rds.model.RdsInstance;
-import com.stratocloud.provider.aliyun.zone.AliyunZoneHandler;
+import com.stratocloud.provider.aliyun.redis.AliyunRedisHandler;
+import com.stratocloud.provider.aliyun.redis.model.RedisInstance;
+import com.stratocloud.provider.aliyun.subnet.AliyunSubnetHandler;
 import com.stratocloud.provider.relationship.EssentialRequirementHandler;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.ExternalRequirement;
@@ -15,35 +15,35 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class AliyunRdsToZoneHandler implements EssentialRequirementHandler {
+public class AliyunRedisToSubnetHandler implements EssentialRequirementHandler {
 
-    private final AliyunRdsHandler rdsHandler;
+    private final AliyunRedisHandler redisHandler;
 
-    private final AliyunZoneHandler zoneHandler;
+    private final AliyunSubnetHandler subnetHandler;
 
-    public AliyunRdsToZoneHandler(AliyunRdsHandler rdsHandler, AliyunZoneHandler zoneHandler) {
-        this.rdsHandler = rdsHandler;
-        this.zoneHandler = zoneHandler;
+    public AliyunRedisToSubnetHandler(AliyunRedisHandler redisHandler, AliyunSubnetHandler subnetHandler) {
+        this.redisHandler = redisHandler;
+        this.subnetHandler = subnetHandler;
     }
 
     @Override
     public String getRelationshipTypeId() {
-        return "ALIYUN_RDS_TO_ZONE_RELATIONSHIP";
+        return "ALIYUN_REDIS_TO_SUBNET_RELATIONSHIP";
     }
 
     @Override
     public String getRelationshipTypeName() {
-        return "阿里云RDS实例与可用区";
+        return "阿里云Redis实例与子网";
     }
 
     @Override
     public ResourceHandler getSource() {
-        return rdsHandler;
+        return redisHandler;
     }
 
     @Override
     public ResourceHandler getTarget() {
-        return zoneHandler;
+        return subnetHandler;
     }
 
     @Override
@@ -53,12 +53,12 @@ public class AliyunRdsToZoneHandler implements EssentialRequirementHandler {
 
     @Override
     public String getCapabilityName() {
-        return "RDS实例";
+        return "Redis实例";
     }
 
     @Override
     public String getRequirementName() {
-        return "可用区";
+        return "子网";
     }
 
     @Override
@@ -73,17 +73,17 @@ public class AliyunRdsToZoneHandler implements EssentialRequirementHandler {
 
     @Override
     public List<ExternalRequirement> describeExternalRequirements(ExternalAccount account, ExternalResource source) {
-        Optional<RdsInstance> rdsInstance = rdsHandler.describeRds(account, source.externalId());
+        Optional<RedisInstance> redis = redisHandler.describeRedis(account, source.externalId());
 
-        if(rdsInstance.isEmpty())
+        if(redis.isEmpty())
             return List.of();
 
-        Optional<ExternalResource> zoneResource = zoneHandler.describeExternalResource(
+        Optional<ExternalResource> subnetResource = subnetHandler.describeExternalResource(
                 account,
-                rdsInstance.get().detail().getZoneId()
+                redis.get().detail().getVSwitchId()
         );
 
-        return zoneResource.map(externalResource -> List.of(
+        return subnetResource.map(externalResource -> List.of(
                 new ExternalRequirement(
                         getRelationshipTypeId(),
                         externalResource,
