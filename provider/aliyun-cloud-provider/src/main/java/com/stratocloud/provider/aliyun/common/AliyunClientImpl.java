@@ -102,4 +102,9 @@ public class AliyunClientImpl implements AliyunClient {
     public AliyunTairService tair(){
         return new AliyunTairServiceImpl(cacheService, config);
     }
+
+    @Override
+    public AliyunRocketService rocket(){
+        return new AliyunRocketServiceImpl(cacheService, config);
+    }
 }

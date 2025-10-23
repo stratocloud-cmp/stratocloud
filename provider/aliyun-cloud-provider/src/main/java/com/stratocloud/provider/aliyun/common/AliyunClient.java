@@ -28,4 +28,6 @@ public interface AliyunClient {
     AliyunRdsService rds();
 
     AliyunTairService tair();
+
+    AliyunRocketService rocket();
 }

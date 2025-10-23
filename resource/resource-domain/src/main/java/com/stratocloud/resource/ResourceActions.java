@@ -68,4 +68,7 @@ public class ResourceActions {
     public static final ResourceAction READ_YAML = new ResourceAction(
             "READ_YAML", "查看YAML", 401
     );
+    public static final ResourceAction READ_ENDPOINTS = new ResourceAction(
+            "READ_ENDPOINTS", "查看连接地址", 402
+    );
 }
