@@ -30,4 +30,6 @@ public interface AliyunClient {
     AliyunTairService tair();
 
     AliyunRocketService rocket();
+
+    AliyunKafkaService kafka();
 }

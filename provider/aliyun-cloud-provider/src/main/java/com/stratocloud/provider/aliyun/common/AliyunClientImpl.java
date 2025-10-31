@@ -107,4 +107,9 @@ public class AliyunClientImpl implements AliyunClient {
     public AliyunRocketService rocket(){
         return new AliyunRocketServiceImpl(cacheService, config);
     }
+
+    @Override
+    public AliyunKafkaService kafka(){
+        return new AliyunKafkaServiceImpl(cacheService, config);
+    }
 }

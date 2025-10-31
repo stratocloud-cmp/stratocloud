@@ -21,10 +21,24 @@
         <module>resource</module>
         <module>order</module>
         <module>commons</module>
-        <module>premium</module>
         <module>provider</module>
         <module>starters</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>CommunityEdition</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>PremiumEdition</id>
+            <modules>
+                <module>premium</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <properties>
         <maven.compiler.source>20</maven.compiler.source>
