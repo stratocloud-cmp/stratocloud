@@ -138,7 +138,9 @@ public class CdbParamList implements DynamicForm {
                             false,
                             List.of(),
                             SelectType.NORMAL,
-                            param.getName()
+                            param.getName(),
+                            List.of(),
+                            List.of()
                     )
             );
         } else if(Objects.equals(paramType, "integer")){
@@ -165,7 +167,9 @@ public class CdbParamList implements DynamicForm {
                                 false,
                                 List.of(),
                                 SelectType.NORMAL,
-                                param.getName()
+                                param.getName(),
+                                List.of(),
+                                List.of()
                         )
                 );
             }else {

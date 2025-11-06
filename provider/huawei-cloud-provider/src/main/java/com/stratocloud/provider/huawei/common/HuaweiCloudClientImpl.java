@@ -163,4 +163,9 @@ public class HuaweiCloudClientImpl implements HuaweiCloudClient {
     public HuaweiObsService obs(){
         return new HuaweiObsServiceImpl(credential.getAk(), credential.getSk(), regionId);
     }
+
+    @Override
+    public HuaweiRdsService rds(){
+        return new HuaweiRdsServiceImpl(cacheService, credential, regionId, credential.getAk());
+    }
 }

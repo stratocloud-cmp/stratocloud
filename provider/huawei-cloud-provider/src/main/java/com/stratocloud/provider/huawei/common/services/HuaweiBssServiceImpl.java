@@ -6,10 +6,12 @@ import com.huaweicloud.sdk.bss.v2.region.BssRegion;
 import com.huaweicloud.sdk.core.auth.ICredential;
 import com.stratocloud.cache.CacheService;
 import com.stratocloud.utils.Utils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 public class HuaweiBssServiceImpl extends HuaweiAbstractService implements HuaweiBssService {
 
     public HuaweiBssServiceImpl(CacheService cacheService,
@@ -58,5 +60,23 @@ public class HuaweiBssServiceImpl extends HuaweiAbstractService implements Huawe
         return tryInvoke(
                 () -> buildClient().listRateOnPeriodDetail(request)
         );
+    }
+
+    @Override
+    public void unsubscribeResource(String resourceId){
+        CancelResourcesSubscriptionRequest request = new CancelResourcesSubscriptionRequest();
+        UnsubscribeResourcesReq body = new UnsubscribeResourcesReq();
+        body.setResourceIds(List.of(resourceId));
+        body.setUnsubscribeType(1);
+
+        request.withBody(body);
+
+        tryInvoke(
+                () -> buildClient().cancelResourcesSubscription(
+                        request
+                )
+        );
+
+        log.info("Huawei resource subscription canceled. ResourceId={}.", resourceId);
     }
 }

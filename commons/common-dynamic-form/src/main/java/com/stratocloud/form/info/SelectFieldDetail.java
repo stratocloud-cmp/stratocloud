@@ -18,5 +18,10 @@ public record SelectFieldDetail(boolean multiSelect,
                                 boolean required,
                                 List<String> conditions,
                                 SelectType type,
-                                String placeholder) implements FieldDetail {
+                                String placeholder,
+                                List<Property> properties,
+                                List<String> filterPredicates) implements FieldDetail {
+    public record Property(String name, String label, List<?> values, boolean displayable){
+
+    }
 }

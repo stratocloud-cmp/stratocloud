@@ -37,4 +37,9 @@ public @interface SelectField {
     String[] conditions() default {};
 
     SelectType type() default SelectType.NORMAL;
+
+
+    SelectProperty[] properties() default {};
+
+    String[] filterPredicates() default {};
 }

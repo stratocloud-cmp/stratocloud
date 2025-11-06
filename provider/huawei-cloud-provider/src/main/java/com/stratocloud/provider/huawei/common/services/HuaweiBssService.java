@@ -11,4 +11,6 @@ public interface HuaweiBssService {
     ListOnDemandResourceRatingsResponse inquiryOnDemandResources(ListOnDemandResourceRatingsRequest request);
 
     ListRateOnPeriodDetailResponse inquiryPeriodResources(ListRateOnPeriodDetailRequest request);
+
+    void unsubscribeResource(String resourceId);
 }

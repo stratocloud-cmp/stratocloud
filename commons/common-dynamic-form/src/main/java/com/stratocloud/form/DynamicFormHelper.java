@@ -143,7 +143,68 @@ public class DynamicFormHelper {
                                 selectFieldDetail.required(),
                                 selectFieldDetail.conditions(),
                                 selectFieldDetail.type(),
-                                selectFieldDetail.placeholder()
+                                selectFieldDetail.placeholder(),
+                                selectFieldDetail.properties(),
+                                selectFieldDetail.filterPredicates()
+                        );
+                        replacingFieldInfo = new FieldInfo(
+                                fieldInfo.type(),
+                                fieldInfo.key(),
+                                fieldInfo.label(),
+                                fieldInfo.description(),
+                                newDetail
+                        );
+                        replacingFieldIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        List<FieldInfo> newFieldInfoList = new ArrayList<>(fieldInfoList);
+        if(replacingFieldIndex != null){
+            newFieldInfoList.set(replacingFieldIndex, replacingFieldInfo);
+        }
+        return new DynamicFormMetaData(formMetaData.formClass(), newFieldInfoList);
+    }
+
+    public static DynamicFormMetaData addProperty(DynamicFormMetaData formMetaData,
+                                                  String key,
+                                                  String propertyName,
+                                                  String propertyLabel,
+                                                  List<?> propertyValues,
+                                                  boolean propertyDisplayable){
+        List<FieldInfo> fieldInfoList = formMetaData.fieldInfoList();
+
+        FieldInfo replacingFieldInfo = null;
+        Integer replacingFieldIndex = null;
+        if(Utils.isNotEmpty(fieldInfoList)){
+            for (int i = 0; i < fieldInfoList.size(); i++) {
+                FieldInfo fieldInfo = fieldInfoList.get(i);
+                if(Objects.equals(fieldInfo.key(), key)){
+                    if(fieldInfo.detail() instanceof SelectFieldDetail selectFieldDetail){
+                        List<SelectFieldDetail.Property> properties = new ArrayList<>(selectFieldDetail.properties());
+                        properties.add(
+                                new SelectFieldDetail.Property(
+                                        propertyName, propertyLabel, propertyValues, propertyDisplayable
+                                )
+                        );
+
+                        SelectFieldDetail newDetail = new SelectFieldDetail(
+                                selectFieldDetail.multiSelect(),
+                                selectFieldDetail.allowCreate(),
+                                selectFieldDetail.defaultValues(),
+                                selectFieldDetail.options(),
+                                selectFieldDetail.optionNames(),
+                                selectFieldDetail.source(),
+                                selectFieldDetail.entityType(),
+                                selectFieldDetail.dependsOn(),
+                                selectFieldDetail.required(),
+                                selectFieldDetail.conditions(),
+                                selectFieldDetail.type(),
+                                selectFieldDetail.placeholder(),
+                                properties,
+                                selectFieldDetail.filterPredicates()
                         );
                         replacingFieldInfo = new FieldInfo(
                                 fieldInfo.type(),
@@ -210,7 +271,9 @@ public class DynamicFormHelper {
                             selectFieldDetail.required(),
                             selectFieldDetail.conditions(),
                             selectFieldDetail.type(),
-                            selectFieldDetail.placeholder()
+                            selectFieldDetail.placeholder(),
+                            selectFieldDetail.properties(),
+                            selectFieldDetail.filterPredicates()
                     );
                 } else if(fieldInfo.detail() instanceof InputFieldDetail inputFieldDetail){
                     if(o instanceof String s){

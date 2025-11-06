@@ -36,4 +36,6 @@ public interface HuaweiCloudClient {
     HuaweiCtsService cts();
 
     HuaweiObsService obs();
+
+    HuaweiRdsService rds();
 }
