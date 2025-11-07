@@ -1,6 +1,7 @@
 package com.stratocloud.provider.huawei.rds.actions;
 
 import com.stratocloud.account.ExternalAccount;
+import com.stratocloud.job.TaskContext;
 import com.stratocloud.provider.huawei.HuaweiCloudProvider;
 import com.stratocloud.provider.huawei.rds.HuaweiRdsHandler;
 import com.stratocloud.provider.huawei.rds.HuaweiRdsUtil;
@@ -59,7 +60,8 @@ public class HuaweiRdsStopHandler implements ResourceActionHandler {
         HuaweiCloudProvider provider = (HuaweiCloudProvider) rdsHandler.getProvider();
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
 
-        provider.buildClient(account).rds().stopInstance(resource.getExternalId());
+        String jobId = provider.buildClient(account).rds().stopInstance(resource.getExternalId());
+        TaskContext.setExternalTaskId(jobId);
     }
 
     @Override

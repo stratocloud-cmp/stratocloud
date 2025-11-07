@@ -85,6 +85,7 @@ public class HuaweiRdsHandler extends AbstractResourceHandler {
                  "SWITCHOVER", "MIGRATING", "BACKING UP", "MODIFYING DATABASE PORT" -> ResourceState.CONFIGURING;
             case "REBOOTING" -> ResourceState.RESTARTING;
             case "STORAGE FULL" -> ResourceState.INSUFFICIENT_RESOURCE;
+            case "SHUTDOWN" -> ResourceState.STOPPED;
             default -> ResourceState.UNKNOWN;
         };
     }

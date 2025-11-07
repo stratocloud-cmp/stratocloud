@@ -86,6 +86,10 @@ public class HuaweiRdsBuildHandler implements BuildResourceActionHandler {
                 () -> new StratoException("Subnet not found")
         );
 
+        Resource securityGroupResource = resource.getEssentialTarget(ResourceCategories.SECURITY_GROUP).orElseThrow(
+                () -> new StratoException("Security group not provided")
+        );
+
         HuaweiRdsBuildInput.EngineInput engineInput = input.getEngineInput();
 
         InstanceRequest body = new InstanceRequest();
@@ -117,8 +121,13 @@ public class HuaweiRdsBuildHandler implements BuildResourceActionHandler {
         Ha ha = new Ha();
         Ha.ModeEnum modeEnum = Ha.ModeEnum.fromValue(engineInput.getHaMode());
         ha.setMode(modeEnum);
-        if(Objects.equals(modeEnum, Ha.ModeEnum.HA))
+        if(Objects.equals(modeEnum, Ha.ModeEnum.HA)) {
             ha.setReplicationMode(Ha.ReplicationModeEnum.fromValue(engineInput.getReplicationMode()));
+
+            body.setAvailabilityZone("%s,%s".formatted(zoneResource.getExternalId(), engineInput.getBackupZone()));
+        }else {
+            body.setAvailabilityZone(zoneResource.getExternalId());
+        }
         body.setHa(ha);
 
         body.setConfigurationId(engineInput.getConfigurationId());
@@ -131,9 +140,9 @@ public class HuaweiRdsBuildHandler implements BuildResourceActionHandler {
         volume.setSize(engineInput.getStorageSize());
         body.setVolume(volume);
 
-        body.setAvailabilityZone(zoneResource.getExternalId());
         body.setVpcId(subnet.getVpcId());
         body.setSubnetId(subnet.getId());
+        body.setSecurityGroupId(securityGroupResource.getExternalId());
 
         UnchangeableParam unchangeableParam = new UnchangeableParam();
         unchangeableParam.setLowerCaseTableNames(engineInput.isTableNameCaseSensitive()?"0":"1");

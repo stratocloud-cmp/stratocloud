@@ -1,6 +1,7 @@
 package com.stratocloud.provider.huawei.rds.actions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.huaweicloud.sdk.ecs.v2.model.NovaAvailabilityZone;
 import com.huaweicloud.sdk.rds.v3.model.*;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.*;
@@ -12,6 +13,7 @@ import com.stratocloud.utils.Utils;
 import com.stratocloud.utils.concurrent.RealTimeTaskUtil;
 import lombok.Data;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -146,11 +148,35 @@ public class HuaweiRdsBuildInput implements ResourceActionInput {
         @SelectField(label = "备机同步模式", conditions = "this.haMode === 'Ha'")
         private String replicationMode;
 
+        @SelectField(label = "备可用区", conditions = "this.haMode === 'Ha'")
+        private String backupZone;
+
+        @SelectField(
+                label = "规格类型",
+                options = {
+                        "normal",
+                        "dedicated",
+                        "armFlavors"
+                },
+                optionNames = {
+                        "通用型",
+                        "独享型",
+                        "鲲鹏通用增强型"
+                },
+                defaultValues = "normal"
+        )
+        private String flavorGroup;
+
+        @SuppressWarnings("SpellCheckingInspection")
         @SelectField(
                 label = "规格",
                 filterPredicates = {
                         "!formData.haMode || formData.haMode.toLowerCase() === element.haMode",
-                        "!formData.engineVersion || (element.engineVersion && element.engineVersion.indexOf(formData.engineVersion) !== -1)"
+                        "!formData.engineVersion || (element.engineVersion && element.engineVersion.indexOf(formData.engineVersion) !== -1)",
+                        "!formData.flavorGroup || " +
+                                "(element.group && formData.flavorGroup === 'normal' && ['normal','normal2','normalLocalssd','general'].indexOf(element.group) !== -1) || " +
+                                "(element.group && formData.flavorGroup === 'dedicated' && ['dedicicateNormal','dedicatedNormalLocalssd','dedicated','rapid'].indexOf(element.group) !== -1) || " +
+                                "(element.group && formData.flavorGroup === 'armFlavors' && element.group === 'armFlavors')"
                 }
         )
         private String flavorCode;
@@ -191,7 +217,12 @@ public class HuaweiRdsBuildInput implements ResourceActionInput {
         @BooleanField(label = "表名大小写是否敏感")
         private boolean tableNameCaseSensitive;
 
-        @SelectField(label = "参数模板")
+        @SelectField(
+                label = "参数模板",
+                filterPredicates = {
+                        "!formData.engineVersion || (element.engineVersion && element.engineVersion === formData.engineVersion)"
+                }
+        )
         private String configurationId;
 
 
@@ -244,9 +275,19 @@ public class HuaweiRdsBuildInput implements ResourceActionInput {
                     replicationModeOptionNames
             );
 
+            List<NovaAvailabilityZone> zones = client.ecs().describeZones();
+            formMetaData = DynamicFormHelper.changeOptions(
+                    formMetaData,
+                    "backupZone",
+                    zones.stream().map(NovaAvailabilityZone::getZoneName).toList(),
+                    zones.stream().map(NovaAvailabilityZone::getZoneName).toList()
+            );
+
             ListFlavorsRequest flavorsRequest = new ListFlavorsRequest();
             flavorsRequest.setDatabaseName(flavorDatabase);
-            List<Flavor> flavors = client.rds().describeFlavors(flavorsRequest);
+            List<Flavor> flavors = client.rds().describeFlavors(flavorsRequest).stream().sorted(
+                    Comparator.comparing(Flavor::getVcpus).thenComparingInt(Flavor::getRam)
+            ).toList();
 
             formMetaData = DynamicFormHelper.changeOptions(
                     formMetaData,
@@ -270,6 +311,15 @@ public class HuaweiRdsBuildInput implements ResourceActionInput {
                     "engineVersion",
                     "数据库版本",
                     flavors.stream().map(Flavor::getVersionName).toList(),
+                    false
+            );
+
+            formMetaData = DynamicFormHelper.addProperty(
+                    formMetaData,
+                    "flavorCode",
+                    "group",
+                    "规格类型",
+                    flavors.stream().map(Flavor::getGroupType).toList(),
                     false
             );
 
@@ -300,6 +350,15 @@ public class HuaweiRdsBuildInput implements ResourceActionInput {
                     "configurationId",
                     configurationSummaries.stream().map(ConfigurationSummary::getId).toList(),
                     configurationSummaries.stream().map(ConfigurationSummary::getName).toList()
+            );
+
+            formMetaData = DynamicFormHelper.addProperty(
+                    formMetaData,
+                    "configurationId",
+                    "engineVersion",
+                    "数据库版本",
+                    configurationSummaries.stream().map(ConfigurationSummary::getDatastoreVersionName).toList(),
+                    false
             );
 
             formMetaData = DynamicFormHelper.changeDefaultValues(formMetaData, engineInput);
