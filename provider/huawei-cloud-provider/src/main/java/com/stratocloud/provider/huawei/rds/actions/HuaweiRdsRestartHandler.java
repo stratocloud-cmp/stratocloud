@@ -1,6 +1,7 @@
 package com.stratocloud.provider.huawei.rds.actions;
 
 import com.huaweicloud.sdk.rds.v3.model.InstanceRestartRequsetBody;
+import com.huaweicloud.sdk.rds.v3.model.RestartConfiguration;
 import com.huaweicloud.sdk.rds.v3.model.StartInstanceRestartActionRequest;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.job.TaskContext;
@@ -64,7 +65,7 @@ public class HuaweiRdsRestartHandler implements ResourceActionHandler {
 
         StartInstanceRestartActionRequest request = new StartInstanceRestartActionRequest();
         request.setInstanceId(resource.getExternalId());
-        request.setBody(new InstanceRestartRequsetBody());
+        request.setBody(new InstanceRestartRequsetBody().withRestart(new RestartConfiguration()));
 
         String jobId = provider.buildClient(account).rds().restartInstance(request);
 

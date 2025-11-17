@@ -35,7 +35,8 @@ public class HuaweiMetricsProvider implements MetricsProvider {
                 CPU_LOAD_AVERAGE_1, CPU_LOAD_AVERAGE_5, CPU_LOAD_AVERAGE_15,
                 MEM_UTIL,
                 DISK_READ_RATE, DISK_READ_IOPS, DISK_WRITE_RATE, DISK_WRITE_IOPS,
-                NETWORK_BANDWIDTH_OUT, NETWORK_BANDWIDTH_IN, NETWORK_PPS_OUT, NETWORK_PPS_IN, NETWORK_NEW_CONNECTIONS
+                NETWORK_BANDWIDTH_OUT, NETWORK_BANDWIDTH_IN, NETWORK_PPS_OUT, NETWORK_PPS_IN, NETWORK_NEW_CONNECTIONS,
+                RDS_CPU_UTIL, RDS_MEM_UTIL, RDS_DISK_UTIL
         );
     }
 
@@ -46,6 +47,19 @@ public class HuaweiMetricsProvider implements MetricsProvider {
                 new MetricObject(
                         List.of(
                                 new MetricDimension("instance_id", resource.getExternalId())
+                        )
+                )
+        );
+    }
+
+    private static List<MetricObject> getRdsInstanceMetricObjects(Resource resource) {
+        if(Utils.isBlank(resource.getExternalId()))
+            return List.of();
+
+        return List.of(
+                new MetricObject(
+                        List.of(
+                                new MetricDimension("rds_cluster_id", resource.getExternalId())
                         )
                 )
         );
@@ -140,7 +154,7 @@ public class HuaweiMetricsProvider implements MetricsProvider {
         };
     }
 
-    private HuaweiCloudClient getClient(Resource resource) {
+    private static HuaweiCloudClient getClient(Resource resource) {
         HuaweiCloudProvider provider = (HuaweiCloudProvider) resource.getResourceHandler().getProvider();
         ExternalAccount account = provider.getAccountRepository().findExternalAccount(resource.getAccountId());
         return provider.buildClient(account);
@@ -212,7 +226,9 @@ public class HuaweiMetricsProvider implements MetricsProvider {
     public Map<Metric, String> getShortMetricNames() {
         return Map.of(
                 HuaweiMetrics.CPU_UTIL, "cpu",
-                HuaweiMetrics.MEM_UTIL, "mem"
+                HuaweiMetrics.MEM_UTIL, "mem",
+                HuaweiMetrics.RDS_CPU_UTIL, "cpu",
+                HuaweiMetrics.RDS_MEM_UTIL, "mem"
         );
     }
 
@@ -426,5 +442,34 @@ public class HuaweiMetricsProvider implements MetricsProvider {
             Optional.empty(),
             false,
             ResourceCategories.COMPUTE_INSTANCE
+    );
+
+
+    public static final SupportedMetric RDS_CPU_UTIL = new SupportedMetric(
+            HuaweiMetrics.RDS_CPU_UTIL,
+            "rds_cluster_id",
+            HuaweiMetricsProvider::getRdsInstanceMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric RDS_MEM_UTIL = new SupportedMetric(
+            HuaweiMetrics.RDS_MEM_UTIL,
+            "rds_cluster_id",
+            HuaweiMetricsProvider::getRdsInstanceMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
+    );
+    public static final SupportedMetric RDS_DISK_UTIL = new SupportedMetric(
+            HuaweiMetrics.RDS_DISK_UTIL,
+            "rds_cluster_id",
+            HuaweiMetricsProvider::getRdsInstanceMetricObjects,
+            Optional.empty(),
+            Optional.empty(),
+            false,
+            ResourceCategories.RELATIONAL_DB_INSTANCE
     );
 }

@@ -63,7 +63,7 @@ public class HuaweiRdsServiceImpl extends HuaweiAbstractService implements Huawe
     }
 
     @Override
-    public String createInstance(CreateInstanceRequest request){
+    public CreateInstanceResponse createInstance(CreateInstanceRequest request){
         request.getBody().setRegion(regionId);
 
         boolean dryRun = request.getBody().getDryRun() != null ? request.getBody().getDryRun() : false;
@@ -76,7 +76,7 @@ public class HuaweiRdsServiceImpl extends HuaweiAbstractService implements Huawe
         } else {
             String instanceId = response.getInstance().getId();
             log.info("Huawei create rds request sent. InstanceId={}.", instanceId);
-            return instanceId;
+            return response;
         }
     }
 
@@ -136,10 +136,12 @@ public class HuaweiRdsServiceImpl extends HuaweiAbstractService implements Huawe
     }
 
     @Override
-    public void resizeInstance(StartResizeFlavorActionRequest request){
-        tryInvoke(() -> buildClient().startResizeFlavorAction(request));
+    public String resizeInstance(StartResizeFlavorActionRequest request){
+        StartResizeFlavorActionResponse response = tryInvoke(() -> buildClient().startResizeFlavorAction(request));
 
         log.info("Huawei resize rds request sent. InstanceId={}.", request.getInstanceId());
+
+        return response.getJobId();
     }
 
     @Override
@@ -151,18 +153,14 @@ public class HuaweiRdsServiceImpl extends HuaweiAbstractService implements Huawe
     }
 
     @Override
-    public void enlargeVolume(StartInstanceEnlargeVolumeActionRequest request){
-        tryInvoke(() -> buildClient().startInstanceEnlargeVolumeAction(request));
+    public String enlargeVolume(StartInstanceEnlargeVolumeActionRequest request){
+        StartInstanceEnlargeVolumeActionResponse response = tryInvoke(
+                () -> buildClient().startInstanceEnlargeVolumeAction(request)
+        );
 
         log.info("Huawei enlarge rds volume request sent. InstanceId={}.", request.getInstanceId());
-    }
 
-    @Override
-    public void deletePostPaidInstance(String instanceId){
-        DeleteInstanceRequest request = new DeleteInstanceRequest();
-        request.setInstanceId(instanceId);
-
-        tryInvoke(() -> buildClient().deleteInstance(request));
+        return response.getJobId();
     }
 
     @Override

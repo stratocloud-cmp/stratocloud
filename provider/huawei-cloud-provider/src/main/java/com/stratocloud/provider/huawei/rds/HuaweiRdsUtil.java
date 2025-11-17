@@ -5,8 +5,10 @@ import com.huaweicloud.sdk.rds.v3.model.ListJobInfoResponse;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.job.TaskContext;
 import com.stratocloud.provider.huawei.HuaweiCloudProvider;
+import com.stratocloud.provider.huawei.common.HuaweiCloudClient;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.ResourceActionResult;
+import com.stratocloud.utils.concurrent.SleepUtil;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -33,5 +35,16 @@ public class HuaweiRdsUtil {
             return ResourceActionResult.failed(job.get().getJob().getFailReason());
 
         return ResourceActionResult.finished();
+    }
+
+    public static void waitForJob(HuaweiCloudClient client, String jobId) {
+        Optional<ListJobInfoResponse> job = client.rds().describeJob(jobId);
+
+        int count = 0;
+        while (job.isPresent() &&
+                Objects.equals(job.get().getJob().getStatus(), GetJobInfoResponseBodyJob.StatusEnum.RUNNING) && count++<300){
+            SleepUtil.sleep(10);
+            job = client.rds().describeJob(jobId);
+        }
     }
 }

@@ -17,7 +17,7 @@ public interface HuaweiRdsService {
 
     Optional<InstanceResponse> describeInstance(String instanceId);
 
-    String createInstance(CreateInstanceRequest request);
+    CreateInstanceResponse createInstance(CreateInstanceRequest request);
 
     void deleteInstance(String instanceId);
 
@@ -29,13 +29,11 @@ public interface HuaweiRdsService {
 
     String restartInstance(StartInstanceRestartActionRequest request);
 
-    void resizeInstance(StartResizeFlavorActionRequest request);
+    String resizeInstance(StartResizeFlavorActionRequest request);
 
     ListFlavorsResizeResponse describeResizeTargetFlavors(String instanceId);
 
-    void enlargeVolume(StartInstanceEnlargeVolumeActionRequest request);
-
-    void deletePostPaidInstance(String instanceId);
+    String enlargeVolume(StartInstanceEnlargeVolumeActionRequest request);
 
     List<ConfigurationSummary> listConfigurations(DbEngine engine);
 

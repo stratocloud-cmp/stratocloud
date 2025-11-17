@@ -5,17 +5,23 @@ import com.huaweicloud.sdk.vpc.v2.model.Subnet;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.form.info.DynamicFormMetaData;
+import com.stratocloud.job.TaskContext;
+import com.stratocloud.job.TaskState;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.constants.UsageTypes;
 import com.stratocloud.provider.huawei.HuaweiCloudProvider;
 import com.stratocloud.provider.huawei.common.HuaweiCloudClient;
 import com.stratocloud.provider.huawei.rds.HuaweiRdsHandler;
+import com.stratocloud.provider.huawei.rds.HuaweiRdsUtil;
 import com.stratocloud.provider.resource.BuildResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.Resource;
+import com.stratocloud.resource.ResourceActionResult;
+import com.stratocloud.resource.ResourceSyncScheduler;
 import com.stratocloud.resource.ResourceUsage;
 import com.stratocloud.utils.JSON;
+import com.stratocloud.utils.concurrent.SleepUtil;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -63,11 +69,30 @@ public class HuaweiRdsBuildHandler implements BuildResourceActionHandler {
 
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        String instanceId = createInstance(resource, parameters, false);
+        CreateInstanceResponse response = createInstance(resource, parameters, false);
+        String instanceId = response.getInstance().getId();
         resource.setExternalId(instanceId);
+
+        SleepUtil.sleep(20);
+
+        TaskContext.setExternalTaskId(response.getJobId());
     }
 
-    private String createInstance(Resource resource, Map<String, Object> parameters, boolean dryRun) {
+    @Override
+    public ResourceActionResult checkActionResult(Resource resource, Map<String, Object> parameters) {
+        ResourceActionResult result = HuaweiRdsUtil.checkActionResult(resource);
+        if(result.taskState() == TaskState.FINISHED)
+            ResourceSyncScheduler.addSyncTask(
+                    new ResourceSyncScheduler.SyncTask(
+                            resource.getId(),
+                            20L,
+                            5
+                    )
+            );
+        return result;
+    }
+
+    private CreateInstanceResponse createInstance(Resource resource, Map<String, Object> parameters, boolean dryRun) {
         HuaweiCloudProvider provider = (HuaweiCloudProvider) rdsHandler.getProvider();
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
         HuaweiCloudClient client = provider.buildClient(account);

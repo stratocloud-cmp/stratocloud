@@ -376,7 +376,7 @@ public class HuaweiRdsBuildInput implements ResourceActionInput {
         }
 
         @SuppressWarnings("SpellCheckingInspection")
-        private static String getFlavorGroupName(String groupType) {
+        public static String getFlavorGroupName(String groupType) {
             if(Utils.isBlank(groupType))
                 return "";
             return switch (groupType){

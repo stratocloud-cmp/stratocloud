@@ -138,7 +138,7 @@ public class HuaweiMetrics {
             MetricType.TIME_SERIES,
             MetricGroup.STORAGE_METRICS,
             MetricValueType.AVG,
-            true,
+            false,
             List.of(300)
     );
 
@@ -150,7 +150,7 @@ public class HuaweiMetrics {
             MetricType.TIME_SERIES,
             MetricGroup.STORAGE_METRICS,
             MetricValueType.AVG,
-            true,
+            false,
             List.of(300)
     );
 
@@ -162,7 +162,7 @@ public class HuaweiMetrics {
             MetricType.TIME_SERIES,
             MetricGroup.STORAGE_METRICS,
             MetricValueType.AVG,
-            true,
+            false,
             List.of(300)
     );
 
@@ -174,7 +174,7 @@ public class HuaweiMetrics {
             MetricType.TIME_SERIES,
             MetricGroup.STORAGE_METRICS,
             MetricValueType.AVG,
-            true,
+            false,
             List.of(300)
     );
 
@@ -187,7 +187,7 @@ public class HuaweiMetrics {
             MetricType.TIME_SERIES,
             MetricGroup.NETWORK_METRICS,
             MetricValueType.AVG,
-            true,
+            false,
             List.of(300)
     );
 
@@ -199,7 +199,7 @@ public class HuaweiMetrics {
             MetricType.TIME_SERIES,
             MetricGroup.NETWORK_METRICS,
             MetricValueType.AVG,
-            true,
+            false,
             List.of(300)
     );
 
@@ -211,7 +211,7 @@ public class HuaweiMetrics {
             MetricType.TIME_SERIES,
             MetricGroup.NETWORK_METRICS,
             MetricValueType.AVG,
-            true,
+            false,
             List.of(300)
     );
 
@@ -223,7 +223,7 @@ public class HuaweiMetrics {
             MetricType.TIME_SERIES,
             MetricGroup.NETWORK_METRICS,
             MetricValueType.AVG,
-            true,
+            false,
             List.of(300)
     );
 
@@ -235,7 +235,43 @@ public class HuaweiMetrics {
             MetricType.TIME_SERIES,
             MetricGroup.NETWORK_METRICS,
             MetricValueType.AVG,
-            true,
+            false,
             List.of(300)
+    );
+
+
+
+    public static final Metric RDS_CPU_UTIL = new Metric(
+            "SYS.RDS",
+            "rds001_cpu_util",
+            "RDS实例CPU使用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.AVG,
+            true,
+            List.of(1, 5, 60)
+    );
+    public static final Metric RDS_MEM_UTIL = new Metric(
+            "SYS.RDS",
+            "rds002_mem_util",
+            "RDS实例内存使用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.AVG,
+            true,
+            List.of(1, 5, 60)
+    );
+    public static final Metric RDS_DISK_UTIL = new Metric(
+            "SYS.RDS",
+            "rds039_disk_util",
+            "RDS实例磁盘使用率",
+            "%",
+            MetricType.TIME_SERIES,
+            MetricGroup.RESOURCE_METRICS,
+            MetricValueType.AVG,
+            true,
+            List.of(60)
     );
 }
