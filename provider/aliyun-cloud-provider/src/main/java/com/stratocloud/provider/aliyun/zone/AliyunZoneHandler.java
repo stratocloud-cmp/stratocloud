@@ -78,7 +78,7 @@ public class AliyunZoneHandler extends AbstractResourceHandler {
                                                 AliyunZone zone) {
         ResourceState zoneState = ResourceState.AVAILABLE;
 
-        if("SoldOut".equals(zone.availability().getStatus()))
+        if(zone.availability() != null && "SoldOut".equals(zone.availability().getStatus()))
             zoneState = ResourceState.SOLD_OUT;
 
         return new ExternalResource(

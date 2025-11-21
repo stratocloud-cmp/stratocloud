@@ -44,4 +44,8 @@ public interface HuaweiRdsService {
     void changeOpsWindow(ChangeOpsWindowRequest request);
 
     Optional<ListJobInfoResponse> describeJob(String jobId);
+
+    void resetPassword(SetDbUserPwdRequest request);
+
+    List<UserForList> describeAccounts(String instanceId);
 }

@@ -202,9 +202,22 @@ public class HuaweiRdsServiceImpl extends HuaweiAbstractService implements Huawe
     public Optional<ListJobInfoResponse> describeJob(String jobId){
         ListJobInfoRequest request = new ListJobInfoRequest();
         request.setId(jobId);
-
         return queryOne(() -> buildClient().listJobInfo(request));
     }
 
+    @Override
+    public void resetPassword(SetDbUserPwdRequest request){
+        tryInvoke(() -> buildClient().setDbUserPwd(request));
 
+        log.info("Huawei reset rds password request sent. InstanceId={}.", request.getInstanceId());
+    }
+
+    @Override
+    public List<UserForList> describeAccounts(String instanceId){
+        ListDbUsersRequest request = new ListDbUsersRequest();
+        request.setInstanceId(instanceId);
+        request.setPage(1);
+        request.setLimit(100);
+        return queryAll(() -> buildClient().listDbUsers(request).getUsers());
+    }
 }
