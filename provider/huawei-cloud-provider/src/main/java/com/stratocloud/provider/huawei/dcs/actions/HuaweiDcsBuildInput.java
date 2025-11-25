@@ -1,14 +1,13 @@
 package com.stratocloud.provider.huawei.dcs.actions;
 
-import com.huaweicloud.sdk.dcs.v2.model.AttrsObject;
 import com.huaweicloud.sdk.dcs.v2.model.FlavorsItems;
 import com.huaweicloud.sdk.dcs.v2.model.ListFlavorsRequest;
 import com.huaweicloud.sdk.ecs.v2.model.NovaAvailabilityZone;
 import com.stratocloud.form.*;
 import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.provider.huawei.common.HuaweiCloudClient;
+import com.stratocloud.provider.huawei.dcs.HuaweiDcsUtil;
 import com.stratocloud.provider.resource.ResourceActionInput;
-import com.stratocloud.utils.Utils;
 import lombok.Data;
 
 import java.util.*;
@@ -220,24 +219,11 @@ public class HuaweiDcsBuildInput implements ResourceActionInput {
 
     private static DynamicFormMetaData changeSpecCodeMeta(List<FlavorsItems> flavors, DynamicFormMetaData formMetaData) {
         List<String> specCodes = flavors.stream().map(FlavorsItems::getSpecCode).toList();
-        List<String> specCodeNames = flavors.stream().map(
-                f -> {
-                    if (Utils.isEmpty(f.getCapacity()))
-                        return f.getSpecCode();
-                    return "%s (%s)".formatted(
-                            f.getSpecCode(),
-                            String.join(",", f.getCapacity().stream().map(c -> c + "GB").toList())
-                    );
-                }
-        ).toList();
+        List<String> specCodeNames = flavors.stream().map(HuaweiDcsUtil::getFlavorName).toList();
         List<String> cpuTypes = flavors.stream().map(FlavorsItems::getCpuType).toList();
         List<String> engineVersions = flavors.stream().map(FlavorsItems::getEngineVersion).toList();
         List<String> cacheModes = flavors.stream().map(FlavorsItems::getCacheMode).toList();
-        List<String> shardingNumbers = flavors.stream().map(
-                f -> f.getAttrs().stream().filter(
-                        attr -> Objects.equals(attr.getName(), "sharding_num")
-                ).findAny().map(AttrsObject::getValue).orElse(null)
-        ).toList();
+        List<String> shardingNumbers = flavors.stream().map(HuaweiDcsUtil::getShardingNum).toList();
         List<String> replicaNumbers = flavors.stream().map(
                 f -> f.getReplicaCount() != null ? f.getReplicaCount().toString() : null
         ).toList();

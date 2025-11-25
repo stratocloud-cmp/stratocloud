@@ -121,7 +121,7 @@ public class HuaweiDcsBuildHandler implements BuildResourceActionHandler {
                 BackupPlan plan = new BackupPlan();
                 plan.setBackupAt(input.getBackupPolicy().getBackupAt().stream().map(Long::intValue).toList());
                 plan.setPeriodType("weekly");
-                plan.setBeginAt(TimeUtil.toUtcTime(input.getBackupPolicy().getBeginAt()));
+                plan.setBeginAt(TimeUtil.toUtcTimeRange(input.getBackupPolicy().getBeginAt()));
                 policy.setPeriodicalBackupPlan(plan);
             }
 
@@ -152,8 +152,8 @@ public class HuaweiDcsBuildHandler implements BuildResourceActionHandler {
                 bssParam.setPeriodType(BssParam.PeriodTypeEnum.MONTH);
                 bssParam.setPeriodNum(period.intValue());
             }
-
-
+        }else {
+            bssParam.setChargingMode(BssParam.ChargingModeEnum.POSTPAID);
         }
 
         bssParam.setIsAutoPay(BssParam.IsAutoPayEnum.TRUE);

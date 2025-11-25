@@ -44,4 +44,13 @@ public class TimeUtil {
                 UTC_ZONE_ID
         ).toLocalDateTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"));
     }
+
+    public static String toUtcTimeRange(String timeRange){
+        String[] split = timeRange.split("-");
+
+        if(Utils.length(split) != 2)
+            return timeRange;
+
+        return "%s-%s".formatted(toUtcTime(split[0]), toUtcTime(split[1]));
+    }
 }
