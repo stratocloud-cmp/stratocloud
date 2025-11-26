@@ -40,4 +40,6 @@ public interface HuaweiCloudClient {
     HuaweiRdsService rds();
 
     HuaweiDcsService dcs();
+
+    HuaweiKafkaService kafka();
 }

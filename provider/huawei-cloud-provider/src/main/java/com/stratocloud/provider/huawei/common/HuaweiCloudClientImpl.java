@@ -173,4 +173,9 @@ public class HuaweiCloudClientImpl implements HuaweiCloudClient {
     public HuaweiDcsService dcs(){
         return new HuaweiDcsServiceImpl(cacheService, credential, regionId, credential.getAk());
     }
+
+    @Override
+    public HuaweiKafkaService kafka(){
+        return new HuaweiKafkaServiceImpl(cacheService, credential, regionId, credential.getAk());
+    }
 }

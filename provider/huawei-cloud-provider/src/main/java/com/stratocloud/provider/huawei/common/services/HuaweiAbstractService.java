@@ -120,7 +120,7 @@ public abstract class HuaweiAbstractService {
                                    Consumer<Integer> limitSetter,
                                    Consumer<String> markerSetter,
                                    Function<E, String> idGetter){
-        int limit = 100;
+        int limit = 50;
         String marker;
 
         limitSetter.accept(limit);
@@ -145,7 +145,7 @@ public abstract class HuaweiAbstractService {
     protected <E> List<E> queryAll(Supplier<List<E>> supplier,
                                    Consumer<Integer> limitSetter,
                                    Consumer<Integer> offsetSetter){
-        int limit = 100;
+        int limit = 50;
 
         limitSetter.accept(limit);
 
