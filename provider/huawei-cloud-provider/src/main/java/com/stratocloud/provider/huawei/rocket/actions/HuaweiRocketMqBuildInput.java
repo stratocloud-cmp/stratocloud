@@ -1,7 +1,7 @@
-package com.stratocloud.provider.huawei.kafka.actions;
+package com.stratocloud.provider.huawei.rocket.actions;
 
-import com.huaweicloud.sdk.kafka.v2.model.AvailableZonesResp;
-import com.huaweicloud.sdk.kafka.v2.model.ListEngineProductsEntity;
+import com.huaweicloud.sdk.rocketmq.v2.model.ListAvailableZonesRespAvailableZones;
+import com.huaweicloud.sdk.rocketmq.v2.model.ProductEntity;
 import com.stratocloud.form.BooleanField;
 import com.stratocloud.form.DynamicFormHelper;
 import com.stratocloud.form.NumberField;
@@ -9,13 +9,12 @@ import com.stratocloud.form.SelectField;
 import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.provider.huawei.common.HuaweiCloudClient;
 import com.stratocloud.provider.resource.ResourceActionInput;
-import com.stratocloud.utils.Utils;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-public class HuaweiKafkaBuildInput implements ResourceActionInput {
+public class HuaweiRocketMqBuildInput implements ResourceActionInput {
     @SelectField(
             label = "计费模式",
             options = {
@@ -46,46 +45,46 @@ public class HuaweiKafkaBuildInput implements ResourceActionInput {
     @BooleanField(label = "自动续费", conditions = "this.chargingMode === 'prePaid'")
     private boolean autoRenew;
 
-
-    @SelectField(
-            label = "Kafka版本",
-            options = {
-                    "1.1.0", "2.3.0", "2.7", "3.x"
-            },
-            optionNames = {
-                    "1.1.0", "2.3.0", "2.7", "3.x"
-            },
-            defaultValues = "3.x"
-    )
-    private String engineVersion;
-
     @SelectField(
             label = "部署架构",
             options = {
-                    "single",
-                    "cluster"
+                    "cluster",
+                    "single.basic",
+                    "cluster.basic",
+                    "cluster.professional"
             },
             optionNames = {
-                    "单机",
-                    "集群"
+                    "4.8.0集群",
+                    "5.x单机基础版",
+                    "5.x集群基础版",
+                    "5.x集群专业版"
             },
-            defaultValues = "cluster"
-
+            defaultValues = "cluster.basic"
     )
     private String instanceType;
 
-    @BooleanField(label = "使用备可用区", conditions = "this.instanceType === 'cluster'")
-    private boolean enableBackupZones;
+    @SelectField(label = "备可用区", conditions = "this.instanceType !== 'single.basic'", required = false)
+    private String backupZone;
 
-    @SelectField(label = "备可用区1", conditions = "this.instanceType === 'cluster' && this.enableBackupZones === true")
-    private String firstBackupZone;
 
-    @SelectField(label = "备可用区2", conditions = "this.instanceType === 'cluster' && this.enableBackupZones === true")
-    private String secondBackupZone;
+    @SelectField(
+            label = "芯片架构",
+            options = {
+                    "X86"
+            },
+            optionNames = {
+                    "X86"
+            },
+            defaultValues = "X86"
+    )
+    private String archType;
 
     @SelectField(
             label = "实例规格",
-            filterPredicates = "!formData.instanceType || element.type === formData.instanceType"
+            filterPredicates = {
+                    "!formData.instanceType || element.type === formData.instanceType",
+                    "!formData.archType || (element.archTypes && element.archTypes.indexOf(formData.archType) !== -1)"
+            }
     )
     private String productId;
 
@@ -113,48 +112,23 @@ public class HuaweiKafkaBuildInput implements ResourceActionInput {
     @NumberField(label = "单个代理存储空间(GB)", min = 100, defaultValue = 100, step = 100)
     private Integer storageSpace;
 
-    @SelectField(
-            label = "容量阈值策略",
-            options = {
-                    "time_base",
-                    "produce_reject"
-            },
-            optionNames = {
-                    "自动删除",
-                    "生产受限"
-            },
-            defaultValues = "time_base"
-    )
-    private String retentionPolicy;
-
-    @BooleanField(label = "自动创建Topic")
-    private boolean enableAutoTopic;
-
 
     public static DynamicFormMetaData getFormMeta(HuaweiCloudClient client){
-        List<AvailableZonesResp> zones = client.kafka().describeZones();
-        List<ListEngineProductsEntity> products = client.kafka().describeProducts().stream().filter(
-                p -> Utils.length(p.getChargingMode()) == 2
-        ).toList();
+        var zones = client.rocket().describeZones();
+        var products = client.rocket().describeProducts();
 
-        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(HuaweiKafkaBuildInput.class);
+        DynamicFormMetaData formMetaData = DynamicFormHelper.generateMetaData(HuaweiRocketMqBuildInput.class);
 
         formMetaData = DynamicFormHelper.changeOptions(
                 formMetaData,
-                "firstBackupZone",
-                zones.stream().map(AvailableZonesResp::getCode).toList(),
-                zones.stream().map(AvailableZonesResp::getName).toList()
+                "backupZone",
+                zones.stream().map(ListAvailableZonesRespAvailableZones::getCode).toList(),
+                zones.stream().map(ListAvailableZonesRespAvailableZones::getCode).toList()
         );
 
-        formMetaData = DynamicFormHelper.changeOptions(
-                formMetaData,
-                "secondBackupZone",
-                zones.stream().map(AvailableZonesResp::getCode).toList(),
-                zones.stream().map(AvailableZonesResp::getName).toList()
-        );
-
-        List<String> productIds = products.stream().map(ListEngineProductsEntity::getProductId).toList();
-        List<String> productTypes = products.stream().map(ListEngineProductsEntity::getType).toList();
+        List<String> productIds = products.stream().map(ProductEntity::getProductId).toList();
+        List<String> productTypes = products.stream().map(ProductEntity::getType).toList();
+        List<List<String>> productArchTypes = products.stream().map(ProductEntity::getArchTypes).toList();
 
         formMetaData = DynamicFormHelper.changeOptions(
                 formMetaData,
@@ -169,6 +143,15 @@ public class HuaweiKafkaBuildInput implements ResourceActionInput {
                 "type",
                 "实例类型",
                 productTypes,
+                false
+        );
+
+        formMetaData = DynamicFormHelper.addProperty(
+                formMetaData,
+                 "productId",
+                "archTypes",
+                "芯片架构",
+                productArchTypes,
                 false
         );
 

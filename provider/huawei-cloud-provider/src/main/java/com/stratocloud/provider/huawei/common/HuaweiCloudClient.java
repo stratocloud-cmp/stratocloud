@@ -42,4 +42,6 @@ public interface HuaweiCloudClient {
     HuaweiDcsService dcs();
 
     HuaweiKafkaService kafka();
+
+    HuaweiRocketMqService rocket();
 }

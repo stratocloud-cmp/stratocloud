@@ -178,4 +178,9 @@ public class HuaweiCloudClientImpl implements HuaweiCloudClient {
     public HuaweiKafkaService kafka(){
         return new HuaweiKafkaServiceImpl(cacheService, credential, regionId, credential.getAk());
     }
+
+    @Override
+    public HuaweiRocketMqService rocket(){
+        return new HuaweiRocketMqServiceImpl(cacheService, credential, regionId, credential.getAk());
+    }
 }

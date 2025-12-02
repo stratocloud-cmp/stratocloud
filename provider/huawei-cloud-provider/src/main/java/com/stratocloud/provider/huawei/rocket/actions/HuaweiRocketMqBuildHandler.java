@@ -1,9 +1,6 @@
-package com.stratocloud.provider.huawei.kafka.actions;
+package com.stratocloud.provider.huawei.rocket.actions;
 
-import com.huaweicloud.sdk.kafka.v2.model.AvailableZonesResp;
-import com.huaweicloud.sdk.kafka.v2.model.BssParam;
-import com.huaweicloud.sdk.kafka.v2.model.CreateInstanceByEngineReq;
-import com.huaweicloud.sdk.kafka.v2.model.CreatePostPaidKafkaInstanceRequest;
+import com.huaweicloud.sdk.rocketmq.v2.model.*;
 import com.huaweicloud.sdk.vpc.v2.model.Subnet;
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.exceptions.StratoException;
@@ -11,40 +8,42 @@ import com.stratocloud.form.info.DynamicFormMetaData;
 import com.stratocloud.provider.constants.ResourceCategories;
 import com.stratocloud.provider.huawei.HuaweiCloudProvider;
 import com.stratocloud.provider.huawei.common.HuaweiCloudClient;
-import com.stratocloud.provider.huawei.kafka.HuaweiKafkaHandler;
+import com.stratocloud.provider.huawei.rocket.HuaweiRocketMqHandler;
 import com.stratocloud.provider.resource.BuildResourceActionHandler;
 import com.stratocloud.provider.resource.ResourceActionInput;
 import com.stratocloud.provider.resource.ResourceHandler;
 import com.stratocloud.resource.Resource;
 import com.stratocloud.resource.ResourceUsage;
 import com.stratocloud.utils.JSON;
+import com.stratocloud.utils.Utils;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-public class HuaweiKafkaBuildHandler implements BuildResourceActionHandler {
+public class HuaweiRocketMqBuildHandler implements BuildResourceActionHandler {
 
-    private final HuaweiKafkaHandler kafkaHandler;
+    private final HuaweiRocketMqHandler rocketMqHandler;
 
-    public HuaweiKafkaBuildHandler(HuaweiKafkaHandler kafkaHandler) {
-        this.kafkaHandler = kafkaHandler;
+    public HuaweiRocketMqBuildHandler(HuaweiRocketMqHandler rocketMqHandler) {
+        this.rocketMqHandler = rocketMqHandler;
     }
 
     @Override
     public ResourceHandler getResourceHandler() {
-        return kafkaHandler;
+        return rocketMqHandler;
     }
 
     @Override
     public String getTaskName() {
-        return "创建Kafka实例";
+        return "创建RocketMQ实例";
     }
 
     @Override
     public Class<? extends ResourceActionInput> getInputClass() {
-        return HuaweiKafkaBuildInput.class;
+        return HuaweiRocketMqBuildInput.class;
     }
 
     @Override
@@ -53,45 +52,53 @@ public class HuaweiKafkaBuildHandler implements BuildResourceActionHandler {
             return Optional.empty();
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        HuaweiCloudProvider provider = (HuaweiCloudProvider) kafkaHandler.getProvider();
+        HuaweiCloudProvider provider = (HuaweiCloudProvider) rocketMqHandler.getProvider();
         HuaweiCloudClient client = provider.buildClient(account);
 
-        return Optional.of(HuaweiKafkaBuildInput.getFormMeta(client));
+        return Optional.of(HuaweiRocketMqBuildInput.getFormMeta(client));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void run(Resource resource, Map<String, Object> parameters) {
-        HuaweiKafkaBuildInput input = JSON.convert(parameters, HuaweiKafkaBuildInput.class);
+        HuaweiRocketMqBuildInput input = JSON.convert(parameters, HuaweiRocketMqBuildInput.class);
 
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
-        HuaweiCloudProvider provider = (HuaweiCloudProvider) kafkaHandler.getProvider();
+        HuaweiCloudProvider provider = (HuaweiCloudProvider) rocketMqHandler.getProvider();
         HuaweiCloudClient client = provider.buildClient(account);
 
+        ProductEntity product = client.rocket().describeProduct(input.getProductId()).orElseThrow(
+                () -> new StratoException("Product not found")
+        );
+
+        Map<String, Object> productProperties = (Map<String, Object>) product.getProperties();
 
 
-        CreatePostPaidKafkaInstanceRequest request = new CreatePostPaidKafkaInstanceRequest();
+        CreateInstanceByEngineRequest request = new CreateInstanceByEngineRequest();
         CreateInstanceByEngineReq body = new CreateInstanceByEngineReq();
-        body.setArchType("X86");
+        body.setArchType(input.getArchType());
         body.setName(resource.getName());
         body.setDescription(resource.getDescription());
 
-        body.setEngine(CreateInstanceByEngineReq.EngineEnum.KAFKA);
-        body.setEngineVersion(input.getEngineVersion());
+        body.setEngine(CreateInstanceByEngineReq.EngineEnum.RELIABILITY);
+        body.setEngineVersion(
+                CreateInstanceByEngineReq.EngineVersionEnum.fromValue(
+                        MapUtils.getString(productProperties, "engine_versions")
+                )
+        );
 
-        if(Objects.equals(input.getInstanceType(), "cluster"))
+        if(Objects.equals(input.getInstanceType(), "cluster")){
             body.setBrokerNum(input.getBrokerNumber());
-        else
-            body.setBrokerNum(1);
-        body.setProductId(input.getProductId());
+        }else {
+            body.setBrokerNum(MapUtils.getInteger(productProperties, "broker_num"));
+        }
+
+
+        body.setProductId(CreateInstanceByEngineReq.ProductIdEnum.fromValue(input.getProductId()));
         body.setStorageSpecCode(CreateInstanceByEngineReq.StorageSpecCodeEnum.fromValue(input.getStorageSpecCode()));
         body.setStorageSpace(input.getStorageSpace() * input.getBrokerNumber());
 
         resolvePlacement(resource, client, body, input);
-
-        body.setRetentionPolicy(CreateInstanceByEngineReq.RetentionPolicyEnum.fromValue(input.getRetentionPolicy()));
-        body.setEnableAutoTopic(input.isEnableAutoTopic());
-
-
 
         BssParam bssParam = new BssParam();
         bssParam.setIsAutoPay(true);
@@ -110,14 +117,14 @@ public class HuaweiKafkaBuildHandler implements BuildResourceActionHandler {
 
         request.setBody(body);
 
-        String instanceId = client.kafka().createInstance(request);
+        String instanceId = client.rocket().createInstance(request);
         resource.setExternalId(instanceId);
     }
 
     private static void resolvePlacement(Resource resource,
                                          HuaweiCloudClient client,
                                          CreateInstanceByEngineReq body,
-                                         HuaweiKafkaBuildInput input) {
+                                         HuaweiRocketMqBuildInput input) {
         Resource subnetResource = resource.getEssentialTarget(ResourceCategories.SUBNET).orElseThrow(
                 () -> new StratoException("Subnet not provided")
         );
@@ -130,9 +137,9 @@ public class HuaweiKafkaBuildHandler implements BuildResourceActionHandler {
                 () -> new StratoException("Security group not provided")
         );
 
-        Map<String, AvailableZonesResp> azMap = client.kafka().describeZones().stream().collect(
+        Map<String, ListAvailableZonesRespAvailableZones> azMap = client.rocket().describeZones().stream().collect(
                 Collectors.toMap(
-                        AvailableZonesResp::getCode,
+                        ListAvailableZonesRespAvailableZones::getCode,
                         z -> z
                 )
         );
@@ -144,9 +151,8 @@ public class HuaweiKafkaBuildHandler implements BuildResourceActionHandler {
         List<String> azCodes = new ArrayList<>();
         azCodes.add(subnet.getAvailabilityZone());
 
-        if(Objects.equals(input.getInstanceType(), "cluster") && input.isEnableBackupZones()){
-            azCodes.add(input.getFirstBackupZone());
-            azCodes.add(input.getSecondBackupZone());
+        if(!Objects.equals(input.getInstanceType(), "single.basic") && Utils.isNotBlank(input.getBackupZone())){
+            azCodes.add(input.getBackupZone());
         }
 
         List<String> azIds = azCodes.stream().map(c -> azMap.get(c).getId()).toList();

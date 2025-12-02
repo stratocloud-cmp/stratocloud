@@ -110,6 +110,12 @@
             <artifactId>provider-common</artifactId>
             <version>1.0.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.huaweicloud.sdk</groupId>
+            <artifactId>huaweicloud-sdk-rocketmq</artifactId>
+            <version>3.1.176</version>
+        </dependency>
     </dependencies>
 
 </project>
