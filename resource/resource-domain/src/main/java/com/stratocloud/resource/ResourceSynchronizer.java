@@ -80,6 +80,7 @@ public class ResourceSynchronizer {
             try {
                 tagEntryRepository.ensureTagValue(
                         resource.getCategory(),
+                        resource.getType(),
                         tag.entry().key(),
                         tag.entry().name(),
                         tag.value(),

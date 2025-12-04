@@ -23,10 +23,11 @@ public class TagValueRepositoryImpl extends AbstractTenantedRepository<ResourceT
     @Override
     public Page<ResourceTagValue> page(String tagEntryKey,
                                        String search,
+                                       String resourceType,
                                        List<String> tagValues,
                                        Pageable pageable) {
         Specification<ResourceTagValue> spec = getResourceTagValueSpecification(
-                tagEntryKey, search, tagValues
+                tagEntryKey, search, resourceType, tagValues
         );
 
         return jpaRepository.findAll(spec, pageable);
@@ -34,6 +35,7 @@ public class TagValueRepositoryImpl extends AbstractTenantedRepository<ResourceT
 
     private Specification<ResourceTagValue> getResourceTagValueSpecification(String tagEntryKey,
                                                                              String search,
+                                                                             String resourceType,
                                                                              List<String> tagValues) {
         Specification<ResourceTagValue> spec = getCallingTenantSpec();
 
@@ -42,10 +44,20 @@ public class TagValueRepositoryImpl extends AbstractTenantedRepository<ResourceT
         if(Utils.isNotBlank(search))
             spec = spec.and(getSearchSpec(search));
 
+        if(Utils.isNotBlank(resourceType))
+            spec = spec.and(getResourceTypeSpec(resourceType));
+
         if(Utils.isNotEmpty(tagValues))
             spec = spec.and(getTagValueSpec(tagValues));
 
         return spec;
+    }
+
+    private Specification<ResourceTagValue> getResourceTypeSpec(String resourceType) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.or(
+                criteriaBuilder.isMember(resourceType, root.get("resourceTypes")),
+                criteriaBuilder.isEmpty(root.get("resourceTypes"))
+        );
     }
 
     private Specification<ResourceTagValue> getTagValueSpec(List<String> tagValues) {

@@ -50,7 +50,7 @@ public class TagEntryRepositoryImpl extends AbstractTenantedRepository<ResourceT
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void ensureTagValue(String category, String key, String keyName, String value, String valueName, int index) {
+    public void ensureTagValue(String category, String resourceType, String key, String keyName, String value, String valueName, int index) {
         Optional<ResourceTagEntry> optional = jpaRepository.findByTagKey(key);
 
         ResourceTagEntry tagEntry;
@@ -63,7 +63,7 @@ public class TagEntryRepositoryImpl extends AbstractTenantedRepository<ResourceT
                 .userGroupTaggable(false)
                 .build());
 
-        tagEntry.addValue(value, valueName, index, null);
+        tagEntry.addValue(resourceType, value, valueName, index, null);
 
         saveIgnoreDuplicateKey(tagEntry);
     }

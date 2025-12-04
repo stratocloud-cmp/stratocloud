@@ -118,7 +118,9 @@ public class TagServiceImpl implements TagService{
         addAuditObject(tagEntry);
 
 
-        tagEntry.addValue(tagValue, tagValueName, index, description);
+        tagEntry.addValue(null, tagValue, tagValueName, index, description);
+
+        repository.save(tagEntry);
 
         return new AddTagValueResponse();
     }
@@ -176,11 +178,12 @@ public class TagServiceImpl implements TagService{
     public Page<NestedTagValueResponse> describeTagValues(DescribeTagValuesRequest request) {
         String tagEntryKey = request.getTagEntryKey();
         String search = request.getSearch();
+        String resourceType = request.getResourceType();
         List<String> tagValues = request.getTagValues();
         Pageable pageable = request.getPageable();
 
         Page<ResourceTagValue> page = tagValueRepository.page(
-                tagEntryKey, search, tagValues, pageable
+                tagEntryKey, search, resourceType, tagValues, pageable
         );
 
         return page.map(this::toNestedTagValueResponse);

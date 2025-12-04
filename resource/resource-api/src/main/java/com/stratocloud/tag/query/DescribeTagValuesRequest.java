@@ -11,6 +11,7 @@ import java.util.List;
 public class DescribeTagValuesRequest extends PagingRequest {
     private String tagEntryKey;
     private String search;
+    private String resourceType;
     private List<String> tagValues;
     private List<Long> parentTagValueIds;
 }

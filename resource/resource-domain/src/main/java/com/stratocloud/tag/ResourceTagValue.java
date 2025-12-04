@@ -8,6 +8,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Getter
 @Setter
 @Entity
@@ -22,6 +25,9 @@ import lombok.Setter;
 public class ResourceTagValue extends Tenanted {
     @ManyToOne
     private ResourceTagEntry entry;
+    @Column
+    @ElementCollection
+    private Set<String> resourceTypes = new HashSet<>();
     @Column(nullable = false)
     private String tagValue;
     @Column(nullable = false)
@@ -33,10 +39,12 @@ public class ResourceTagValue extends Tenanted {
 
 
     public ResourceTagValue(ResourceTagEntry entry,
+                            Set<String> resourceTypes,
                             String tagValue,
                             String tagValueName,
                             Integer index,
                             String description) {
+        this.resourceTypes.addAll(resourceTypes);
         this.entry = entry;
         this.tagValue = tagValue;
         this.tagValueName = tagValueName;

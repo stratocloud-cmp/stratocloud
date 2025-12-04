@@ -3,12 +3,11 @@ package com.stratocloud.tag;
 
 import com.stratocloud.exceptions.StratoException;
 import com.stratocloud.jpa.entities.Tenanted;
+import com.stratocloud.utils.Utils;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Getter
 @Setter
@@ -87,11 +86,25 @@ public class ResourceTagEntry extends Tenanted {
         );
     }
 
-    public void addValue(String tagValue, String tagValueName, int index, String description) {
-        if(values.stream().anyMatch(v->Objects.equals(tagValue, v.getTagValue())))
-            return;
+    public void addValue(String resourceType, String tagValue, String tagValueName, int index, String description) {
+        Optional<ResourceTagValue> currentValue = values.stream().filter(
+                v -> Objects.equals(tagValue, v.getTagValue())
+        ).findAny();
+        if(currentValue.isPresent()) {
+            if(currentValue.get().getResourceTypes() == null)
+                currentValue.get().setResourceTypes(new HashSet<>());
 
-        ResourceTagValue value = new ResourceTagValue(this, tagValue, tagValueName, index, description);
+            if(Utils.isNotBlank(resourceType))
+                currentValue.get().getResourceTypes().add(resourceType);
+            currentValue.get().setTagValueName(tagValueName);
+            currentValue.get().setIndex(index);
+            currentValue.get().setDescription(description);
+            return;
+        }
+
+        ResourceTagValue value = new ResourceTagValue(
+                this, Set.of(resourceType), tagValue, tagValueName, index, description
+        );
         values.add(value);
     }
 

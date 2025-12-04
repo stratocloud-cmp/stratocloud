@@ -177,13 +177,20 @@ public class HuaweiFlavorHandler extends AbstractResourceHandler {
 
     @Override
     public void synchronize(Resource resource) {
+        if(resource.getSyncState() == ResourceSyncState.NOT_FOUND)
+            resource.markRecycled(false);
+
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
 
         Flavor flavor = describeFlavor(account, resource.getExternalId()).orElseThrow(
                 () -> new ExternalResourceNotFoundException("Flavor not found.")
         );
 
-        resource.updateByExternal(toExternalResource(account, flavor));
+        ExternalResource externalResource = toExternalResource(account, flavor);
+        resource.updateByExternal(externalResource);
+
+        if(externalResource.state() == ResourceState.UNAVAILABLE || externalResource.state() == ResourceState.SOLD_OUT)
+            resource.markRecycled(false);
 
         String sizeInfo = "%sC%sG".formatted(flavor.getVcpus(), flavor.getRam()>>10);
         RuntimeProperty sizeProperty = RuntimeProperty.ofDisplayInList(

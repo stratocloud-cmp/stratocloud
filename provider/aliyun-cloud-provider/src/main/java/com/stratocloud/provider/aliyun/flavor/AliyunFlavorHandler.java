@@ -149,6 +149,9 @@ public class AliyunFlavorHandler extends AbstractResourceHandler {
 
     @Override
     public void synchronize(Resource resource) {
+        if(resource.getSyncState() == ResourceSyncState.NOT_FOUND)
+            resource.markRecycled(false);
+
         ExternalAccount account = getAccountRepository().findExternalAccount(resource.getAccountId());
 
         AliyunFlavor flavor = describeFlavor(account, resource.getExternalId()).orElseThrow(
@@ -158,6 +161,9 @@ public class AliyunFlavorHandler extends AbstractResourceHandler {
         ExternalResource externalResource = toExternalResource(account, flavor);
 
         resource.updateByExternal(externalResource);
+
+        if(externalResource.state() == ResourceState.UNAVAILABLE || externalResource.state() == ResourceState.SOLD_OUT)
+            resource.markRecycled(false);
 
         RuntimeProperty cpuProperty = RuntimeProperty.ofDisplayInList(
                 "cpuCores",

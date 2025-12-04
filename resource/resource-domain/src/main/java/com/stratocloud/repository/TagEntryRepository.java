@@ -15,5 +15,5 @@ public interface TagEntryRepository extends TenantedRepository<ResourceTagEntry>
 
     Page<ResourceTagEntry> page(TagEntryFilters filters, Boolean disabled, Pageable pageable);
 
-    void ensureTagValue(String category, String key, String keyName, String value, String valueName, int index);
+    void ensureTagValue(String category, String resourceType, String key, String keyName, String value, String valueName, int index);
 }

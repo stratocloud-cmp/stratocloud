@@ -10,6 +10,7 @@ import java.util.List;
 public interface TagValueRepository extends TenantedRepository<ResourceTagValue> {
     Page<ResourceTagValue> page(String tagEntryKey,
                                 String search,
+                                String resourceType,
                                 List<String> tagValues,
                                 Pageable pageable);
 }
