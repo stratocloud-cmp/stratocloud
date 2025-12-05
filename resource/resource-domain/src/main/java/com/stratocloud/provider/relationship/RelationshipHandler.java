@@ -153,4 +153,8 @@ public interface RelationshipHandler {
     default boolean supportDisconnectEvent() {
         return false;
     }
+
+    default RequirementSelectType getSelectType(){
+        return RequirementSelectType.NORMAL;
+    }
 }

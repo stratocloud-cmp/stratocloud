@@ -180,4 +180,9 @@ public class AliyunInstanceToFlavorHandler implements ChangeableEssentialHandler
 
         return new ResourceCost(tradePrice, months, ChronoUnit.MONTHS);
     }
+
+    @Override
+    public RequirementSelectType getSelectType() {
+        return RequirementSelectType.TABLE;
+    }
 }

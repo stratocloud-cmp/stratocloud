@@ -250,6 +250,8 @@ public class ResourceAssembler {
         nestedRelationshipSpec.setVisibleInForm(relationshipHandler.visibleInForm());
         nestedRelationshipSpec.setIsolatedTargetContext(relationshipHandler.isolatedTargetContext());
 
+        nestedRelationshipSpec.setSelectType(relationshipHandler.getSelectType());
+
         return nestedRelationshipSpec;
     }
 

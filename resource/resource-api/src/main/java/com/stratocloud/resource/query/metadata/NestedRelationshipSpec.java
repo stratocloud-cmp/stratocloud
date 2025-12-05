@@ -1,5 +1,6 @@
 package com.stratocloud.resource.query.metadata;
 
+import com.stratocloud.resource.RequirementSelectType;
 import com.stratocloud.resource.ResourceState;
 import lombok.Data;
 
@@ -30,4 +31,6 @@ public class NestedRelationshipSpec {
     private Boolean visibleInTarget;
     private Boolean visibleInForm;
     private Boolean isolatedTargetContext;
+
+    private RequirementSelectType selectType;
 }

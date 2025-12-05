@@ -125,4 +125,9 @@ public class HuaweiServerToFlavorHandler implements ChangeableEssentialHandler {
         )).orElseGet(List::of);
 
     }
+
+    @Override
+    public RequirementSelectType getSelectType() {
+        return RequirementSelectType.TABLE;
+    }
 }

@@ -192,4 +192,9 @@ public class TencentInstanceToFlavorHandler implements ChangeableEssentialHandle
         @BooleanField(label = "强制关机")
         private Boolean forceStop;
     }
+
+    @Override
+    public RequirementSelectType getSelectType() {
+        return RequirementSelectType.TABLE;
+    }
 }
