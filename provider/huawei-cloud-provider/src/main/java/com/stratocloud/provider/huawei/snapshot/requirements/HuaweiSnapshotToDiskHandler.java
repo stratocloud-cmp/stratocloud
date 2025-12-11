@@ -83,4 +83,9 @@ public class HuaweiSnapshotToDiskHandler implements EssentialRequirementHandler 
                 )
         )).orElseGet(List::of);
     }
+
+    @Override
+    public boolean visibleInForm() {
+        return false;
+    }
 }

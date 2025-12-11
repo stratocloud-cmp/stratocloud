@@ -85,4 +85,9 @@ public class AliyunSnapshotToDiskHandler implements EssentialRequirementHandler 
                 )
         )).orElseGet(List::of);
     }
+
+    @Override
+    public boolean visibleInForm() {
+        return false;
+    }
 }

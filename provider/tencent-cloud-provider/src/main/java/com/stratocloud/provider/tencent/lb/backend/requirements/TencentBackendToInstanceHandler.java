@@ -69,6 +69,11 @@ public class TencentBackendToInstanceHandler implements EssentialRequirementHand
     }
 
     @Override
+    public boolean visibleInTarget() {
+        return false;
+    }
+
+    @Override
     public List<ExternalRequirement> describeExternalRequirements(ExternalAccount account, ExternalResource source) {
         Optional<TencentBackend> backend = backendHandler.describeBackend(account, source.externalId());
 

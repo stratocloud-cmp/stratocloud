@@ -68,6 +68,11 @@ public class TencentSnapshotToDiskHandler implements EssentialRequirementHandler
     }
 
     @Override
+    public boolean visibleInForm() {
+        return false;
+    }
+
+    @Override
     public List<ExternalRequirement> describeExternalRequirements(ExternalAccount account, ExternalResource source) {
         Optional<Snapshot> snapshot = snapshotHandler.describeSnapshot(account, source.externalId());
 
