@@ -41,7 +41,7 @@ public class KubernetesPvHandler extends AbstractResourceHandler {
 
     @Override
     public String getResourceTypeName() {
-        return "K8s PersistentVolume";
+        return "K8s PV";
     }
 
     @Override

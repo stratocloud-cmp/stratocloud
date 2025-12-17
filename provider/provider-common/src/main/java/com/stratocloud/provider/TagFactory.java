@@ -10,8 +10,9 @@ public class TagFactory {
     }
 
     public static Tag buildFlavorSizeTag(int cpuCores, Number memoryGb){
-        String flavorSize = "%sC%sG".formatted(cpuCores, memoryGb.intValue());
-        int flavorIndex = cpuCores * 10000 + memoryGb.intValue();
+        int memoryInt = memoryGb.intValue() == 0 ? 1 : memoryGb.intValue();
+        String flavorSize = "%sC%sG".formatted(cpuCores, memoryInt);
+        int flavorIndex = cpuCores * 10000 + memoryInt;
         return new Tag(TagEntries.FLAVOR_SIZE, flavorSize, flavorSize, flavorIndex);
     }
 

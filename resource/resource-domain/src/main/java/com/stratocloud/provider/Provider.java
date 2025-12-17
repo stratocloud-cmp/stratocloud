@@ -50,4 +50,8 @@ public interface Provider {
     default Optional<MetricsProvider> getMetricsProvider(){
         return Optional.empty();
     }
+
+    default Optional<String> getLogoFileName(){
+        return Optional.of("default_logo.png");
+    }
 }

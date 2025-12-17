@@ -1,6 +1,7 @@
 package com.stratocloud.controllers;
 
 import com.stratocloud.audit.SendAuditLog;
+import com.stratocloud.auth.CheckToken;
 import com.stratocloud.exceptions.BadCommandException;
 import com.stratocloud.permission.PermissionRequired;
 import com.stratocloud.permission.PermissionTarget;
@@ -19,7 +20,9 @@ import com.stratocloud.resource.response.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -92,6 +95,11 @@ public class ResourceController implements ResourceApi {
     @Override
     public DescribeResourceTypesResponse describeResourceTypes(@RequestBody DescribeResourceTypesRequest request) {
         return service.describeResourceTypes(request);
+    }
+
+    @Override
+    public DescribeSimpleResourceTypesResponse describeSimpleResourceTypes(@RequestBody DescribeResourceTypesRequest request) {
+        return service.describeSimpleResourceTypes(request);
     }
 
     @Override
@@ -197,5 +205,11 @@ public class ResourceController implements ResourceApi {
     )
     public UpdateDescriptionResponse updateDescription(@RequestBody UpdateDescriptionCmd cmd) {
         return service.updateDescription(cmd);
+    }
+
+    @Override
+    @CheckToken(check = false)
+    public ResponseEntity<?> getProviderLogo(@RequestParam String type, @RequestParam String id) {
+        return service.getProviderLogo(type, id);
     }
 }

@@ -179,6 +179,15 @@ public class ResourceAssembler {
         return resourceType;
     }
 
+    public NestedSimpleResourceType toNestedSimpleResourceType(ResourceHandler resourceHandler) {
+        NestedResourceTypeSpec spec = toNestedResourceTypeSpec(resourceHandler);
+
+        NestedSimpleResourceType resourceType = new NestedSimpleResourceType();
+        resourceType.setSpec(spec);
+
+        return resourceType;
+    }
+
 
     private NestedResourceTypeCapability toNestedResourceTypeCapability(RelationshipHandler relationshipHandler) {
         ResourceHandler source = relationshipHandler.getSource();

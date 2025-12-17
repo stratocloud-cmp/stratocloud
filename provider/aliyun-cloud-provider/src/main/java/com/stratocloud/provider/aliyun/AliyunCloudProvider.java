@@ -73,4 +73,9 @@ public class AliyunCloudProvider extends AbstractProvider {
     public Optional<MetricsProvider> getMetricsProvider() {
         return Optional.of(metricsProvider);
     }
+
+    @Override
+    public Optional<String> getLogoFileName() {
+        return Optional.of("aliyun.png");
+    }
 }

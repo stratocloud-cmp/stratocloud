@@ -130,4 +130,8 @@ public interface ResourceHandler extends DynamicPermissionRequired {
     default ResourceCost getCurrentCost(Resource resource){
         return ResourceCost.ZERO;
     }
+
+    default Optional<String> getLogoFileName(){
+        return Optional.empty();
+    }
 }

@@ -13,6 +13,7 @@ import com.stratocloud.resource.query.monitor.DescribeQuickStatsRequest;
 import com.stratocloud.resource.query.monitor.DescribeQuickStatsResponse;
 import com.stratocloud.resource.response.*;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 
 public interface ResourceService {
     CreateResourcesResponse create(BatchCreateResourcesCmd cmd);
@@ -43,6 +44,8 @@ public interface ResourceService {
     ChangeEssentialRequirementsResponse changeEssentialRequirements(BatchChangeEssentialRequirementsCmd cmd);
 
     DescribeResourceTypesResponse describeResourceTypes(DescribeResourceTypesRequest request);
+
+    DescribeSimpleResourceTypesResponse describeSimpleResourceTypes(DescribeResourceTypesRequest request);
 
     DescribeResourceCategoriesResponse describeResourceCategories(DescribeResourceCategoriesRequest request);
 
@@ -85,4 +88,7 @@ public interface ResourceService {
     DisassociateTagResponse disassociateTag(DisassociateTagCmd cmd);
 
     UpdateDescriptionResponse updateDescription(UpdateDescriptionCmd cmd);
+
+
+    ResponseEntity<?> getProviderLogo(String type, String id);
 }

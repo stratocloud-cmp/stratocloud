@@ -48,6 +48,7 @@ import com.stratocloud.resource.query.monitor.DescribeMetricsResponse;
 import com.stratocloud.resource.query.monitor.DescribeQuickStatsRequest;
 import com.stratocloud.resource.query.monitor.DescribeQuickStatsResponse;
 import com.stratocloud.resource.response.*;
+import com.stratocloud.utils.ContextUtil;
 import com.stratocloud.utils.GraphUtil;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
@@ -57,6 +58,9 @@ import com.stratocloud.validate.ValidateRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -407,6 +411,17 @@ public class ResourceServiceImpl implements ResourceService {
         ).toList();
 
         return new DescribeResourceTypesResponse(nestedResourceTypes);
+    }
+
+    @Override
+    public DescribeSimpleResourceTypesResponse describeSimpleResourceTypes(DescribeResourceTypesRequest request) {
+        List<ResourceHandler> resourceHandlers = getResourceHandlers(request);
+
+        List<NestedSimpleResourceType> nestedResourceTypes = resourceHandlers.stream().map(
+                assembler::toNestedSimpleResourceType
+        ).toList();
+
+        return new DescribeSimpleResourceTypesResponse(nestedResourceTypes);
     }
 
     @Override
@@ -1357,5 +1372,49 @@ public class ResourceServiceImpl implements ResourceService {
 
         log.info("{} resources states synchronized of account {}.",
                 synchronizedResources.size(), account.getName());
+    }
+
+    @Override
+    public ResponseEntity<?> getProviderLogo(String type, String id) {
+        try {
+            Optional<String> logoFileName;
+            if(Objects.equals(type, "Provider")){
+                Provider provider = ProviderRegistry.getProvider(id);
+                logoFileName = provider.getLogoFileName();
+            }else if(Objects.equals(type, "ResourceType")){
+                ResourceHandler resourceHandler = ProviderRegistry.getResourceHandler(id);
+                logoFileName = resourceHandler.getLogoFileName();
+
+                if(logoFileName.isEmpty())
+                    logoFileName = resourceHandler.getProvider().getLogoFileName();
+            }else {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .body("Unsupported logo type");
+            }
+
+            if(logoFileName.isEmpty())
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .body("Logo not provided");
+
+
+            org.springframework.core.io.Resource logoResource = ContextUtil.getApplicationContext().getResource(
+                    "classpath:logos/" + logoFileName.get()
+            );
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .contentType(logoFileName.get().endsWith(".png") ? MediaType.IMAGE_PNG : MediaType.IMAGE_JPEG)
+                    .body(logoResource);
+        }catch (Exception e){
+            log.error("Failed to get provider logo.", e);
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(e.getMessage());
+        }
     }
 }

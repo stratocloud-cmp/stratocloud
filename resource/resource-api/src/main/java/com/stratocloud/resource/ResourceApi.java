@@ -11,8 +11,11 @@ import com.stratocloud.resource.query.monitor.DescribeQuickStatsRequest;
 import com.stratocloud.resource.query.monitor.DescribeQuickStatsResponse;
 import com.stratocloud.resource.response.*;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 public interface ResourceApi {
     @PostMapping(StratoServices.RESOURCE_SERVICE+"/describe-resources")
@@ -50,6 +53,9 @@ public interface ResourceApi {
     @PostMapping(StratoServices.RESOURCE_SERVICE+"/describe-resource-types")
     DescribeResourceTypesResponse describeResourceTypes(@RequestBody DescribeResourceTypesRequest request);
 
+    @PostMapping(StratoServices.RESOURCE_SERVICE+"/describe-simple-resource-types")
+    DescribeSimpleResourceTypesResponse describeSimpleResourceTypes(@RequestBody DescribeResourceTypesRequest request);
+
     @PostMapping(StratoServices.RESOURCE_SERVICE+"/describe-resource-categories")
     DescribeResourceCategoriesResponse describeResourceCategories(@RequestBody DescribeResourceCategoriesRequest request);
 
@@ -82,8 +88,15 @@ public interface ResourceApi {
 
     @PostMapping(StratoServices.RESOURCE_SERVICE+"/associate-tags")
     AssociateTagsResponse associateTags(AssociateTagsCmd cmd);
+
     @PostMapping(StratoServices.RESOURCE_SERVICE+"/disassociate-tag")
     DisassociateTagResponse disassociateTag(DisassociateTagCmd cmd);
+
     @PostMapping(StratoServices.RESOURCE_SERVICE+"/update-description")
     UpdateDescriptionResponse updateDescription(UpdateDescriptionCmd cmd);
+
+    @GetMapping(
+            value = StratoServices.RESOURCE_SERVICE+"/provider-logo"
+    )
+    ResponseEntity<?> getProviderLogo(@RequestParam String type, @RequestParam String id);
 }
