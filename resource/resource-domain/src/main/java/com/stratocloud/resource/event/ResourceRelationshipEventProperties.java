@@ -1,5 +1,4 @@
 package com.stratocloud.resource.event;
-import com.stratocloud.resource.ResourceCategory;
 
 import com.stratocloud.account.ExternalAccount;
 import com.stratocloud.resource.*;

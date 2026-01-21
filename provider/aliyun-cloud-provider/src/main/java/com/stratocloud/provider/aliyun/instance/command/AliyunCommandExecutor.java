@@ -12,7 +12,6 @@ import com.stratocloud.utils.SecurityUtil;
 import com.stratocloud.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -92,7 +91,7 @@ public abstract class AliyunCommandExecutor implements ProviderGuestCommandExecu
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
 
     }
 }

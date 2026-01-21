@@ -66,7 +66,7 @@ public class CosSessionManager implements DisposableBean {
 
 
     @Override
-    public void destroy() throws Exception {
+    public void destroy() {
         Collection<CosSession> sessions = sessionsMap.values();
 
         if(Utils.isEmpty(sessions))

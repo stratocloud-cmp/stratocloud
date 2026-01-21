@@ -546,12 +546,6 @@ public class TencentCloudClientImpl implements TencentCloudClient{
 
     @Override
     public List<Image> describeImages(DescribeImagesRequest request) {
-        if(Utils.isEmpty(request.getImageIds())){
-            Filter filter = new Filter();
-            filter.setName("image-type");
-            filter.setValues(new String[]{"PRIVATE_IMAGE", "PUBLIC_IMAGE", "SHARED_IMAGE"});
-        }
-
         return CacheUtil.queryWithCache(
                 cacheService,
                 buildCacheKey("Images", request),

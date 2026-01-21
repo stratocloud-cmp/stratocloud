@@ -18,7 +18,7 @@ public interface RemoteScriptExecutor extends InitializingBean {
     record ExecutionType(GuestCommandType commandType, RemoteScriptType scriptType) {}
 
     @Override
-    default void afterPropertiesSet() throws Exception {
+    default void afterPropertiesSet() {
         RemoteScriptExecutorRegistry.register(this);
     }
 }

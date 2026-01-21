@@ -64,7 +64,7 @@ public class HuaweiObsSessionManager implements DisposableBean {
 
 
     @Override
-    public void destroy() throws Exception {
+    public void destroy() {
         Collection<IObsClient> sessions = sessionsMap.values();
 
         if(Utils.isEmpty(sessions))

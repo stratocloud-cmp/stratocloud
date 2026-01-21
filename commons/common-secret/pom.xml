@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.stratocloud</groupId>
         <artifactId>commons</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -22,17 +22,17 @@
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-base</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-jpa</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-local-cache</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
 

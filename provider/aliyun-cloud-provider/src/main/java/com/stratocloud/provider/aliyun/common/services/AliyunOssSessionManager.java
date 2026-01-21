@@ -75,7 +75,7 @@ public class AliyunOssSessionManager implements DisposableBean {
 
 
     @Override
-    public void destroy() throws Exception {
+    public void destroy() {
         Collection<OSS> sessions = sessionsMap.values();
 
         if(Utils.isEmpty(sessions))

@@ -109,7 +109,7 @@ public class AuditLog extends Tenanted {
         if(jsonNode instanceof ArrayNode arrayNode){
             arrayNode.elements().forEachRemaining(this::eraseSensitiveProperties);
         }else if(jsonNode instanceof ObjectNode objectNode){
-            Iterator<Map.Entry<String, JsonNode>> iterator = objectNode.fields();
+            Iterator<Map.Entry<String, JsonNode>> iterator = objectNode.properties().iterator();
             while (iterator.hasNext()){
                 Map.Entry<String, JsonNode> entry = iterator.next();
                 if(SecurityUtil.isSensitiveProperty(entry.getKey()))

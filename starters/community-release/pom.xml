@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.stratocloud</groupId>
         <artifactId>starters</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <artifactId>community-release</artifactId>
@@ -22,70 +22,70 @@
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>identity-api-impl</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>identity-repository</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>email-notification-provider</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <!--    resource modules    -->
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>resource-api-impl</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>resource-repository</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>resource-external</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <!--    order modules    -->
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>order-api-impl</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>order-repository</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>order-external</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <!--    middleware modules    -->
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-distributed-lock</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-local-cache</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-memory-message-bus</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-secret</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <!--    db modules    -->
         <dependency>
@@ -110,34 +110,34 @@
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-jpa</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
 
         <!--    provider modules    -->
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>tencent-cloud-provider</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>aliyun-cloud-provider</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>script-handlers</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>huawei-cloud-provider</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>built-in-software</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
 

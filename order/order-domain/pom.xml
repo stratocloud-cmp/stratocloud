@@ -5,7 +5,7 @@
     <parent>
         <artifactId>order</artifactId>
         <groupId>com.stratocloud</groupId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -27,28 +27,28 @@
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-jpa</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-dynamic-form</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>order-primitives</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-job</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>common-rule</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
 

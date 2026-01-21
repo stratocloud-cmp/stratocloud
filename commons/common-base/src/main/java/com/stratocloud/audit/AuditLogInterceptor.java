@@ -137,7 +137,7 @@ public class AuditLogInterceptor implements HandlerInterceptor {
 
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         handleAuditLog(request, response, handler, Set.of(AuditLogLevel.warning, AuditLogLevel.error));
     }
 }

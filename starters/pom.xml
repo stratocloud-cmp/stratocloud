@@ -5,7 +5,7 @@
     <parent>
         <artifactId>stratocloud</artifactId>
         <groupId>com.stratocloud</groupId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>pom</packaging>
@@ -15,7 +15,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>starters</artifactId>
-    <version>1.0.0</version>
 
     <properties>
         <maven.compiler.source>20</maven.compiler.source>

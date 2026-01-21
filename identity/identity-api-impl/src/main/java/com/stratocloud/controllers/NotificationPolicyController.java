@@ -15,8 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @PermissionTarget(target = "NotificationPolicy", targetName = "通知策略")
 public class NotificationPolicyController implements NotificationPolicyApi {

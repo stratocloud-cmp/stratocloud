@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class TestTemplate {
 
-    static String template = """
+    static final String template = """
             <!DOCTYPE html>
             <html lang="en">
                 <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
