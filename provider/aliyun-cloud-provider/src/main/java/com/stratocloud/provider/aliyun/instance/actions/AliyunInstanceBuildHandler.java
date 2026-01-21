@@ -28,12 +28,15 @@ import com.stratocloud.resource.ResourceCost;
 import com.stratocloud.resource.ResourceUsage;
 import com.stratocloud.utils.JSON;
 import com.stratocloud.utils.Utils;
+import com.stratocloud.utils.concurrent.SleepUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+@Slf4j
 @Component
 public class AliyunInstanceBuildHandler implements BuildResourceActionHandler {
     private final AliyunInstanceHandler instanceHandler;
@@ -97,13 +100,27 @@ public class AliyunInstanceBuildHandler implements BuildResourceActionHandler {
     private void setPrimaryNicId(Resource instance, AliyunClient client) {
         Optional<AliyunNic> networkInterface = client.ecs().describePrimaryNicByInstanceId(instance.getExternalId());
         Optional<Resource> nicResource = instance.getPrimaryCapability(ResourceCategories.NIC);
-        nicResource.ifPresent(nic -> nic.setExternalId(networkInterface.orElseThrow().detail().getNetworkInterfaceId()));
+        if(networkInterface.isEmpty()){
+            log.warn("Primary nic not ready yet.");
+            SleepUtil.sleep(20);
+            networkInterface = client.ecs().describePrimaryNicByInstanceId(instance.getExternalId());
+        }
+        Optional<AliyunNic> primaryNic = networkInterface;
+        nicResource.ifPresent(
+                nic -> nic.setExternalId(primaryNic.orElseThrow().detail().getNetworkInterfaceId())
+        );
     }
 
     private void setSystemDiskId(Resource instance, AliyunClient client) {
         Optional<AliyunDisk> disk = client.ecs().describeSystemDiskByInstanceId(instance.getExternalId());
         Optional<Resource> diskResource = instance.getPrimaryCapability(ResourceCategories.DISK);
-        diskResource.ifPresent(d -> d.setExternalId(disk.orElseThrow().detail().getDiskId()));
+        if(disk.isEmpty()){
+            log.warn("System disk not ready yet.");
+            SleepUtil.sleep(20);
+            disk = client.ecs().describeSystemDiskByInstanceId(instance.getExternalId());
+        }
+        Optional<AliyunDisk> systemDisk = disk;
+        diskResource.ifPresent(d -> d.setExternalId(systemDisk.orElseThrow().detail().getDiskId()));
     }
 
 
