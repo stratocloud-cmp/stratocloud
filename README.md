@@ -5,7 +5,9 @@ StratoCloud
 
 # 关键特性
 * 云资源全生命周期管理
-  * 实现云主机、云硬盘、弹性网卡、弹性IP、负载均衡、安全组等云资源的统一申请、变更、回收操作
+  * 实现云主机、云数据库、云中间件、云硬盘、弹性网卡、弹性IP、负载均衡、安全组等云资源的统一申请、变更、回收操作
+* Kubernetes资源全生命周期管理
+  * 实现Deployment、Pod、StatefulSet、Service、Ingress、ConfigMap等k8s资源的统一管理
 * 多级租户
   * 支持按多级租户结构控制数据权限，实现不同子公司、部门、项目组等组织结构的数据隔离与共享
 * 用户组与资源标签
@@ -26,6 +28,26 @@ StratoCloud
   * 支持对接OpenStack、vSphere、SmartX等私有云/虚拟化平台
 * SSH/WinRM远程命令执行[(商业版功能)](./docs/PREMIUM.md)
   * 支持通过SSH/WinRM在私有云环境部署软件或执行脚本
+
+
+<div style="text-align: center;margin-top: 36px">
+
+![云资源全生命周期管理](docs/img/instances.png)
+*云资源全生命周期管理*
+
+![云资源详情](docs/img/instance_detail.png)
+*云资源详情*
+
+![云资源监控](docs/img/metrics.png)
+*云资源监控*
+
+![软件库](docs/img/software_definition.png)
+*软件库*
+
+![蓝图编排](docs/img/blueprint.png)
+*蓝图编排*
+
+</div>
 
 # 逻辑架构
 ![arch](docs/img/architecture_20250424.jpg)
@@ -60,18 +82,18 @@ OpenJDK Runtime Environment (build 21.0.2+13-58)
 OpenJDK 64-Bit Server VM (build 21.0.2+13-58, mixed mode, sharing)
 ```
 ## 2.下载安装包
-* Windows用户请点击[此处](https://github.com/stratocloud-cmp/stratocloud/releases/download/v1.0.0/stratocloud-release-1.0.0.zip)下载安装包，解压到您的本地磁盘，例如`D:\stratocloud`。
+* Windows用户请点击[此处](https://github.com/stratocloud-cmp/stratocloud/releases/download/v1.0.1/stratocloud-release-1.0.1.zip)下载安装包，解压到您的本地磁盘，例如`D:\stratocloud`。
 * macOs和Linux用户请运行以下命令:
 ```shell
 # 下载安装包
-$ wget https://github.com/stratocloud-cmp/stratocloud/releases/download/v1.0.0/stratocloud-release-1.0.0.zip
+$ wget https://github.com/stratocloud-cmp/stratocloud/releases/download/v1.0.1/stratocloud-release-1.0.1.zip
 
 # 解压
-$ unzip stratocloud-1.0.0-release.zip
+$ unzip stratocloud-1.0.1-release.zip
 ```
 ## 3.修改配置文件
 * StratoCloud默认支持使用H2、PostgreSQL或MySQL作为后端存储，您可以根据需求选用其中一种 (H2数据库为内置数据库无需单独部署)。如果有使用其他国产数据库需求，详见[商业版功能](./docs/PREMIUM.md)或[二次开发参考](./docs/DEVELOPER_REFERENCE.md)  
-* 请根据您选用的数据库参考以下配置文件，修改并覆盖到`stratocloud-1.0.0-release/config/application.yaml`  
+* 请根据您选用的数据库参考以下配置文件，修改并覆盖到`stratocloud-1.0.1-release/config/application.yaml`  
 * 如果您想直接使用默认配置，请跳过本小节并前往[第4步](#4启动服务)
 
 **H2数据库(内置):**
@@ -170,9 +192,9 @@ spring:
 ```  
 
 ## 4.启动服务
-请在命令行中执行以下命令以切换到stratocloud-1.0.0-release/bin目录
+请在命令行中执行以下命令以切换到stratocloud-1.0.1-release/bin目录
 ```shell
-$ cd stratocloud-1.0.0-release/bin
+$ cd stratocloud-1.0.1-release/bin
 ```
 执行启动脚本(Linux/macOS环境):  
 ```shell

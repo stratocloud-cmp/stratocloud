@@ -1,0 +1,1 @@
+import{r,aa as s,ab as n}from"./index-p-bjOlTn.js";class o{constructor(){this.networkResourceId=r()}setNetworkResourceId(t){this.networkResourceId.value=t}}function c(){const e=new o;return n("networkResourceContext",e),e}function a(){return s("networkResourceContext",new o)}export{a,c as u};

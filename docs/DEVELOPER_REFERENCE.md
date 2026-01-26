@@ -20,13 +20,13 @@
     <parent>
         <artifactId>provider</artifactId>
         <groupId>com.stratocloud</groupId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>aliyun-cloud-provider</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <properties>
         <maven.compiler.source>20</maven.compiler.source>
@@ -38,7 +38,7 @@
         <dependency>
             <groupId>com.stratocloud</groupId>
             <artifactId>provider-common</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
 
         ...
