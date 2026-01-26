@@ -82,11 +82,11 @@ OpenJDK Runtime Environment (build 21.0.2+13-58)
 OpenJDK 64-Bit Server VM (build 21.0.2+13-58, mixed mode, sharing)
 ```
 ## 2.下载安装包
-* Windows用户请点击[此处](https://github.com/stratocloud-cmp/stratocloud/releases/download/v1.0.1/stratocloud-release-1.0.1.zip)下载安装包，解压到您的本地磁盘，例如`D:\stratocloud`。
+* Windows用户请点击[此处](https://github.com/stratocloud-cmp/stratocloud/releases/download/v1.0.1/stratocloud-1.0.1-release.zip)下载安装包，解压到您的本地磁盘，例如`D:\stratocloud`。
 * macOs和Linux用户请运行以下命令:
 ```shell
 # 下载安装包
-$ wget https://github.com/stratocloud-cmp/stratocloud/releases/download/v1.0.1/stratocloud-release-1.0.1.zip
+$ wget https://github.com/stratocloud-cmp/stratocloud/releases/download/v1.0.1/stratocloud-1.0.1-release.zip
 
 # 解压
 $ unzip stratocloud-1.0.1-release.zip
